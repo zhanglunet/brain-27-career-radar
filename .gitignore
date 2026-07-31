@@ -21,6 +21,7 @@
 # misc
 .DS_Store
 *.pem
+*.cpuprofile
 
 # debug
 npm-debug.log*
@@ -36,6 +37,7 @@ yarn-error.log*
 
 # typescript
 next-env.d.ts
+tsconfig.tsbuildinfo
 /dist/
 /.wrangler/
 /outputs/

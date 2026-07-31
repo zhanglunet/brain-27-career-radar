@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Opportunity = {
   name: string;
@@ -14,6 +14,24 @@ type Opportunity = {
   action: string;
   tags: string[];
   url: string;
+  sourceVerifiedAt?: string | null;
+};
+
+type Institution = {
+  name: string;
+  mark: string;
+  summary: string;
+  note: string;
+  url: string;
+  sourceVerifiedAt?: string | null;
+};
+
+type RadarPayload = {
+  dataOrigin: "database";
+  updatedAt: string | null;
+  syncStatus: string;
+  opportunities: Opportunity[];
+  institutions: Institution[];
 };
 
 const opportunities: Opportunity[] = [
@@ -246,20 +264,54 @@ export default function Home() {
   const [status, setStatus] = useState<(typeof statusOptions)[number]>("全部");
   const [kind, setKind] = useState<(typeof kindOptions)[number]>("全部");
   const [query, setQuery] = useState("");
+  const [radar, setRadar] = useState<{
+    opportunities: Opportunity[];
+    institutions: Institution[];
+    updatedAt: string;
+    origin: "static" | "database";
+    syncStatus: string;
+  }>({ opportunities, institutions, updatedAt: "2026-08-01", origin: "static", syncStatus: "not_run" });
 
-  const filtered = useMemo(() => opportunities.filter((item) => {
+  useEffect(() => {
+    const controller = new AbortController();
+    async function loadRadar() {
+      try {
+        const response = await fetch("/api/radar", { signal: controller.signal });
+        if (!response.ok) return;
+        const payload: unknown = await response.json();
+        if (!isRadarPayload(payload)) return;
+        setRadar({
+          opportunities: payload.opportunities,
+          institutions: payload.institutions,
+          updatedAt: payload.updatedAt ?? new Date().toISOString(),
+          origin: "database",
+          syncStatus: payload.syncStatus,
+        });
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === "AbortError")) {
+          console.error("Unable to load live radar data", error);
+        }
+      }
+    }
+    void loadRadar();
+    return () => controller.abort();
+  }, []);
+
+  const filtered = useMemo(() => radar.opportunities.filter((item) => {
     const statusMatch = status === "全部" || item.status === status;
     const kindMatch = kind === "全部" || item.kind === kind;
     const haystack = `${item.name}${item.org}${item.location}${item.tags.join("")}`.toLowerCase();
     return statusMatch && kindMatch && haystack.includes(query.trim().toLowerCase());
-  }), [status, kind, query]);
+  }), [status, kind, query, radar.opportunities]);
+
+  const immediateCount = radar.opportunities.filter((item) => item.status === "立即行动").length;
 
   return (
     <main>
       <nav className="nav">
         <a className="brand" href="#top" aria-label="返回顶部"><span>Ψ</span> BRAIN / 27</a>
         <div className="navlinks"><a href="#radar">机会雷达</a><a href="#institutes">科研机构</a><a href="#plan">行动计划</a></div>
-        <div className="fresh"><i /> 更新于 2026.08.01</div>
+        <div className="fresh"><i /> {freshnessLabel(radar.origin, radar.syncStatus)}于 {formatDate(radar.updatedAt)}</div>
       </nav>
 
       <section className="hero" id="top">
@@ -270,12 +322,12 @@ export default function Home() {
           <div className="hero-actions"><a className="primary" href="#radar">查看立即行动项 ↘</a><a className="secondary" href="#institutes">研究机构地图</a></div>
         </div>
         <div className="hero-panel">
-          <div className="panel-head"><span>PROFILE SIGNAL</span><span className="live">LIVE</span></div>
+          <div className="panel-head"><span>PROFILE SIGNAL</span><span className="live">{freshnessBadge(radar.origin, radar.syncStatus)}</span></div>
           <div className="profile-line"><b>背景</b><span>实验心理学 · 2027 硕士</span></div>
           <div className="profile-line"><b>主航道</b><span>认知神经 / BCI / Brain × AI</span></div>
           <div className="profile-line"><b>当前窗口</b><span>秋招投递 + 联培博士初筛</span></div>
           <div className="signal"><div style={{width:"86%"}} /><small>方向匹配强度 86%</small></div>
-          <div className="mini-grid"><div><strong>14</strong><span>精选机会</span></div><div><strong>7</strong><span>立即行动</span></div><div><strong>5</strong><span>重点机构</span></div></div>
+          <div className="mini-grid"><div><strong>{radar.opportunities.length}</strong><span>精选机会</span></div><div><strong>{immediateCount}</strong><span>立即行动</span></div><div><strong>{radar.institutions.length}</strong><span>重点机构</span></div></div>
         </div>
       </section>
 
@@ -291,7 +343,7 @@ export default function Home() {
           <div className="segmented" aria-label="按类型筛选">{kindOptions.map((option) => <button key={option} className={kind === option ? "active" : ""} onClick={() => setKind(option)}>{option}</button>)}</div>
           <label className="search"><span>⌕</span><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="搜索机构、方向或城市" /></label>
         </div>
-        <p className="result-count">显示 {filtered.length} / {opportunities.length} 个机会</p>
+        <p className="result-count">显示 {filtered.length} / {radar.opportunities.length} 个机会</p>
         <div className="cards">
           {filtered.map((item, index) => (
             <article className="card" key={`${item.org}-${item.name}`}>
@@ -299,6 +351,7 @@ export default function Home() {
               <p className="org">{item.org}</p><h3>{item.name}</h3>
               <div className="meta"><span>{item.kind}</span><span>{item.location}</span><span className={`fit fit-${item.fit}`}>{item.fit}</span></div>
               <p className="deadline">◷ {item.deadline}</p>
+              {item.sourceVerifiedAt ? <p className="deadline">来源验证于 {formatDate(item.sourceVerifiedAt)}</p> : null}
               <p className="why">{item.why}</p>
               <div className="tag-row">{item.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
               <div className="next"><b>下一步</b><p>{item.action}</p></div>
@@ -311,7 +364,7 @@ export default function Home() {
       <section className="section institutes" id="institutes">
         <div className="section-title"><div><p className="eyebrow">RESEARCH INSTITUTES</p><h2>智源与同类科研机构</h2></div><p>不是所有 AI 研究院都同样适合实验心理学背景。</p></div>
         <div className="institution-list">
-          {institutions.map((item, index) => <a href={item.url} target="_blank" rel="noreferrer" className="institution" key={item.name}>
+          {radar.institutions.map((item, index) => <a href={item.url} target="_blank" rel="noreferrer" className="institution" key={item.name}>
             <span className="num">0{index + 1}</span><div><div className="inst-head"><h3>{item.name}</h3><span>{item.mark}</span></div><p>{item.summary}</p><small>{item.note}</small></div><b>↗</b>
           </a>)}
         </div>
@@ -335,4 +388,68 @@ export default function Home() {
       <footer><div><span className="brand"><span>Ψ</span> BRAIN / 27</span><p>2027 脑科学与 AI 机会雷达</p></div><p>信息会变化。投递前请以链接中的机构官方页面为准。</p></footer>
     </main>
   );
+}
+
+function isRadarPayload(value: unknown): value is RadarPayload {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Record<string, unknown>;
+  return candidate.dataOrigin === "database"
+    && (typeof candidate.updatedAt === "string" || candidate.updatedAt === null)
+    && typeof candidate.syncStatus === "string"
+    && Array.isArray(candidate.opportunities)
+    && candidate.opportunities.every(isOpportunity)
+    && Array.isArray(candidate.institutions)
+    && candidate.institutions.every(isInstitution);
+}
+
+function isOpportunity(value: unknown): value is Opportunity {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Record<string, unknown>;
+  return typeof item.name === "string"
+    && typeof item.org === "string"
+    && typeof item.kind === "string"
+    && typeof item.status === "string"
+    && typeof item.fit === "string"
+    && typeof item.location === "string"
+    && typeof item.deadline === "string"
+    && typeof item.why === "string"
+    && typeof item.action === "string"
+    && typeof item.url === "string"
+    && Array.isArray(item.tags)
+    && item.tags.every((tag) => typeof tag === "string");
+}
+
+function isInstitution(value: unknown): value is Institution {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Record<string, unknown>;
+  return typeof item.name === "string"
+    && typeof item.mark === "string"
+    && typeof item.summary === "string"
+    && typeof item.note === "string"
+    && typeof item.url === "string";
+}
+
+function formatDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("zh-CN", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function freshnessLabel(origin: "static" | "database", syncStatus: string): string {
+  if (origin === "static") return "静态快照";
+  if (syncStatus === "succeeded") return "已验证";
+  if (syncStatus === "partial") return "部分验证";
+  return "数据库快照";
+}
+
+function freshnessBadge(origin: "static" | "database", syncStatus: string): string {
+  if (origin === "static") return "STATIC";
+  if (syncStatus === "succeeded") return "LIVE";
+  if (syncStatus === "partial") return "PARTIAL";
+  return "DATA";
 }
