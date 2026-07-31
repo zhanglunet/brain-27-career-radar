@@ -5,6 +5,7 @@ import { defineConfig } from "vite";
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 const localD1Id = "00000000-0000-0000-0000-000000000027";
 const productionD1Id = process.env.BRAIN_RADAR_D1_ID;
+const useRemoteD1InDevelopment = process.env.BRAIN_RADAR_REMOTE_D1 === "true";
 
 const localBindingConfig = {
   name: "brain-27-career-radar",
@@ -16,6 +17,7 @@ const localBindingConfig = {
     database_name: "brain-27-career-radar",
     database_id: productionD1Id ?? localD1Id,
     ...(productionD1Id ? {} : { preview_database_id: localD1Id }),
+    ...(useRemoteD1InDevelopment ? { remote: true } : {}),
     // The Vite plugin rewrites this relative to dist/server/wrangler.json.
     migrations_dir: "drizzle",
   }],

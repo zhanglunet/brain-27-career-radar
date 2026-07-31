@@ -310,7 +310,7 @@ export default function Home() {
     <main>
       <nav className="nav">
         <a className="brand" href="#top" aria-label="返回顶部"><span>Ψ</span> BRAIN / 27</a>
-        <div className="navlinks"><a href="#radar">机会雷达</a><a href="#institutes">科研机构</a><a href="#plan">行动计划</a></div>
+        <div className="navlinks"><a href="#radar">机会雷达</a><a href="#institutes">科研机构</a><a href="#plan">行动计划</a><a href="/system">系统说明</a><a href="/prd">需求文档</a></div>
         <div className="fresh"><i /> {freshnessLabel(radar.origin, radar.syncStatus)}于 {formatDate(radar.updatedAt)}</div>
       </nav>
 

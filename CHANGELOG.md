@@ -10,9 +10,11 @@
 - `/api/radar` 动态只读接口和前端静态快照降级。
 - 结构化 Worker 日志、同步运行记录、绑定类型生成和生产部署预检。
 - 来源巡检成功、内容变化和连续失败测试。
+- `/system` 实时系统运行说明、`/prd` 网页版需求文档和 `/api/system-status` 聚合状态接口。
 
 ### Changed
 
 - 页面更新时间、机会数、立即行动数和机构数改为数据驱动。
 - Cloudflare binding 类型改为由 Wrangler 生成。
 - Wrangler 升级至 4.118.0、Cloudflare Vite 插件升级至 1.50.0、Next.js 升级至 16.2.12。
+- 主页导航增加系统说明与需求文档入口；PRD 版本推进至 v0.3。

@@ -33,6 +33,15 @@ npx wrangler dev --config dist/server/wrangler.json --persist-to .wrangler/state
 curl http://localhost:8787/cdn-cgi/local/scheduled
 ```
 
+如需由本地 Worker 受控连接远程 D1 验证，必须同时显式设置真实数据库 ID 和远程开关；不要在日常开发中默认连接生产数据：
+
+```bash
+export BRAIN_RADAR_D1_ID='<database-id>'
+export BRAIN_RADAR_REMOTE_D1=true
+npm run build
+npx wrangler dev --test-scheduled --config dist/server/wrangler.json
+```
+
 查询最近运行：
 
 ```bash
@@ -50,6 +59,7 @@ npx wrangler d1 execute brain-27-career-radar --local \
 4. 运行 `npm run deploy`；预检会拒绝缺少生产 D1 ID 的部署。
 5. 验证 `/api/radar` 返回 `dataOrigin=database`。
 6. 在 Workers Logs 中检查 `radar.sync.*` 和 `radar.source.*` 结构化事件。
+7. 打开 `/system`，确认 D1 正常并在首个计划时刻后出现最近一次巡检记录。
 
 ## 故障处理
 
