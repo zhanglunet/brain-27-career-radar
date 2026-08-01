@@ -1,5 +1,14 @@
 # 部署记录
 
+## 2026-08-01 · 根域名、www 与首次生产论文同步
+
+- 发布来源：干净提交 `39abffa`，分支 `codex/root-domain-routing`；完整质量门为 TypeScript、ESLint、生产构建和 23/23 测试通过。
+- Cloudflare Worker 版本：`a299fd8a-c94f-4e34-9411-19cb5dca9e7e`；启动时间 20 ms；D1、Images、Assets 和 `0 1,7,13,19 * * *` Cron 绑定正常。
+- Custom Domain 已同时部署：`openagent.hk`、`www.openagent.hk`、`radar.openagent.hk`。Cloudflare 权威 DNS、1.1.1.1 与 8.8.8.8 均返回 Cloudflare 边缘地址。
+- 三个域名的首页、`/papers` 与 `/api/papers` 均完成固定边缘解析验收：HTTP 200、TLS 校验成功；部署机系统解析器的旧 NXDOMAIN 负缓存等待自动过期。
+- 生产 D1 复核为 54 篇唯一论文、99 条数据库来源关系：arXiv 4、Crossref 1、DOAJ 5、Europe PMC 32、PMC 24、PubMed 33。
+- 首次手工运行与 PMC/DOAJ 恢复运行保留原始 `manual` 审计状态；PMC 恢复阶段的 6 次 HTTP 429 明确计入 `partial`，不改写为成功。后续自然 Cron 将使用新加入的限流重试逻辑。
+
 ## 2026-08-01 · v0.5.0 六数据库自动采集
 
 - 从已提交的干净分支构建生产包；发布前导出生产 D1 SQL 回滚基线：301,102 bytes，SHA-256 `abbfc7a295960be1d635387f39ec8216c89792646625f0e37759be96ebf958e9`，仅保存在部署机临时目录。
