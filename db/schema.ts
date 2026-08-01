@@ -204,3 +204,127 @@ export const changeSets = sqliteTable("change_sets", {
   uniqueIndex("change_sets_patch_unique").on(table.candidateId, table.patchHash),
   index("change_sets_status_idx").on(table.status, table.riskLevel, table.createdAt),
 ]);
+
+export const researchers = sqliteTable("researchers", {
+  id: text("id").primaryKey(),
+  slug: text("slug").notNull(),
+  name: text("name").notNull(),
+  nameZh: text("name_zh"),
+  institution: text("institution").notNull(),
+  department: text("department").notNull().default(""),
+  role: text("role").notNull().default(""),
+  region: text("region", { enum: ["CN", "HK", "UK", "US", "EU", "OTHER"] }).notNull(),
+  city: text("city").notNull().default(""),
+  profileUrl: text("profile_url").notNull(),
+  labUrl: text("lab_url"),
+  cvUrl: text("cv_url"),
+  topicsJson: text("topics_json").notNull().default("[]"),
+  methodsJson: text("methods_json").notNull().default("[]"),
+  summary: text("summary").notNull(),
+  applicationValue: text("application_value").notNull().default(""),
+  recruitmentStatus: text("recruitment_status", { enum: ["open", "watch", "unknown", "closed"] }).notNull().default("unknown"),
+  priority: text("priority", { enum: ["normal", "high", "critical"] }).notNull().default("normal"),
+  published: integer("published", { mode: "boolean" }).notNull().default(true),
+  sourceVerifiedAt: text("source_verified_at"),
+  ...timestamps,
+}, (table) => [
+  uniqueIndex("researchers_slug_unique").on(table.slug),
+  index("researchers_region_idx").on(table.region, table.priority),
+  index("researchers_published_idx").on(table.published, table.priority),
+]);
+
+export const researcherIdentities = sqliteTable("researcher_identities", {
+  id: text("id").primaryKey(),
+  researcherId: text("researcher_id").notNull().references(() => researchers.id, { onDelete: "cascade" }),
+  provider: text("provider", { enum: ["orcid", "crossref", "europe_pmc", "openalex", "google_scholar", "semantic_scholar"] }).notNull(),
+  externalId: text("external_id").notNull(),
+  profileUrl: text("profile_url"),
+  verified: integer("verified", { mode: "boolean" }).notNull().default(false),
+  verifiedAt: text("verified_at"),
+  ...timestamps,
+}, (table) => [
+  uniqueIndex("researcher_identities_provider_unique").on(table.provider, table.externalId),
+  index("researcher_identities_researcher_idx").on(table.researcherId),
+]);
+
+export const researcherSources = sqliteTable("researcher_sources", {
+  researcherId: text("researcher_id").notNull().references(() => researchers.id, { onDelete: "cascade" }),
+  sourceId: text("source_id").notNull().references(() => sources.id, { onDelete: "cascade" }),
+  relation: text("relation", { enum: ["official_profile", "lab", "cv", "publications"] }).notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  uniqueIndex("researcher_sources_relation_unique").on(table.researcherId, table.sourceId, table.relation),
+  index("researcher_sources_source_idx").on(table.sourceId),
+]);
+
+export const papers = sqliteTable("papers", {
+  id: text("id").primaryKey(),
+  doi: text("doi"),
+  pmid: text("pmid"),
+  arxivId: text("arxiv_id"),
+  title: text("title").notNull(),
+  abstract: text("abstract").notNull().default(""),
+  venue: text("venue").notNull().default(""),
+  publicationDate: text("publication_date"),
+  paperType: text("paper_type", { enum: ["journal", "conference", "preprint", "review", "other"] }).notNull().default("other"),
+  versionStatus: text("version_status", { enum: ["published", "preprint", "corrected", "retracted"] }).notNull().default("published"),
+  openAccessUrl: text("open_access_url"),
+  sourceUrl: text("source_url").notNull(),
+  sourceProvider: text("source_provider", { enum: ["official", "crossref", "europe_pmc", "arxiv", "manual"] }).notNull().default("official"),
+  topicsJson: text("topics_json").notNull().default("[]"),
+  takeaway: text("takeaway").notNull().default(""),
+  relevanceScore: integer("relevance_score").notNull().default(0),
+  reviewStatus: text("review_status", { enum: ["verified", "candidate", "rejected"] }).notNull().default("candidate"),
+  published: integer("published", { mode: "boolean" }).notNull().default(false),
+  sourceVerifiedAt: text("source_verified_at"),
+  ...timestamps,
+}, (table) => [
+  uniqueIndex("papers_doi_unique").on(table.doi),
+  uniqueIndex("papers_pmid_unique").on(table.pmid),
+  uniqueIndex("papers_arxiv_unique").on(table.arxivId),
+  index("papers_published_date_idx").on(table.published, table.publicationDate),
+  index("papers_review_idx").on(table.reviewStatus, table.createdAt),
+]);
+
+export const paperAuthors = sqliteTable("paper_authors", {
+  paperId: text("paper_id").notNull().references(() => papers.id, { onDelete: "cascade" }),
+  researcherId: text("researcher_id").references(() => researchers.id, { onDelete: "set null" }),
+  authorName: text("author_name").notNull(),
+  authorOrder: integer("author_order").notNull().default(0),
+  corresponding: integer("corresponding", { mode: "boolean" }).notNull().default(false),
+  ...timestamps,
+}, (table) => [
+  uniqueIndex("paper_authors_order_unique").on(table.paperId, table.authorOrder),
+  index("paper_authors_researcher_idx").on(table.researcherId, table.paperId),
+]);
+
+export const academicSyncRuns = sqliteTable("academic_sync_runs", {
+  id: text("id").primaryKey(),
+  trigger: text("trigger", { enum: ["cron", "manual", "test"] }).notNull(),
+  status: text("status", { enum: ["running", "succeeded", "partial", "failed"] }).notNull(),
+  startedAt: text("started_at").notNull(),
+  finishedAt: text("finished_at"),
+  researchersChecked: integer("researchers_checked").notNull().default(0),
+  candidatesFound: integer("candidates_found").notNull().default(0),
+  papersInserted: integer("papers_inserted").notNull().default(0),
+  failedCount: integer("failed_count").notNull().default(0),
+  errorSummary: text("error_summary"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index("academic_sync_runs_started_idx").on(table.startedAt),
+]);
+
+export const academicEvents = sqliteTable("academic_events", {
+  id: text("id").primaryKey(),
+  runId: text("run_id").references(() => academicSyncRuns.id, { onDelete: "set null" }),
+  researcherId: text("researcher_id").references(() => researchers.id, { onDelete: "set null" }),
+  paperId: text("paper_id").references(() => papers.id, { onDelete: "set null" }),
+  eventType: text("event_type", { enum: ["profile_checked", "paper_candidate", "paper_updated", "sync_failed"] }).notNull(),
+  confidence: integer("confidence").notNull().default(0),
+  message: text("message").notNull().default(""),
+  payloadJson: text("payload_json").notNull().default("{}"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index("academic_events_created_idx").on(table.createdAt),
+  index("academic_events_researcher_idx").on(table.researcherId, table.createdAt),
+]);

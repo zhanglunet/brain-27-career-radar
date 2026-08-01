@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function PrdPage() {
   return <main className={styles.page}>
-    <nav className={styles.nav}><Link className={styles.brand} href="/"><span className={styles.brandMark}>Ψ</span> BRAIN / 27</Link><div className={styles.navLinks}><Link href="/">机会雷达</Link><Link href="/sources">信息源</Link><Link href="/logs">采集日志</Link><Link href="/system">系统说明</Link><Link className={styles.active} href="/prd">需求文档</Link></div></nav>
+    <nav className={styles.nav}><Link className={styles.brand} href="/"><span className={styles.brandMark}>Ψ</span> BRAIN / 27</Link><div className={styles.navLinks}><Link href="/">机会雷达</Link><Link href="/researchers">导师雷达</Link><Link href="/papers">最新论文</Link><Link href="/sources">信息源</Link><Link href="/logs">采集日志</Link><Link href="/system">系统说明</Link><Link className={styles.active} href="/prd">需求文档</Link></div></nav>
     <header className={styles.hero}>
       <div><p className={styles.eyebrow}>PRODUCT REQUIREMENTS / V0.7</p><h1>自动更新<span>需求文档</span></h1><p className={styles.lede}>自动检查可信来源、记录变化、保护最后可信内容；同时提供硕士可申请的高校科研助理路径，并保证电脑和手机都能完整使用。</p></div>
       <aside className={styles.heroAside}><strong>2026.08.01</strong><p>P1.9 科研助理路径、上海深圳重点覆盖和响应式页面已实现；高风险语义字段仍不自动发布。</p></aside>
@@ -37,11 +37,11 @@ export default function PrdPage() {
       </section>
 
       <section className={styles.section}>
-        <div className={styles.sectionHead}><h2>版本范围</h2><p>“自动更新”分三个阶段交付。P0 解决可靠监控，P1 解决结构化内容更新，P2 解决运营闭环。</p></div>
+        <div className={styles.sectionHead}><h2>版本范围</h2><p>P0 解决可靠监控，P1 解决结构化内容更新，P2 扩展导师与论文情报，P3 再建设运营闭环。</p></div>
         <div className={styles.cardGrid}>
           <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>P0 · 已上线</span><h3>可靠监控与动态展示</h3><p>D1 数据模型、分频 Cron、51 个自动来源巡检、逐来源日志、条件请求、哈希快照、审核队列、动态 API 和静态降级。</p></article>
           <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>P1 · 灰度观察</span><h3>列表发现与字段抽取</h3><p>5 个来源已启用适配器，候选与证据进入 D1；待完成 7 天准确率、重复率和安全边界验收。</p></article>
-          <article className={`${styles.card} ${styles.cardNext}`}><span className={styles.cardLabel}>P2 · 待开发</span><h3>审核后台与模型辅助</h3><p>批准、驳回、编辑变更；生成匹配度和行动建议草案；发送变更通知及每周摘要。</p></article>
+          <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>P2.1 / P2.2 · 已开发</span><h3>导师与论文雷达</h3><p>16 位重点导师、官方主页、Crossref 论文候选、DOI 去重、核验状态与学术同步日志。<br/><Link href="/prd/academic">查看独立 PRD →</Link></p></article>
         </div>
       </section>
 
@@ -122,6 +122,6 @@ export default function PrdPage() {
         </ul>
       </section>
     </div>
-    <footer className={styles.footer}><span>BRAIN / 27 · PRD v0.7</span><p>产品边界：自动发现变化，不未经审核自动发布高风险判断。</p></footer>
+    <footer className={styles.footer}><span>BRAIN / 27 · PRD v0.8</span><p>产品边界：自动发现变化，不未经审核自动发布高风险判断。</p></footer>
   </main>;
 }

@@ -1,0 +1,18 @@
+"use client";
+import { useEffect, useMemo, useState } from "react";
+import styles from "../documentation.module.css";
+
+type Researcher = { id:string; name:string; nameZh:string|null; institution:string; department:string; role:string; region:string; city:string; profileUrl:string; topics:string[]; methods:string[]; summary:string; applicationValue:string; recruitmentStatus:string; priority:string; sourceVerifiedAt:string|null; paperCount:number };
+
+export default function ResearchersExplorer() {
+  const [items, setItems] = useState<Researcher[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState("");
+  const [q, setQ] = useState(""); const [region, setRegion] = useState(""); const [priority, setPriority] = useState("");
+  useEffect(() => { const controller = new AbortController(); fetch("/api/researchers", { signal: controller.signal }).then(async (r) => { if (!r.ok) throw new Error("导师数据暂不可用"); return r.json() as Promise<{ researchers?: Researcher[] }>; }).then((d) => setItems(d.researchers ?? [])).catch((e: Error) => { if (e.name !== "AbortError") setError(e.message); }).finally(() => setLoading(false)); return () => controller.abort(); }, []);
+  const filtered = useMemo(() => items.filter((item) => (!region || item.region === region) && (!priority || item.priority === priority) && (!q || `${item.name} ${item.nameZh ?? ""} ${item.institution} ${item.topics.join(" ")} ${item.methods.join(" ")}`.toLowerCase().includes(q.toLowerCase()))), [items,q,region,priority]);
+  return <section className={styles.section}><div className={styles.sectionHead}><h2>重点导师清单</h2><p>高优先级代表与目标院校、地区和方向的匹配程度；论文数量包含自动候选，需看核验标签。</p></div>
+    <div className={styles.filterBar}><label><span>关键词</span><input value={q} onChange={(e)=>setQ(e.target.value)} placeholder="导师、机构、主题或方法" /></label><label><span>地区</span><select value={region} onChange={(e)=>setRegion(e.target.value)}><option value="">全部</option><option value="UK">英国</option><option value="CN">中国内地</option><option value="HK">中国香港</option><option value="US">美国</option></select></label><label><span>优先级</span><select value={priority} onChange={(e)=>setPriority(e.target.value)}><option value="">全部</option><option value="critical">核心</option><option value="high">重点</option></select></label></div>
+    {loading && <p className={styles.loading}>正在读取导师雷达…</p>}{error && <p className={`${styles.state} ${styles.stateError}`}>{error}</p>}
+    {!loading && !error && <><p className={styles.note}>当前显示 {filtered.length} / {items.length} 位。招生状态默认为“持续关注”，只有官方明确开放时才会标为开放。</p><div className={styles.directoryGrid}>{filtered.map((item) => <article className={styles.sourceCard} key={item.id}><div className={styles.sourceCardTop}><span>{regionLabel(item.region)} · {item.city}</span><span className={item.priority === "critical" ? styles.good : styles.pending}>{item.priority === "critical" ? "核心" : "重点"}</span></div><h3><a href={item.profileUrl} target="_blank" rel="noreferrer">{item.nameZh ? `${item.nameZh} · ` : ""}{item.name}</a></h3><p>{item.institution}<br />{item.department} · {item.role}</p><div className={styles.chips}>{item.topics.map((x)=><span key={x}>{x}</span>)}</div><p>{item.summary}</p><p className={styles.academicValue}>{item.applicationValue}</p><dl className={styles.sourceMeta}><div><dt>论文候选</dt><dd>{item.paperCount}</dd></div><div><dt>主页核验</dt><dd>{item.sourceVerifiedAt ? new Date(item.sourceVerifiedAt).toLocaleDateString("zh-CN") : "等待首次 Cron"}</dd></div></dl></article>)}</div></>}
+  </section>;
+}
+function regionLabel(region:string) { return ({UK:"英国",CN:"中国内地",HK:"中国香港",US:"美国",EU:"欧洲"} as Record<string,string>)[region] ?? "全球"; }

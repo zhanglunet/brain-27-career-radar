@@ -439,6 +439,10 @@ async function markLinkedRecordsVerified(db: D1Database, sourceId: string, check
     .bind(checkedAt, sourceId).run();
   await db.prepare("UPDATE institutions SET source_verified_at = ?, updated_at = CURRENT_TIMESTAMP WHERE source_id = ?")
     .bind(checkedAt, sourceId).run();
+  await db.prepare(
+    `UPDATE researchers SET source_verified_at = ?, updated_at = CURRENT_TIMESTAMP
+     WHERE id IN (SELECT researcher_id FROM researcher_sources WHERE source_id = ?)`,
+  ).bind(checkedAt, sourceId).run();
 }
 
 async function readBoundedBody(response: Response, maxBytes: number): Promise<{ text: string; truncated: boolean }> {
