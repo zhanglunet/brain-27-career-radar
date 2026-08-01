@@ -83,7 +83,18 @@ npx wrangler d1 execute brain-27-career-radar --local \
   --command "SELECT outcome, COUNT(*) FROM source_check_logs GROUP BY outcome; SELECT coverage, COUNT(*) FROM sources GROUP BY coverage"
 ```
 
-网页运维入口：`/sources` 查看全部 57 个来源、优先级与采集状态，`/logs` 按来源、结果、类型、地区和 UTC 日期检索历史及审核状态。旧版 `sync_runs` 仍保留；逐来源日志只从 `source_check_logs` 上线后的首次运行开始，不回填虚构历史。
+网页运维入口：`/sources` 查看全部 109 个来源、优先级与采集状态，`/logs` 按来源、结果、类型、地区和 UTC 日期检索历史及审核状态。旧版 `sync_runs` 仍保留；逐来源日志只从 `source_check_logs` 上线后的首次运行开始，不回填虚构历史。
+
+查询日报、周报和月报：
+
+```bash
+npx wrangler d1 execute brain-27-career-radar --local \
+  --persist-to .wrangler/state \
+  --config dist/server/wrangler.json \
+  --command "SELECT period_type,period_start,period_end,new_opportunities,new_sources,new_papers,generated_at FROM intelligence_reports ORDER BY period_start DESC"
+```
+
+网页入口 `/reports`；API `/api/reports?periodType=daily|weekly|monthly&q=YYYY-MM`。报告在每次 Cron 的来源和论文管线结束后刷新，使用 UTC 日期；`radar.reports.refreshed` 日志记录三个周期的核心计数。
 
 ## 生产发布
 
@@ -92,8 +103,8 @@ npx wrangler d1 execute brain-27-career-radar --local \
 3. 构建后执行远程迁移。
 4. 运行 `npm run deploy`；预检会拒绝缺少生产 D1 ID 的部署。
 5. 验证 `/api/radar` 返回 `dataOrigin=database`。
-6. 在 Workers Logs 中检查 `radar.sync.*` 和 `radar.source.*` 结构化事件。
-7. 打开 `/system`，确认 D1 正常；再用 `/sources` 核对 57 个来源、用 `/logs` 核对自动观察、人工审核和逐来源记录。
+6. 在 Workers Logs 中检查 `radar.sync.*`、`radar.source.*` 和 `radar.reports.refreshed` 结构化事件。
+7. 打开 `/system`，确认 D1 正常；再用 `/sources` 核对来源、用 `/logs` 核对自动观察和逐来源记录、用 `/reports` 核对日报/周报/月报。
 8. P1 发布后确认 `pilotSources=5`，并检查候选、证据和待决策聚合数；前 7 天每日抽样复核。
 
 ## 生产域名

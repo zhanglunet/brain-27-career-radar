@@ -4,6 +4,7 @@ import handler from "vinext/server/app-router-entry";
 import { monitorSources } from "../lib/source-monitor";
 import { syncAcademicPapers } from "../lib/academic-monitor";
 import { translatePendingPapers } from "../lib/paper-translator";
+import { refreshIntelligenceReports } from "../lib/intelligence-reports";
 
 // Image security config. SVG sources with .svg extension auto-skip the
 // optimization endpoint on the client side (served directly, no proxy).
@@ -37,10 +38,14 @@ const worker = {
       event: "radar.sync.scheduled",
       receivedAt: new Date().toISOString(),
     }));
-    ctx.waitUntil(Promise.all([
+    ctx.waitUntil(Promise.allSettled([
       monitorSources(env.DB, { trigger: "cron" }),
       syncAcademicPapers(env.DB, { trigger: "cron" }).then(() => translatePendingPapers(env.DB, env.AI)),
-    ]).then(() => undefined));
+    ]).then((results) => {
+      const rejected=results.filter((item)=>item.status==="rejected");
+      if(rejected.length)console.error(JSON.stringify({event:"radar.sync.pipeline_rejected",count:rejected.length}));
+      return refreshIntelligenceReports(env.DB);
+    }).then(() => undefined));
   },
 } satisfies ExportedHandler<Env>;
 
