@@ -1,5 +1,18 @@
 # 部署记录
 
+## 2026-08-01 · P1.7 来源目录与历史日志
+
+- 发布前生产版本：`79a270c9-0414-416b-bd3b-ae6f14652338`；先导出 113 KB 远程 D1 SQL 回滚基线到部署机临时目录，未提交 Git。
+- 生产自然 Cron 已于 `2026-08-01T01:00:16Z` 自动触发：15/15 来源成功、发现 2 个页面变化、0 失败。这是 Cloudflare 时钟触发的 `trigger=cron` 证据，定时链路已闭环。
+- 应用 `0004_nosy_mastermind.sql` 后无待执行迁移；生产来源为 39 个，其中 33 个自动、6 个人工核对，博士/科研 22 个、企业校招 17 个。
+- 地区覆盖计数：英国 13、爱尔兰 2、中国大陆 20、中国香港 11；同一跨区域企业入口会计入多个地区。
+- 新增 `source_check_logs`、`/api/sources`、`/api/logs`、`/sources` 和 `/logs`。旧 `sync_runs` 保留；逐来源日志从本版本后首次 Cron 开始，发布时为 0 条是预期行为。
+- 完整验证通过：TypeScript、ESLint、构建和 13 个测试；全新 D1 从 0000 到 0004 迁移成功；真实本地 Cron 对原 36 个自动候选写入 36 条日志并暴露 3 个不可稳定访问来源，随后将其转为人工核对。
+- Dry run 上传体积 1,584.04 KiB / gzip 345.68 KiB；本地启动分析 active 23.7 ms；实际 Worker Startup Time 20 ms。
+- 生产版本：`9ff0136d-cfbd-4cc8-be56-8de6cc17bd2a`；D1、Images、Assets 和 `0 1 * * *` Cron 绑定正常，自定义域名保持 `https://radar.openagent.hk`。
+- 边缘传播完成后，首页、来源页、日志页、系统页、PRD 页及四个 API 连续 5 轮均返回 HTTP 200；来源 API 返回 39/33/6，系统 API 返回最新自然 Cron。
+- 当前待审核共 8 项：2 个 `content_changed`、3 个 `new_source`、3 个 `parse_conflict`；自动合并仍为 0，不会未经审核发布。
+
 ## 2026-08-01 · P1 五来源灰度
 
 - 发布前 Worker 版本：`3b714c42-86d7-476f-83b2-7fa9d94adb15`。

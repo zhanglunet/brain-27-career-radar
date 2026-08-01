@@ -1,4 +1,5 @@
 import { processSourceDocument } from "./p1/pipeline.ts";
+import type { P1PipelineSummary } from "./p1/pipeline.ts";
 
 const MAX_BODY_BYTES = 512 * 1024;
 const MAX_EXCERPT_CHARS = 1_500;
@@ -139,6 +140,16 @@ async function checkSource(
     if (response.status === 304) {
       await markSuccess(db, source.id, checkedAt, 304, source.final_url ?? source.url, source.etag, source.last_modified, source.content_hash);
       await markLinkedRecordsVerified(db, source.id, checkedAt);
+      await writeSourceCheckLog(db, {
+        sourceId: source.id,
+        runId,
+        checkedAt,
+        outcome: "not_modified",
+        ok: true,
+        changed: false,
+        statusCode: 304,
+        finalUrl: source.final_url ?? source.url,
+      });
       logSourceResult(runId, source.id, true, false, 304);
       return { sourceId: source.id, ok: true, changed: false, statusCode: 304 };
     }
@@ -180,9 +191,10 @@ async function checkSource(
     await markSuccess(db, source.id, checkedAt, response.status, finalUrl, etag, lastModified, contentHash);
     await markLinkedRecordsVerified(db, source.id, checkedAt);
 
+    let p1Summary: P1PipelineSummary | undefined;
     if (source.discovery_enabled === 1 && source.adapter_key) {
       try {
-        const p1 = await processSourceDocument(db, {
+        p1Summary = await processSourceDocument(db, {
           source: {
             id: source.id,
             name: source.name,
@@ -197,7 +209,7 @@ async function checkSource(
           finalUrl,
           capturedAt: checkedAt,
         });
-        console.log(JSON.stringify({ event: "radar.p1.extracted", runId, sourceId: source.id, ...p1 }));
+        console.log(JSON.stringify({ event: "radar.p1.extracted", runId, sourceId: source.id, ...p1Summary }));
       } catch (error) {
         const message = errorMessage(error);
         await createReviewItem(db, source.id, runId, "parse_conflict", { error: message, adapterKey: source.adapter_key });
@@ -214,6 +226,18 @@ async function checkSource(
         truncated: body.truncated,
       });
     }
+
+    await writeSourceCheckLog(db, {
+      sourceId: source.id,
+      runId,
+      checkedAt,
+      outcome: changed ? "changed" : "unchanged",
+      ok: true,
+      changed,
+      statusCode: response.status,
+      finalUrl,
+      p1Summary,
+    });
 
     logSourceResult(runId, source.id, true, changed, response.status, { truncated: body.truncated, finalUrl });
     return { sourceId: source.id, ok: true, changed, statusCode: response.status };
@@ -236,6 +260,18 @@ async function checkSource(
       });
     }
 
+    await writeSourceCheckLog(db, {
+      sourceId: source.id,
+      runId,
+      checkedAt,
+      outcome: "failed",
+      ok: false,
+      changed: false,
+      statusCode,
+      finalUrl: source.final_url ?? source.url,
+      errorSummary: message,
+    });
+
     console.error(JSON.stringify({
       event: "radar.source.failed",
       runId,
@@ -248,6 +284,56 @@ async function checkSource(
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function writeSourceCheckLog(
+  db: D1Database,
+  input: {
+    sourceId: string;
+    runId: string;
+    checkedAt: string;
+    outcome: "unchanged" | "changed" | "not_modified" | "failed";
+    ok: boolean;
+    changed: boolean;
+    statusCode: number | null;
+    finalUrl: string | null;
+    errorSummary?: string;
+    p1Summary?: P1PipelineSummary;
+  },
+) {
+  await db.prepare(
+    `INSERT INTO source_check_logs
+     (id, source_id, run_id, checked_at, outcome, ok, changed, status_code, final_url, error_summary,
+      candidates_count, evidence_count, change_sets_count, applied_count)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(run_id, source_id) DO UPDATE SET
+       checked_at = excluded.checked_at,
+       outcome = excluded.outcome,
+       ok = excluded.ok,
+       changed = excluded.changed,
+       status_code = excluded.status_code,
+       final_url = excluded.final_url,
+       error_summary = excluded.error_summary,
+       candidates_count = excluded.candidates_count,
+       evidence_count = excluded.evidence_count,
+       change_sets_count = excluded.change_sets_count,
+       applied_count = excluded.applied_count`,
+  ).bind(
+    crypto.randomUUID(),
+    input.sourceId,
+    input.runId,
+    input.checkedAt,
+    input.outcome,
+    input.ok ? 1 : 0,
+    input.changed ? 1 : 0,
+    input.statusCode,
+    input.finalUrl,
+    input.errorSummary?.slice(0, 500) ?? null,
+    input.p1Summary?.discoveredCount ?? 0,
+    input.p1Summary?.evidenceCount ?? 0,
+    input.p1Summary?.changeSetCount ?? 0,
+    input.p1Summary?.appliedCount ?? 0,
+  ).run();
 }
 
 async function markSuccess(

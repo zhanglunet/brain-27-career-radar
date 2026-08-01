@@ -39,7 +39,7 @@ npm run dev
 
 ## Automatic updates
 
-The radar stores sources, opportunities, institutions, source snapshots, review items, sync runs, extraction candidates, field evidence, and change sets in D1. A Cloudflare Cron trigger runs every day at `01:00 UTC`. Source checks use bounded response reads, request timeouts, conditional requests, and structured logs. Five P1 pilot sources additionally run deterministic adapters and risk routing; automatic merge is disabled by default. A failed source check or extraction preserves the last trusted opportunity content.
+The radar stores sources, opportunities, institutions, source snapshots, per-source check logs, review items, sync runs, extraction candidates, field evidence, and change sets in D1. A Cloudflare Cron trigger runs every day at `01:00 UTC`. It automatically checks 33 of 39 catalogued official sources; six sites that block Worker access remain visible for manual verification. Five P1 pilot sources additionally run deterministic adapters and risk routing; automatic merge is disabled by default. A failed source check or extraction preserves the last trusted opportunity content.
 
 Local D1 uses a fixed preview UUID and persists under `.wrangler/state`, so builds, Wrangler commands, and the dev server share the same database. Production requires a real D1 database ID:
 
@@ -57,6 +57,8 @@ Production documentation pages:
 
 - `/system`: live aggregate health, update flow, automation boundary, and operator actions
 - `/prd`: product goals, phased scope, functional requirements, rules, and acceptance criteria
+- `/sources`: searchable official-source directory by coverage, region, and collection state
+- `/logs`: searchable sync-run and per-source collection history
 - Primary domain: `https://radar.openagent.hk`
 
 ## Learn More

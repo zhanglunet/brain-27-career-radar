@@ -2,11 +2,13 @@
 
 ## 数据流
 
-`Cron → source monitor → source snapshot → adapter → candidate/evidence → change set/risk route → review queue → 已发布数据`
+`Cron → source monitor → source_check_logs + source snapshot → adapter → candidate/evidence → change set/risk route → review queue → 已发布数据`
 
 抓取器对响应正文设置 512 KiB 上限、12 秒超时和四路并发；失败时保留最后一次可信内容。P1 复用同一次有界响应，不额外抓取页面；只对配置了 `adapter_key` 且开启 `discovery_enabled` 的 5 个试点来源执行抽取。
 
 P1 数据分为三层：`candidate_records` 保存按规范化 URL 去重的候选，`field_evidence` 把字段值关联到来源快照和证据片段，`change_sets` 保存与已发布机会的字段差异、风险等级和处理状态。列表适配器只发现同一注册域名内的候选链接；未知外部域名不自动启用。
+
+来源目录为每个来源保存覆盖类型、机构类型、地区、主题和说明。当前登记 39 个官方入口，其中 33 个由 Cron 自动访问，6 个因官网 403 或 Worker 访问异常而保留为人工核对。`source_check_logs` 以 `(run_id, source_id)` 去重，记录结果、有限错误摘要和本轮 P1 数量；`/api/sources` 与 `/api/logs` 只接受白名单筛选值，并通过 D1 prepared statements 绑定用户输入。
 
 ## 关键决策
 
@@ -33,6 +35,10 @@ P1 使用来源配置、JSON-LD、DOM 元信息和确定性文本规则，所有
 ### ADR-006：默认关闭自动合并
 
 `auto_merge_low_risk` 在 5 个试点均为关闭。URL-only 变化虽被标记为低风险，也只有来源显式开启策略后才能写回；截止日期、开放状态和类别等高风险字段始终进入审核。
+
+### ADR-007：访问受限来源保留为人工目录
+
+牛津、帝国理工、Crick、HKUST、HKU 与 AstraZeneca 的官方页仍属于有效信息源，但自动 Worker 访问返回 403 或运行时异常。它们保持 `enabled=0`，可在来源页检索，不进入每日失败率和重复告警。
 
 ## 部署边界
 

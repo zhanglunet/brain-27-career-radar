@@ -75,6 +75,9 @@ test("monitor stores a baseline snapshot without creating a review item", async 
   });
   assert.ok(database.operations.some((operation) => operation.sql.startsWith("INSERT INTO source_snapshots")));
   assert.equal(database.operations.some((operation) => operation.sql.startsWith("INSERT INTO review_queue")), false);
+  const checkLog = database.operations.find((operation) => operation.sql.startsWith("INSERT INTO source_check_logs"));
+  assert.equal(checkLog?.params[4], "unchanged");
+  assert.equal(checkLog?.params[5], 1);
 });
 
 test("monitor queues a review when known source content changes", async () => {
@@ -105,6 +108,9 @@ test("304 response refreshes verification without creating a duplicate snapshot"
   assert.equal(result.changedCount, 0);
   assert.equal(database.operations.some((operation) => operation.sql.startsWith("INSERT INTO source_snapshots")), false);
   assert.ok(database.operations.some((operation) => operation.sql.startsWith("UPDATE opportunities SET source_verified_at")));
+  const checkLog = database.operations.find((operation) => operation.sql.startsWith("INSERT INTO source_check_logs"));
+  assert.equal(checkLog?.params[4], "not_modified");
+  assert.equal(checkLog?.params[7], 304);
 });
 
 test("third consecutive source failure is retained and sent to review", async () => {
@@ -123,4 +129,8 @@ test("third consecutive source failure is retained and sent to review", async ()
   const review = database.operations.find((operation) => operation.sql.startsWith("INSERT INTO review_queue"));
   assert.equal(review?.params[3], "repeated_failure");
   assert.match(String(review?.params[4]), /"consecutiveFailures":3/);
+  const checkLog = database.operations.find((operation) => operation.sql.startsWith("INSERT INTO source_check_logs"));
+  assert.equal(checkLog?.params[4], "failed");
+  assert.equal(checkLog?.params[7], 503);
+  assert.match(String(checkLog?.params[9]), /HTTP 503/);
 });

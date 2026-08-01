@@ -30,7 +30,7 @@ npx wrangler dev --config dist/server/wrangler.json --persist-to .wrangler/state
 按 Wrangler 启动提示请求本地 scheduled endpoint；Wrangler 4.118.0 当前使用：
 
 ```bash
-curl 'http://localhost:8787/cdn-cgi/handler/scheduled?cron=0+1+*+*+*'
+curl 'http://localhost:8787/cdn-cgi/local/scheduled?cron=0+1+*+*+*'
 ```
 
 如需由本地 Worker 受控连接远程 D1 验证，必须同时显式设置真实数据库 ID 和远程开关；不要在日常开发中默认连接生产数据：
@@ -62,6 +62,17 @@ npx wrangler d1 execute brain-27-career-radar --local \
 
 灰度期重点检查：候选标题是否准确、URL 是否重复、证据是否能回到对应快照、`change_sets` 是否正确分级，以及 `applied` 数量是否保持 0。不要在完成 7 天抽样验收前开启 `auto_merge_low_risk`。
 
+查询逐来源日志和来源覆盖：
+
+```bash
+npx wrangler d1 execute brain-27-career-radar --local \
+  --persist-to .wrangler/state \
+  --config dist/server/wrangler.json \
+  --command "SELECT outcome, COUNT(*) FROM source_check_logs GROUP BY outcome; SELECT coverage, COUNT(*) FROM sources GROUP BY coverage"
+```
+
+网页运维入口：`/sources` 查看全部 39 个来源与采集状态，`/logs` 按来源、结果、类型、地区和 UTC 日期检索历史。旧版 `sync_runs` 仍保留；逐来源日志只从 `source_check_logs` 上线后的首次运行开始，不回填虚构历史。
+
 ## 生产发布
 
 1. 使用 `wrangler d1 create brain-27-career-radar` 创建真实数据库。
@@ -70,7 +81,7 @@ npx wrangler d1 execute brain-27-career-radar --local \
 4. 运行 `npm run deploy`；预检会拒绝缺少生产 D1 ID 的部署。
 5. 验证 `/api/radar` 返回 `dataOrigin=database`。
 6. 在 Workers Logs 中检查 `radar.sync.*` 和 `radar.source.*` 结构化事件。
-7. 打开 `/system`，确认 D1 正常并在首个计划时刻后出现最近一次巡检记录。
+7. 打开 `/system`，确认 D1 正常；再用 `/sources` 核对 39 个来源、用 `/logs` 核对最近一次 Cron 的 33 条逐来源记录。
 8. P1 发布后确认 `pilotSources=5`，并检查候选、证据和待决策聚合数；前 7 天每日抽样复核。
 
 ## 生产域名

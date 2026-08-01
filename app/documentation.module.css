@@ -84,6 +84,38 @@
 .good { color: var(--lime); }
 .pending { color: #ffd76b; }
 
+.filterBar { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.filterBar label { display: grid; gap: 8px; }
+.filterBar label > span { color: var(--muted); font: 10px var(--font-geist-mono); letter-spacing: .1em; text-transform: uppercase; }
+.filterBar input, .filterBar select { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 0; background: rgba(9, 29, 24, .94); color: var(--ink); font: 13px var(--font-geist-sans); color-scheme: dark; }
+.filterBar input:focus, .filterBar select:focus { outline: 1px solid var(--aqua); border-color: var(--aqua); }
+
+.directoryGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
+.sourceCard { min-width: 0; padding: 20px; border: 1px solid var(--line); background: rgba(12, 32, 27, .9); }
+.sourceCardTop { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); font: 10px var(--font-geist-mono); text-transform: uppercase; }
+.sourceCard h3 { margin: 18px 0 10px; font-size: 18px; line-height: 1.35; }
+.sourceCard h3 a:hover { color: var(--lime); }
+.sourceCard > p { min-height: 62px; margin: 0; color: #9fb2ac; font-size: 13px; line-height: 1.6; }
+.healthDot { display: inline-flex; align-items: center; gap: 7px; }
+.healthDot::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 10px currentColor; }
+.health_healthy { color: var(--lime); }
+.health_failing { color: #ff8d80; }
+.health_waiting { color: #ffd76b; }
+.health_manual { color: #9da9a5; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; min-height: 52px; margin: 18px 0; align-content: flex-start; }
+.chips span { padding: 5px 7px; border: 1px solid rgba(98, 231, 212, .22); color: var(--aqua); font: 10px var(--font-geist-mono); }
+.sourceMeta { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 0; padding-top: 16px; border-top: 1px solid var(--line); }
+.sourceMeta div { min-width: 0; }
+.sourceMeta dt { color: var(--muted); font: 9px var(--font-geist-mono); text-transform: uppercase; }
+.sourceMeta dd { margin: 5px 0 0; color: #c8d5d1; font-size: 12px; overflow-wrap: anywhere; }
+.sourceCard .pilotNote { min-height: 0; margin-top: 16px; color: var(--lime); font: 10px var(--font-geist-mono); text-transform: uppercase; }
+
+.logSection { margin-top: 36px; }
+.logSection h3 { margin: 0 0 14px; font-size: 20px; }
+.pagination { display: flex; align-items: center; justify-content: flex-end; gap: 14px; margin-top: 14px; color: var(--muted); font: 12px var(--font-geist-mono); }
+.pagination button { padding: 8px 12px; border: 1px solid var(--line); background: rgba(12, 32, 27, .9); color: var(--ink); cursor: pointer; }
+.pagination button:disabled { opacity: .4; cursor: not-allowed; }
+
 .footer { padding: 30px 4vw 42px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; }
 
 @media (max-width: 900px) {
@@ -94,6 +126,8 @@
   .flowStep { min-height: 0; border-right: 0; border-bottom: 1px solid var(--line); }
   .flowStep:last-child { border-bottom: 0; }
   .cardGrid { grid-template-columns: 1fr; }
+  .filterBar { grid-template-columns: repeat(2, 1fr); }
+  .directoryGrid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 620px) {
@@ -106,4 +140,6 @@
   .checklist .tag { grid-column: 2; justify-self: start; }
   .footer { display: block; }
   .footer p { margin-top: 12px; }
+  .filterBar, .directoryGrid { grid-template-columns: 1fr; }
+  .sourceCard > p, .chips { min-height: 0; }
 }

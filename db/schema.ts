@@ -10,6 +10,11 @@ export const sources = sqliteTable("sources", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   sourceType: text("source_type", { enum: ["detail", "listing", "api", "rss"] }).notNull(),
+  coverage: text("coverage", { enum: ["phd", "campus", "mixed"] }).notNull().default("mixed"),
+  organizationType: text("organization_type", { enum: ["university", "research", "company", "platform"] }).notNull().default("platform"),
+  regionsJson: text("regions_json").notNull().default("[]"),
+  topicsJson: text("topics_json").notNull().default("[]"),
+  description: text("description").notNull().default(""),
   adapterKey: text("adapter_key"),
   discoveryEnabled: integer("discovery_enabled", { mode: "boolean" }).notNull().default(false),
   autoMergeLowRisk: integer("auto_merge_low_risk", { mode: "boolean" }).notNull().default(false),
@@ -95,6 +100,29 @@ export const sourceSnapshots = sqliteTable("source_snapshots", {
 }, (table) => [
   index("snapshots_source_idx").on(table.sourceId, table.capturedAt),
   uniqueIndex("snapshots_source_hash_unique").on(table.sourceId, table.contentHash),
+]);
+
+export const sourceCheckLogs = sqliteTable("source_check_logs", {
+  id: text("id").primaryKey(),
+  sourceId: text("source_id").notNull().references(() => sources.id, { onDelete: "cascade" }),
+  runId: text("run_id").notNull().references(() => syncRuns.id, { onDelete: "cascade" }),
+  checkedAt: text("checked_at").notNull(),
+  outcome: text("outcome", { enum: ["unchanged", "changed", "not_modified", "failed"] }).notNull(),
+  ok: integer("ok", { mode: "boolean" }).notNull(),
+  changed: integer("changed", { mode: "boolean" }).notNull().default(false),
+  statusCode: integer("status_code"),
+  finalUrl: text("final_url"),
+  errorSummary: text("error_summary"),
+  candidatesCount: integer("candidates_count").notNull().default(0),
+  evidenceCount: integer("evidence_count").notNull().default(0),
+  changeSetsCount: integer("change_sets_count").notNull().default(0),
+  appliedCount: integer("applied_count").notNull().default(0),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  uniqueIndex("source_check_logs_run_source_unique").on(table.runId, table.sourceId),
+  index("source_check_logs_checked_idx").on(table.checkedAt),
+  index("source_check_logs_source_idx").on(table.sourceId, table.checkedAt),
+  index("source_check_logs_outcome_idx").on(table.outcome, table.checkedAt),
 ]);
 
 export const reviewQueue = sqliteTable("review_queue", {

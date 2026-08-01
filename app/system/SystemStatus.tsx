@@ -12,6 +12,7 @@ type SystemStatusPayload = {
     opportunities?: number;
     institutions?: number;
     snapshots?: number;
+    sourceCheckLogs?: number;
     pendingReviews?: number;
     candidates?: number;
     fieldEvidence?: number;
@@ -74,7 +75,7 @@ export default function SystemStatus() {
     <div className={styles.statusGrid}>
       <article className={styles.statusCard}><span>D1 数据库</span><strong>{status.database.configured ? "正常" : "异常"}</strong><p>{status.database.sources ?? 0} 个来源，{status.database.opportunities ?? 0} 个公开机会</p></article>
       <article className={styles.statusCard}><span>已成功巡检来源</span><strong>{status.automation.checkedSources ?? 0}/{status.database.enabledSources ?? 0}</strong><p>当前失败来源 {status.automation.failingSources ?? 0} 个</p></article>
-      <article className={styles.statusCard}><span>来源快照</span><strong>{status.database.snapshots ?? 0}</strong><p>待人工审核 {status.database.pendingReviews ?? 0} 项</p></article>
+      <article className={styles.statusCard}><span>逐来源日志</span><strong>{status.database.sourceCheckLogs ?? 0}</strong><p>证据快照 {status.database.snapshots ?? 0} 个，待审核 {status.database.pendingReviews ?? 0} 项</p></article>
       <article className={styles.statusCard}><span>P1 灰度抽取</span><strong>{status.database.candidates ?? 0}</strong><p>{status.database.pilotSources ?? 0} 个试点来源，证据 {status.database.fieldEvidence ?? 0} 条，待决策 {status.database.pendingChangeSets ?? 0} 项</p></article>
       <article className={styles.statusCard}><span>下次自动运行</span><strong>{formatTime(status.automation.nextScheduledAt)}</strong><p>{status.automation.scheduleLabel ?? status.automation.schedule}</p></article>
     </div>

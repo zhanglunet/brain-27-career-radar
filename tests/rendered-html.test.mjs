@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-async function render() {
+async function render(path = "/") {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
 
   return worker.fetch(
-    new Request("http://localhost/", {
+    new Request(`http://localhost${path}`, {
       headers: { accept: "text/html" },
     }),
     {
@@ -33,4 +33,14 @@ test("server-renders the opportunity radar", async () => {
   assert.match(html, /北京智源人工智能研究院/);
   assert.match(html, /2027 级联合培养博士/);
   assert.match(html, /实验心理学/);
+});
+
+test("server-renders the source directory and collection log pages", async () => {
+  const sources = await render("/sources");
+  assert.equal(sources.status, 200);
+  assert.match(await sources.text(), /信息源清单/);
+
+  const logs = await render("/logs");
+  assert.equal(logs.status, 200);
+  assert.match(await logs.text(), /采集与发布日志/);
 });

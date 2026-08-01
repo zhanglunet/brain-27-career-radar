@@ -9,10 +9,10 @@ export const metadata: Metadata = {
 
 export default function PrdPage() {
   return <main className={styles.page}>
-    <nav className={styles.nav}><Link className={styles.brand} href="/"><span className={styles.brandMark}>Ψ</span> BRAIN / 27</Link><div className={styles.navLinks}><Link href="/">机会雷达</Link><Link href="/system">系统说明</Link><Link className={styles.active} href="/prd">需求文档</Link></div></nav>
+    <nav className={styles.nav}><Link className={styles.brand} href="/"><span className={styles.brandMark}>Ψ</span> BRAIN / 27</Link><div className={styles.navLinks}><Link href="/">机会雷达</Link><Link href="/sources">信息源</Link><Link href="/logs">采集日志</Link><Link href="/system">系统说明</Link><Link className={styles.active} href="/prd">需求文档</Link></div></nav>
     <header className={styles.hero}>
-      <div><p className={styles.eyebrow}>PRODUCT REQUIREMENTS / V0.4</p><h1>自动更新<span>需求文档</span></h1><p className={styles.lede}>把人工整理的职业机会快照升级为可追溯的信息系统：自动检查可信来源、记录变化、保护最后可信内容，并逐步实现字段抽取、新来源发现与人工审核。</p></div>
-      <aside className={styles.heroAside}><strong>2026.08.01</strong><p>文档状态：P0 已上线；P1 已进入 5 来源灰度观察；P2 审核后台、通知与模型辅助待开发。</p></aside>
+      <div><p className={styles.eyebrow}>PRODUCT REQUIREMENTS / V0.5</p><h1>自动更新<span>需求文档</span></h1><p className={styles.lede}>把人工整理的职业机会快照升级为可追溯的信息系统：自动检查可信来源、记录变化、保护最后可信内容，并覆盖英国、爱尔兰、中国大陆与中国香港。</p></div>
+      <aside className={styles.heroAside}><strong>2026.08.01</strong><p>文档状态：P1.7 来源目录、历史日志和重点地区扩展已实现；P1 抽取仍处于 5 来源灰度。</p></aside>
     </header>
 
     <div className={styles.content}>
@@ -39,7 +39,7 @@ export default function PrdPage() {
       <section className={styles.section}>
         <div className={styles.sectionHead}><h2>版本范围</h2><p>“自动更新”分三个阶段交付。P0 解决可靠监控，P1 解决结构化内容更新，P2 解决运营闭环。</p></div>
         <div className={styles.cardGrid}>
-          <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>P0 · 已上线</span><h3>可靠监控与动态展示</h3><p>D1 数据模型、每日 Cron、15 个来源巡检、条件请求、哈希快照、运行记录、审核队列、动态 API 和静态降级。</p></article>
+          <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>P0 · 已上线</span><h3>可靠监控与动态展示</h3><p>D1 数据模型、每日 Cron、33 个自动来源巡检、逐来源日志、条件请求、哈希快照、审核队列、动态 API 和静态降级。</p></article>
           <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>P1 · 灰度观察</span><h3>列表发现与字段抽取</h3><p>5 个来源已启用适配器，候选与证据进入 D1；待完成 7 天准确率、重复率和安全边界验收。</p></article>
           <article className={`${styles.card} ${styles.cardNext}`}><span className={styles.cardLabel}>P2 · 待开发</span><h3>审核后台与模型辅助</h3><p>批准、驳回、编辑变更；生成匹配度和行动建议草案；发送变更通知及每周摘要。</p></article>
         </div>
@@ -54,8 +54,9 @@ export default function PrdPage() {
           <tr><td>P1.4</td><td>抽取标题、机构、类型、地点、批次、截止日期、开放状态和正文证据。</td><td>字段解析器、JSON-LD/DOM/规则回退、证据片段。</td><td>每个字段都能追溯到来源 URL、快照和文本证据。</td></tr>
           <tr><td>P1.5</td><td>比较候选与已发布记录，执行日期校验、冲突检测、风险分级和审核路由。</td><td>Change Set、风险规则、parse_conflict 审核项。</td><td>高风险字段不自动发布；低风险变更可配置自动合并。</td></tr>
           <tr><td>P1.6</td><td>小范围上线、回放测试、指标监控和分批扩展来源。</td><td>5 个试点适配器、回归样本、7 天观察报告。</td><td>抽取准确率 ≥ 95%，重复率 &lt; 1%，无未经审核的高风险发布。</td></tr>
+          <tr><td>P1.7</td><td>建立可检索的信息源目录和逐来源历史日志，扩展博士与校招重点地区。</td><td>39 个来源、来源/日志 API、两个公开查询页面。</td><td>英国、爱尔兰、中国大陆、中国香港均可筛选；每次 Cron 留下逐来源结果。</td></tr>
         </tbody></table></div>
-        <p className={styles.note}>建议试点顺序：结构稳定的 OPPO 与高校详情页 → 上海 AI Lab 列表页 → 重定向较多的 BrainCo → 动态渲染或访问不稳定来源。先覆盖 5 个来源，观察一周后再扩展到全部 15 个。</p>
+        <p className={styles.note}>结构化抽取先覆盖 5 个来源并观察一周；39 个来源都已进入目录，其中 33 个执行基础巡检。达到准确率与重复率门槛后，再按页面稳定性分批开发更多字段适配器。</p>
       </section>
 
       <section className={styles.section}>
@@ -78,6 +79,8 @@ export default function PrdPage() {
           <tr><td>FR-05</td><td>从列表和详情页抽取结构化字段并生成证据。</td><td>目标站适配器回归样本通过，冲突进入审核。</td><td><span className={styles.good}>已灰度</span></td></tr>
           <tr><td>FR-06</td><td>发现候选链接和新来源，人工批准后启用。</td><td>同站候选已灰度；未知域名不会自动发布或直接加入巡检。</td><td><span className={styles.pending}>部分完成</span></td></tr>
           <tr><td>FR-07</td><td>提供审核工作台、通知和模型建议草案。</td><td>批准、驳回、编辑和审计链完整。</td><td><span className={styles.pending}>P2</span></td></tr>
+          <tr><td>FR-08</td><td>公开信息源清单，可按关键词、博士/校招、地区和采集状态筛选。</td><td>目录返回 39 个来源；覆盖英国、爱尔兰、中国大陆和中国香港。</td><td><span className={styles.good}>已完成</span></td></tr>
+          <tr><td>FR-09</td><td>公开可检索的历史运行与逐来源采集日志。</td><td>按来源、结果、类型、地区和 UTC 日期检索；显示候选、证据、决策和发布计数。</td><td><span className={styles.good}>已完成</span></td></tr>
         </tbody></table></div>
       </section>
 

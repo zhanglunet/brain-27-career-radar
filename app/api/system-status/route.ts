@@ -23,7 +23,7 @@ export async function GET() {
     const { env } = await import("cloudflare:workers");
     if (!env.DB) throw new Error("D1 binding DB is unavailable");
 
-    const [sourceStats, opportunityStats, institutionStats, reviewStats, snapshotStats, candidateStats, evidenceStats, changeSetStats, pilotStats, latestRun] = await Promise.all([
+    const [sourceStats, opportunityStats, institutionStats, reviewStats, snapshotStats, checkLogStats, candidateStats, evidenceStats, changeSetStats, pilotStats, latestRun] = await Promise.all([
       env.DB.prepare(
         `SELECT COUNT(*) AS total,
                 SUM(CASE WHEN enabled = 1 THEN 1 ELSE 0 END) AS enabled,
@@ -35,6 +35,7 @@ export async function GET() {
       env.DB.prepare("SELECT COUNT(*) AS total FROM institutions WHERE published = 1").first<CountRow>(),
       env.DB.prepare("SELECT COUNT(*) AS total FROM review_queue WHERE status = 'pending'").first<CountRow>(),
       env.DB.prepare("SELECT COUNT(*) AS total FROM source_snapshots").first<CountRow>(),
+      env.DB.prepare("SELECT COUNT(*) AS total FROM source_check_logs").first<CountRow>(),
       env.DB.prepare("SELECT COUNT(*) AS total FROM candidate_records").first<CountRow>(),
       env.DB.prepare("SELECT COUNT(*) AS total FROM field_evidence").first<CountRow>(),
       env.DB.prepare("SELECT COUNT(*) AS total FROM change_sets WHERE status = 'pending'").first<CountRow>(),
@@ -57,6 +58,7 @@ export async function GET() {
         opportunities: number(opportunityStats?.total),
         institutions: number(institutionStats?.total),
         snapshots: number(snapshotStats?.total),
+        sourceCheckLogs: number(checkLogStats?.total),
         pendingReviews: number(reviewStats?.total),
         candidates: number(candidateStats?.total),
         fieldEvidence: number(evidenceStats?.total),
