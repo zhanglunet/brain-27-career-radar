@@ -57,6 +57,7 @@ Production documentation pages:
 
 - `/system`: live aggregate health, update flow, automation boundary, and operator actions
 - `/prd`: product goals, phased scope, functional requirements, rules, and acceptance criteria
+- Primary domain: `https://radar.openagent.hk`
 
 ## Learn More
 

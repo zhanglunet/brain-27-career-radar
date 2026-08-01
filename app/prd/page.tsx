@@ -46,6 +46,29 @@ export default function PrdPage() {
       </section>
 
       <section className={styles.section}>
+        <div className={styles.sectionHead}><h2>P1 开发路径</h2><p>P1 的目标不是让模型自由改页面，而是把来源页面转换成带证据、可比较、可审核的结构化候选变更。</p></div>
+        <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>阶段</th><th>开发内容</th><th>主要产物</th><th>完成标准</th></tr></thead><tbody>
+          <tr><td>P1.1</td><td>扩展数据模型，区分抓取结果、候选记录、字段证据和待发布变更。</td><td>candidate_records、field_evidence、change_sets 迁移与类型。</td><td>迁移可回滚；旧机会和历史快照不丢失。</td></tr>
+          <tr><td>P1.2</td><td>建立来源适配器框架，为列表页、详情页、API/RSS 提供统一接口。</td><td>Adapter SDK、站点配置、抓取夹具和错误分类。</td><td>新增站点无需修改巡检主循环。</td></tr>
+          <tr><td>P1.3</td><td>发现候选链接，进行 URL 规范化、重定向归一、跨列表去重和新域名隔离。</td><td>Link Discovery、去重键、候选来源队列。</td><td>重复链接不重复建档；未知域名不自动启用。</td></tr>
+          <tr><td>P1.4</td><td>抽取标题、机构、类型、地点、批次、截止日期、开放状态和正文证据。</td><td>字段解析器、JSON-LD/DOM/规则回退、证据片段。</td><td>每个字段都能追溯到来源 URL、快照和文本证据。</td></tr>
+          <tr><td>P1.5</td><td>比较候选与已发布记录，执行日期校验、冲突检测、风险分级和审核路由。</td><td>Change Set、风险规则、parse_conflict 审核项。</td><td>高风险字段不自动发布；低风险变更可配置自动合并。</td></tr>
+          <tr><td>P1.6</td><td>小范围上线、回放测试、指标监控和分批扩展来源。</td><td>5 个试点适配器、回归样本、7 天观察报告。</td><td>抽取准确率 ≥ 95%，重复率 &lt; 1%，无未经审核的高风险发布。</td></tr>
+        </tbody></table></div>
+        <p className={styles.note}>建议试点顺序：结构稳定的 OPPO 与高校详情页 → 上海 AI Lab 列表页 → 重定向较多的 BrainCo → 动态渲染或访问不稳定来源。先覆盖 5 个来源，观察一周后再扩展到全部 15 个。</p>
+      </section>
+
+      <section className={styles.section}>
+        <div className={styles.sectionHead}><h2>P1 功能清单</h2><p>交付完成后，系统才能从“发现页面变化”升级为“生成可审核的内容更新”。</p></div>
+        <div className={styles.requirements}>
+          <article className={styles.requirement}><h3>适配器与发现</h3><ul><li>列表、详情、API/RSS 统一接口</li><li>分页与候选链接发现</li><li>URL 归一和跨来源去重</li></ul></article>
+          <article className={styles.requirement}><h3>结构化抽取</h3><ul><li>机会核心字段与原文证据</li><li>日期、地点和状态规范化</li><li>解析失败与冲突留痕</li></ul></article>
+          <article className={styles.requirement}><h3>安全更新</h3><ul><li>字段级差异与风险分类</li><li>低风险字段受控自动合并</li><li>截止日期等高风险字段审核</li></ul></article>
+          <article className={styles.requirement}><h3>质量与运维</h3><ul><li>固定网页样本回放测试</li><li>抽取准确率和重复率指标</li><li>适配器失效告警与回滚</li></ul></article>
+        </div>
+      </section>
+
+      <section className={styles.section}>
         <div className={styles.sectionHead}><h2>功能需求</h2><p>需求编号用于开发、测试和发布记录之间的追踪。</p></div>
         <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>ID</th><th>需求</th><th>验收方式</th><th>状态</th></tr></thead><tbody>
           <tr><td>FR-01</td><td>D1 保存来源、机会、机构、快照、运行和审核项。</td><td>远程库迁移完成且种子数量符合预期。</td><td><span className={styles.good}>已完成</span></td></tr>

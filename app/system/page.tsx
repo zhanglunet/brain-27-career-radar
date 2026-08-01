@@ -18,7 +18,7 @@ export default function SystemPage() {
 
     <div className={styles.content}>
       <section className={styles.section}>
-        <div className={styles.sectionHead}><h2>实时运行状态</h2><p>数据来自生产 D1，只公开聚合状态，不公开数据库标识、日志正文或凭据。页面最多缓存 60 秒。</p></div>
+        <div className={styles.sectionHead}><h2>实时运行状态</h2><p>数据来自生产 D1，只公开聚合状态，不公开数据库标识、日志正文或凭据；运维状态不使用边缘缓存。</p></div>
         <SystemStatus />
       </section>
 
@@ -48,7 +48,7 @@ export default function SystemPage() {
           <li><span>01</span><div><strong>等待首个生产 Cron 留痕</strong><br /><small>日本时间 10:00 后刷新本页，确认出现最近一次巡检及 15 个来源的检查结果。</small></div><span className={`${styles.tag} ${styles.tagPending}`}>需观察</span></li>
           <li><span>02</span><div><strong>处理待审核变化</strong><br /><small>当前尚无可视化后台；P1 前可通过 Cloudflare D1 控制台查看 review_queue。系统不会自动发布高风险语义变更。</small></div><span className={styles.tag}>运维动作</span></li>
           <li><span>03</span><div><strong>决定是否继续 P1</strong><br /><small>若目标是“机会内容和新来源都自动更新”，下一步需要开发站点适配器、字段抽取、候选来源发现和审核工作台。</small></div><span className={`${styles.tag} ${styles.tagPending}`}>产品决策</span></li>
-          <li><span>04</span><div><strong>可选：绑定自定义域名</strong><br /><small>当前 workers.dev 地址已可公开访问；自定义域名不影响自动运行，只影响品牌与访问入口。</small></div><span className={styles.tag}>可选</span></li>
+          <li><span>04</span><div><strong>自定义域名已配置</strong><br /><small>生产入口使用 radar.openagent.hk；workers.dev 地址保留为故障诊断和备用入口。</small></div><span className={styles.tag}>已完成</span></li>
         </ul>
       </section>
 

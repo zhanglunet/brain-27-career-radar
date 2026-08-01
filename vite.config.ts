@@ -10,6 +10,7 @@ const useRemoteD1InDevelopment = process.env.BRAIN_RADAR_REMOTE_D1 === "true";
 const localBindingConfig = {
   name: "brain-27-career-radar",
   main: "./worker/index.ts",
+  workers_dev: true,
   compatibility_date: "2026-07-31",
   compatibility_flags: ["nodejs_compat"],
   d1_databases: [{
@@ -23,6 +24,9 @@ const localBindingConfig = {
   }],
   assets: { binding: "ASSETS" },
   images: { binding: "IMAGES" },
+  routes: productionD1Id
+    ? [{ pattern: "radar.openagent.hk", custom_domain: true }]
+    : [],
   triggers: { crons: ["0 1 * * *"] },
   observability: {
     enabled: true,

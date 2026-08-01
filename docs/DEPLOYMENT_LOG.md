@@ -47,3 +47,14 @@
 - HTTP 验收：首页、两个说明页、雷达 API、状态 API 均返回 200。
 - 状态 API 验收：15 个来源、14 个公开机会、5 个机构、15 个快照、0 个失败来源、0 个待审核项。
 - 浏览器验收：系统页与 PRD 页正常渲染；系统页 hydration 后显示 D1 正常、15/15 来源成功和下次日本时间 10:00 运行。
+
+### P1 规划与 radar.openagent.hk
+
+- 最终 Worker 版本：`3b714c42-86d7-476f-83b2-7fa9d94adb15`
+- 自定义域名：`https://radar.openagent.hk`
+- 备用入口：`https://brain-27-career-radar.zhanglu-net.workers.dev`
+- 发布绑定：D1、Images、Assets；Cron 保持 `0 1 * * *`。
+- 状态接口改为 `Cache-Control: no-store`，避免运行触发方式被旧边缘缓存误报。
+- Cloudflare 权威 DNS 与 1.1.1.1 已解析 `radar.openagent.hk`；部署机系统解析器曾短暂保留负缓存。
+- 使用固定解析直连 Cloudflare 边缘验收：主页、`/system`、`/prd`、`/api/radar`、`/api/system-status` 全部 HTTP 200。
+- 网页 PRD 已增加 P1.1—P1.6 开发计划和验收指标。

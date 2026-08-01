@@ -11,6 +11,7 @@
 - 结构化 Worker 日志、同步运行记录、绑定类型生成和生产部署预检。
 - 来源巡检成功、内容变化和连续失败测试。
 - `/system` 实时系统运行说明、`/prd` 网页版需求文档和 `/api/system-status` 聚合状态接口。
+- P1 六阶段开发计划、功能清单、试点来源与量化验收门槛。
 
 ### Changed
 
@@ -18,3 +19,4 @@
 - Cloudflare binding 类型改为由 Wrangler 生成。
 - Wrangler 升级至 4.118.0、Cloudflare Vite 插件升级至 1.50.0、Next.js 升级至 16.2.12。
 - 主页导航增加系统说明与需求文档入口；PRD 版本推进至 v0.3。
+- 状态接口改为不缓存，并将生产主入口绑定到 `radar.openagent.hk`。

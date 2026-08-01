@@ -71,7 +71,7 @@ export async function GET() {
         automaticSourceDiscovery: false,
       },
     }, {
-      headers: { "Cache-Control": "public, max-age=60, stale-while-revalidate=300" },
+      headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
     console.error(JSON.stringify({ event: "radar.system_status.failed", error: errorMessage(error) }));

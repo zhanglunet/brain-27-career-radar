@@ -61,6 +61,13 @@ npx wrangler d1 execute brain-27-career-radar --local \
 6. 在 Workers Logs 中检查 `radar.sync.*` 和 `radar.source.*` 结构化事件。
 7. 打开 `/system`，确认 D1 正常并在首个计划时刻后出现最近一次巡检记录。
 
+## 生产域名
+
+- 主入口：`https://radar.openagent.hk`
+- 备用入口：`https://brain-27-career-radar.zhanglu-net.workers.dev`
+- `www.openagent.hk` 已有现存站点，不由本 Worker 接管。
+- Custom Domain 由生产构建中的 `routes[].custom_domain=true` 管理，发布时由 Cloudflare 创建 DNS 与证书。
+
 ## 故障处理
 
 - 单来源失败：检查 `sources.consecutive_failures`，系统会保留最后可信内容。
