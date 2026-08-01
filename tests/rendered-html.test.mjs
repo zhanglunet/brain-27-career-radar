@@ -46,3 +46,17 @@ test("server-renders the source directory and collection log pages", async () =>
   assert.equal(logs.status, 200);
   assert.match(await logs.text(), /采集与发布日志/);
 });
+
+test("server-renders the academic intelligence pages", async () => {
+  const researchers = await render("/researchers");
+  assert.equal(researchers.status, 200);
+  assert.match(await researchers.text(), /导师雷达/);
+
+  const papers = await render("/papers");
+  assert.equal(papers.status, 200);
+  assert.match(await papers.text(), /最新论文/);
+
+  const prd = await render("/prd/academic");
+  assert.equal(prd.status, 200);
+  assert.match(await prd.text(), /学术情报雷达/);
+});

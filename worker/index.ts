@@ -2,6 +2,7 @@
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 import { monitorSources } from "../lib/source-monitor";
+import { syncAcademicPapers } from "../lib/academic-monitor";
 
 // Image security config. SVG sources with .svg extension auto-skip the
 // optimization endpoint on the client side (served directly, no proxy).
@@ -35,7 +36,10 @@ const worker = {
       event: "radar.sync.scheduled",
       receivedAt: new Date().toISOString(),
     }));
-    ctx.waitUntil(monitorSources(env.DB, { trigger: "cron" }));
+    ctx.waitUntil(Promise.all([
+      monitorSources(env.DB, { trigger: "cron" }),
+      syncAcademicPapers(env.DB, { trigger: "cron" }),
+    ]).then(() => undefined));
   },
 } satisfies ExportedHandler<Env>;
 

@@ -60,6 +60,18 @@ P1 使用来源配置、JSON-LD、DOM 元信息和确定性文本规则，所有
 
 桌面端使用多列卡片和完整筛选；手机端改为单列卡片、横向可滚动筛选和 16px 搜索输入。关键学历、截止日期和博士过渡信息不得仅依赖 hover 或被移动端隐藏。
 
+### ADR-012：学术实体与职业机会分表
+
+导师和论文不是岗位，不能复用 `opportunities`。P2 使用 `researchers`、`researcher_identities`、`researcher_sources`、`papers` 与 `paper_authors` 建立实体关系，同时复用 `sources`、快照和来源检查日志。
+
+### ADR-013：论文自动发现不等于自动核验
+
+Crossref 查询结果必须同时通过作者规范化匹配和主题阈值，并按 DOI 幂等写入。由于同名作者和元数据不完整风险，新记录默认是 `candidate` 且 `published=false`；只有身份和来源进一步确认后才能升级为 `verified`。
+
+### ADR-014：职业与学术管线故障隔离
+
+同一 Cron 并行触发来源巡检和学术同步，但分别写入 `sync_runs` 与 `academic_sync_runs`。Crossref 失败不会中断职业来源更新，单导师失败不会中断其他导师；学术实体级事件写入 `academic_events`。
+
 ## 部署边界
 
 - D1 binding：`DB`

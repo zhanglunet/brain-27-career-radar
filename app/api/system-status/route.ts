@@ -23,7 +23,7 @@ export async function GET() {
     const { env } = await import("cloudflare:workers");
     if (!env.DB) throw new Error("D1 binding DB is unavailable");
 
-    const [sourceStats, opportunityStats, institutionStats, reviewStats, observationStats, autoResolvedStats, priorityStats, snapshotStats, checkLogStats, candidateStats, evidenceStats, changeSetStats, pilotStats, latestRun] = await Promise.all([
+    const [sourceStats, opportunityStats, institutionStats, reviewStats, observationStats, autoResolvedStats, priorityStats, snapshotStats, checkLogStats, candidateStats, evidenceStats, changeSetStats, pilotStats, researcherStats, paperStats, academicCandidateStats, academicRunStats, latestRun] = await Promise.all([
       env.DB.prepare(
         `SELECT COUNT(*) AS total,
                 SUM(CASE WHEN enabled = 1 THEN 1 ELSE 0 END) AS enabled,
@@ -43,6 +43,10 @@ export async function GET() {
       env.DB.prepare("SELECT COUNT(*) AS total FROM field_evidence").first<CountRow>(),
       env.DB.prepare("SELECT COUNT(*) AS total FROM change_sets WHERE status = 'pending'").first<CountRow>(),
       env.DB.prepare("SELECT COUNT(*) AS total FROM sources WHERE enabled = 1 AND discovery_enabled = 1 AND adapter_key IS NOT NULL").first<CountRow>(),
+      env.DB.prepare("SELECT COUNT(*) AS total FROM researchers WHERE published = 1").first<CountRow>(),
+      env.DB.prepare("SELECT COUNT(*) AS total FROM papers WHERE review_status = 'verified'").first<CountRow>(),
+      env.DB.prepare("SELECT COUNT(*) AS total FROM papers WHERE review_status = 'candidate'").first<CountRow>(),
+      env.DB.prepare("SELECT COUNT(*) AS total FROM academic_sync_runs").first<CountRow>(),
       env.DB.prepare(
         `SELECT id, trigger, status, started_at, finished_at, checked_count, changed_count, failed_count
          FROM sync_runs ORDER BY started_at DESC LIMIT 1`,
@@ -70,6 +74,10 @@ export async function GET() {
         fieldEvidence: number(evidenceStats?.total),
         pendingChangeSets: number(changeSetStats?.total),
         pilotSources: number(pilotStats?.total),
+        researchers: number(researcherStats?.total),
+        verifiedPapers: number(paperStats?.total),
+        paperCandidates: number(academicCandidateStats?.total),
+        academicSyncRuns: number(academicRunStats?.total),
       },
       automation: {
         configured: true,
@@ -88,6 +96,9 @@ export async function GET() {
         automaticContentPublishing: false,
         automaticReview: true,
         automaticExternalSourceApproval: false,
+        researcherMonitoring: true,
+        paperDiscovery: true,
+        automaticPaperVerification: false,
       },
     }, {
       headers: { "Cache-Control": "no-store" },

@@ -1,5 +1,15 @@
 # 部署记录
 
+## 2026-08-01 · v0.3.0 P2 学术情报雷达
+
+- 发布前导出远程 D1 SQL 备份，并在本机临时目录保存 SHA-256；备份未进入 Git。
+- 远程应用 `0008_misty_shadow_king.sql` 与 `0009_sloppy_cerise.sql`，随后确认无待执行迁移。
+- 生产 D1 核对：16 位导师、16 条导师—官方来源关系、73 个来源；区域为 APAC。
+- 发布 Worker 版本 `f59d51bb-723b-404e-a165-37915d2e0be6`，绑定 D1、Assets、Images 和 `0 1,7,13,19 * * *` Cron。
+- 线上 `/researchers`、`/papers`、`/prd/academic`、`/api/researchers`、`/api/papers`、`/api/system-status` 均返回 HTTP 200。
+- 上线时学术同步运行数为 0、论文候选为 0；必须等待生产首次 Cron 留下证据后，才能确认 Crossref 生产同步成功。
+- 本地真实 Cron 已完成 16/16 导师查询、0 失败；阈值收紧为至少两个主题词命中，以降低同名作者噪声。
+
 ## 2026-08-01 · P1.9 科研助理、上海深圳重点与响应式页面
 
 - 首个 P1 功能版本定为 `v0.2.0`，包版本、Git 标签和 GitHub Release 保持一致；发布分支经完整验证后快进合并到 `main`。

@@ -109,6 +109,13 @@
 .sourceMeta dt { color: var(--muted); font: 9px var(--font-geist-mono); text-transform: uppercase; }
 .sourceMeta dd { margin: 5px 0 0; color: #c8d5d1; font-size: 12px; overflow-wrap: anywhere; }
 .sourceCard .pilotNote { min-height: 0; margin-top: 16px; color: var(--lime); font: 10px var(--font-geist-mono); text-transform: uppercase; }
+.academicValue { min-height: 0 !important; margin-top: 14px !important; padding-top: 14px; border-top: 1px solid var(--line); color: var(--aqua) !important; }
+.paperList { display: grid; gap: 12px; }
+.paperCard { padding: 22px; border: 1px solid var(--line); background: rgba(12, 32, 27, .9); }
+.paperCard h3 { margin: 15px 0 10px; font-size: 19px; line-height: 1.45; }
+.paperCard h3 a:hover { color: var(--lime); }
+.paperCard p { margin: 8px 0; color: #9fb2ac; font-size: 13px; line-height: 1.65; }
+.paperCard small { color: var(--muted); font: 10px var(--font-geist-mono); overflow-wrap: anywhere; }
 
 .logSection { margin-top: 36px; }
 .logSection h3 { margin: 0 0 14px; font-size: 20px; }
