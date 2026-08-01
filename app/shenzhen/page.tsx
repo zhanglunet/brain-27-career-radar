@@ -1,0 +1,1 @@
+import type{Metadata}from"next";import RegionPage from"../regions/RegionPage";export const metadata:Metadata={title:"深圳高校与科研机构｜BRAIN / 27",description:"深圳脑科学、脑机接口、类脑智能机构及机会。"};export default function Page(){return <RegionPage slug="shenzhen" name="深圳" nameEn="Shenzhen" subtitle="高校 × 中科院 × 国家实验室"/>}

@@ -1,0 +1,1 @@
+import type{Metadata}from"next";import RegionPage from"../regions/RegionPage";export const metadata:Metadata={title:"中国香港高校与科研机构｜BRAIN / 27",description:"中国香港脑科学、心理学、人工智能博士、HKPFS 与科研助理机会。"};export default function Page(){return <RegionPage slug="hong-kong" name="中国香港" nameEn="Hong Kong, China" subtitle="HKPFS × 高校 × 科研助理"/>}

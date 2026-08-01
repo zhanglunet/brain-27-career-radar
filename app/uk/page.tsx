@@ -1,0 +1,1 @@
+import type{Metadata}from"next";import RegionPage from"../regions/RegionPage";export const metadata:Metadata={title:"英国高校与科研机构｜BRAIN / 27",description:"英国脑科学、认知神经科学、心理学与人工智能博士及研究机会。"};export default function Page(){return <RegionPage slug="uk" name="英国" nameEn="United Kingdom" subtitle="Oxford × Cambridge × UCL"/>}

@@ -24,6 +24,7 @@ const localBindingConfig = {
   }],
   assets: { binding: "ASSETS" },
   images: { binding: "IMAGES" },
+  ai: { binding: "AI" },
   routes: productionD1Id
     ? [
         { pattern: "openagent.hk", custom_domain: true },

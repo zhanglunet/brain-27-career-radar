@@ -63,4 +63,32 @@ test("server-renders the academic intelligence pages", async () => {
   const providers = await render("/paper-sources");
   assert.equal(providers.status, 200);
   assert.match(await providers.text(), /论文数据库/);
+
+  const graph = await render("/knowledge-graph");
+  assert.equal(graph.status, 200);
+  assert.match(await graph.text(), /知识图谱/);
+
+  const beijing = await render("/beijing");
+  assert.equal(beijing.status, 200);
+  assert.match(await beijing.text(), /北京机会/);
+
+  const calendar = await render("/calendar");
+  assert.equal(calendar.status, 200);
+  const calendarHtml = await calendar.text();
+  assert.match(calendarHtml, /统一时间表/);
+  assert.match(calendarHtml, /确认 ≠ 估算/);
+
+  const graphPrd = await render("/prd/knowledge-graph");
+  assert.equal(graphPrd.status, 200);
+  assert.match(await graphPrd.text(), /截止日期治理/);
+
+  const map = await render("/map");
+  assert.equal(map.status, 200);
+  assert.match(await map.text(), /全球分布一眼看清/);
+
+  for (const [path, label] of [["/shanghai", "上海高校与科研机构"], ["/shenzhen", "深圳高校与科研机构"], ["/uk", "英国高校与科研机构"], ["/ireland", "爱尔兰高校与科研机构"], ["/hong-kong", "中国香港高校与科研机构"]]) {
+    const region = await render(path);
+    assert.equal(region.status, 200);
+    assert.match(await region.text(), new RegExp(label));
+  }
 });

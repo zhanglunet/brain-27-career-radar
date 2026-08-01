@@ -1,5 +1,6 @@
 type Row = {
-  id: string; doi: string | null; pmid: string | null; pmcid: string | null; arxiv_id: string | null; title: string; venue: string; publication_date: string | null; paper_type: string;
+  id: string; doi: string | null; pmid: string | null; pmcid: string | null; arxiv_id: string | null; title: string; title_zh: string | null;
+  abstract: string; abstract_zh: string | null; translation_status: string; translated_at: string | null; venue: string; publication_date: string | null; paper_type: string;
   version_status: string; source_url: string; source_provider: string; topics_json: string; takeaway: string; relevance_score: number;
   review_status: string; source_verified_at: string | null; authors: string | null; researcher_ids: string | null; providers: string | null;
 };
@@ -14,7 +15,7 @@ export async function GET(request: Request) {
     const status = allowed(url.searchParams.get("status"), ["verified", "candidate"]);
     const clauses = ["p.review_status != 'rejected'"];
     const bindings: string[] = [];
-    if (q) { clauses.push("(p.title LIKE ? OR p.venue LIKE ? OR p.topics_json LIKE ?)"); const pattern = `%${q}%`; bindings.push(pattern, pattern, pattern); }
+    if (q) { clauses.push("(p.title LIKE ? OR p.title_zh LIKE ? OR p.abstract LIKE ? OR p.abstract_zh LIKE ? OR p.venue LIKE ? OR p.topics_json LIKE ?)"); const pattern = `%${q}%`; bindings.push(pattern, pattern, pattern, pattern, pattern, pattern); }
     if (researcher) { clauses.push("EXISTS (SELECT 1 FROM paper_authors pa2 JOIN researchers r2 ON r2.id = pa2.researcher_id WHERE pa2.paper_id = p.id AND r2.slug = ?)"); bindings.push(researcher); }
     if (status) { clauses.push("p.review_status = ?"); bindings.push(status); }
     const statement = env.DB.prepare(
@@ -30,7 +31,9 @@ export async function GET(request: Request) {
        FROM academic_sync_runs ORDER BY started_at DESC LIMIT 1`,
     ).first();
     return Response.json({ generatedAt: new Date().toISOString(), total: result.results.length, latestRun: latestRun ?? null,
-      papers: result.results.map((row) => ({ id: row.id, doi: row.doi, pmid: row.pmid, pmcid: row.pmcid, arxivId: row.arxiv_id, title: row.title, venue: row.venue,
+      papers: result.results.map((row) => ({ id: row.id, doi: row.doi, pmid: row.pmid, pmcid: row.pmcid, arxivId: row.arxiv_id,
+        title: row.title, titleZh: row.title_zh, abstract: row.abstract, abstractZh: row.abstract_zh,
+        translationStatus: row.translation_status, translatedAt: row.translated_at, venue: row.venue,
         publicationDate: row.publication_date, paperType: row.paper_type, versionStatus: row.version_status,
         sourceUrl: row.source_url, topics: array(row.topics_json), takeaway: row.takeaway,
         relevanceScore: row.relevance_score, reviewStatus: row.review_status, sourceVerifiedAt: row.source_verified_at,
