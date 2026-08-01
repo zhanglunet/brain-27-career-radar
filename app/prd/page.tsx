@@ -11,8 +11,8 @@ export default function PrdPage() {
   return <main className={styles.page}>
     <nav className={styles.nav}><Link className={styles.brand} href="/"><span className={styles.brandMark}>Ψ</span> BRAIN / 27</Link><div className={styles.navLinks}><Link href="/">机会雷达</Link><Link href="/system">系统说明</Link><Link className={styles.active} href="/prd">需求文档</Link></div></nav>
     <header className={styles.hero}>
-      <div><p className={styles.eyebrow}>PRODUCT REQUIREMENTS / V0.3</p><h1>自动更新<span>需求文档</span></h1><p className={styles.lede}>把人工整理的职业机会快照升级为可追溯的信息系统：自动检查可信来源、记录变化、保护最后可信内容，并逐步实现字段抽取、新来源发现与人工审核。</p></div>
-      <aside className={styles.heroAside}><strong>2026.08.01</strong><p>文档状态：P0 已上线；P1 内容抽取与来源发现待开发；P2 审核后台、通知与模型辅助待开发。</p></aside>
+      <div><p className={styles.eyebrow}>PRODUCT REQUIREMENTS / V0.4</p><h1>自动更新<span>需求文档</span></h1><p className={styles.lede}>把人工整理的职业机会快照升级为可追溯的信息系统：自动检查可信来源、记录变化、保护最后可信内容，并逐步实现字段抽取、新来源发现与人工审核。</p></div>
+      <aside className={styles.heroAside}><strong>2026.08.01</strong><p>文档状态：P0 已上线；P1 已进入 5 来源灰度观察；P2 审核后台、通知与模型辅助待开发。</p></aside>
     </header>
 
     <div className={styles.content}>
@@ -40,7 +40,7 @@ export default function PrdPage() {
         <div className={styles.sectionHead}><h2>版本范围</h2><p>“自动更新”分三个阶段交付。P0 解决可靠监控，P1 解决结构化内容更新，P2 解决运营闭环。</p></div>
         <div className={styles.cardGrid}>
           <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>P0 · 已上线</span><h3>可靠监控与动态展示</h3><p>D1 数据模型、每日 Cron、15 个来源巡检、条件请求、哈希快照、运行记录、审核队列、动态 API 和静态降级。</p></article>
-          <article className={`${styles.card} ${styles.cardNext}`}><span className={styles.cardLabel}>P1 · 待开发</span><h3>列表发现与字段抽取</h3><p>按域名适配招聘/招生列表，发现候选详情页，抽取标题、地点、类别、截止日期与正文证据，并处理重复和冲突。</p></article>
+          <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>P1 · 灰度观察</span><h3>列表发现与字段抽取</h3><p>5 个来源已启用适配器，候选与证据进入 D1；待完成 7 天准确率、重复率和安全边界验收。</p></article>
           <article className={`${styles.card} ${styles.cardNext}`}><span className={styles.cardLabel}>P2 · 待开发</span><h3>审核后台与模型辅助</h3><p>批准、驳回、编辑变更；生成匹配度和行动建议草案；发送变更通知及每周摘要。</p></article>
         </div>
       </section>
@@ -75,8 +75,8 @@ export default function PrdPage() {
           <tr><td>FR-02</td><td>每日自动检查启用来源，支持超时、有限并发和有限正文。</td><td>scheduled 处理器产生 sync_runs 及来源结果。</td><td><span className={styles.good}>已完成</span></td></tr>
           <tr><td>FR-03</td><td>跟踪状态码、最终 URL、ETag、Last-Modified、正文哈希和失败次数。</td><td>来源成功、304、变化和三次失败测试通过。</td><td><span className={styles.good}>已完成</span></td></tr>
           <tr><td>FR-04</td><td>页面通过 API 展示已发布记录，数据库不可用时降级。</td><td>API 返回数据库数据；故障时首页仍可渲染。</td><td><span className={styles.good}>已完成</span></td></tr>
-          <tr><td>FR-05</td><td>从列表和详情页抽取结构化字段并生成证据。</td><td>目标站适配器回归样本通过，冲突进入审核。</td><td><span className={styles.pending}>P1</span></td></tr>
-          <tr><td>FR-06</td><td>发现候选链接和新来源，人工批准后启用。</td><td>未知域名不会自动发布或直接加入巡检。</td><td><span className={styles.pending}>P1</span></td></tr>
+          <tr><td>FR-05</td><td>从列表和详情页抽取结构化字段并生成证据。</td><td>目标站适配器回归样本通过，冲突进入审核。</td><td><span className={styles.good}>已灰度</span></td></tr>
+          <tr><td>FR-06</td><td>发现候选链接和新来源，人工批准后启用。</td><td>同站候选已灰度；未知域名不会自动发布或直接加入巡检。</td><td><span className={styles.pending}>部分完成</span></td></tr>
           <tr><td>FR-07</td><td>提供审核工作台、通知和模型建议草案。</td><td>批准、驳回、编辑和审计链完整。</td><td><span className={styles.pending}>P2</span></td></tr>
         </tbody></table></div>
       </section>
@@ -112,6 +112,6 @@ export default function PrdPage() {
         </ul>
       </section>
     </div>
-    <footer className={styles.footer}><span>BRAIN / 27 · PRD v0.3</span><p>产品边界：自动发现变化，不未经审核自动发布高风险判断。</p></footer>
+    <footer className={styles.footer}><span>BRAIN / 27 · PRD v0.4</span><p>产品边界：自动发现变化，不未经审核自动发布高风险判断。</p></footer>
   </main>;
 }

@@ -2,9 +2,11 @@
 
 ## 数据流
 
-`Cron → source monitor → D1 sources/snapshots/runs/review_queue → /api/radar → 页面`
+`Cron → source monitor → source snapshot → adapter → candidate/evidence → change set/risk route → review queue → 已发布数据`
 
-第一阶段只监控已登记的官方页面，不尝试通用网页语义抽取。抓取器对响应正文设置 512 KiB 上限、12 秒超时和四路并发；失败时保留最后一次可信内容。
+抓取器对响应正文设置 512 KiB 上限、12 秒超时和四路并发；失败时保留最后一次可信内容。P1 复用同一次有界响应，不额外抓取页面；只对配置了 `adapter_key` 且开启 `discovery_enabled` 的 5 个试点来源执行抽取。
+
+P1 数据分为三层：`candidate_records` 保存按规范化 URL 去重的候选，`field_evidence` 把字段值关联到来源快照和证据片段，`change_sets` 保存与已发布机会的字段差异、风险等级和处理状态。列表适配器只发现同一注册域名内的候选链接；未知外部域名不自动启用。
 
 ## 关键决策
 
@@ -23,6 +25,14 @@ HTTP/哈希变化可以自动记录；截止日期、状态和职业建议属于
 ### ADR-004：有界抓取
 
 采集只读取有限正文，不缓冲任意大小响应。请求超时、重定向、失败次数和最终 URL均入库。单来源失败不会中断批次。
+
+### ADR-005：规则适配器先于生成式抽取
+
+P1 使用来源配置、JSON-LD、DOM 元信息和确定性文本规则，所有字段都保留提取器、置信度和原文片段。模型辅助只属于 P2 草案能力，不能绕过审核发布。
+
+### ADR-006：默认关闭自动合并
+
+`auto_merge_low_risk` 在 5 个试点均为关闭。URL-only 变化虽被标记为低风险，也只有来源显式开启策略后才能写回；截止日期、开放状态和类别等高风险字段始终进入审核。
 
 ## 部署边界
 

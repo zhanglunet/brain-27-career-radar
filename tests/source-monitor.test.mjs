@@ -19,6 +19,11 @@ class FakeStatement {
     return { results: this.database.sources.map((source) => ({ ...source })) };
   }
 
+  async first() {
+    if (this.sql.includes("FROM source_snapshots")) return { id: "snapshot-1" };
+    throw new Error(`Unexpected first(): ${this.sql}`);
+  }
+
   async run() {
     this.database.operations.push({ sql: this.sql, params: this.params });
     return { success: true };

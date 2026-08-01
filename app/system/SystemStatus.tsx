@@ -13,6 +13,10 @@ type SystemStatusPayload = {
     institutions?: number;
     snapshots?: number;
     pendingReviews?: number;
+    candidates?: number;
+    fieldEvidence?: number;
+    pendingChangeSets?: number;
+    pilotSources?: number;
   };
   automation: {
     configured: boolean;
@@ -71,6 +75,7 @@ export default function SystemStatus() {
       <article className={styles.statusCard}><span>D1 数据库</span><strong>{status.database.configured ? "正常" : "异常"}</strong><p>{status.database.sources ?? 0} 个来源，{status.database.opportunities ?? 0} 个公开机会</p></article>
       <article className={styles.statusCard}><span>已成功巡检来源</span><strong>{status.automation.checkedSources ?? 0}/{status.database.enabledSources ?? 0}</strong><p>当前失败来源 {status.automation.failingSources ?? 0} 个</p></article>
       <article className={styles.statusCard}><span>来源快照</span><strong>{status.database.snapshots ?? 0}</strong><p>待人工审核 {status.database.pendingReviews ?? 0} 项</p></article>
+      <article className={styles.statusCard}><span>P1 灰度抽取</span><strong>{status.database.candidates ?? 0}</strong><p>{status.database.pilotSources ?? 0} 个试点来源，证据 {status.database.fieldEvidence ?? 0} 条，待决策 {status.database.pendingChangeSets ?? 0} 项</p></article>
       <article className={styles.statusCard}><span>下次自动运行</span><strong>{formatTime(status.automation.nextScheduledAt)}</strong><p>{status.automation.scheduleLabel ?? status.automation.schedule}</p></article>
     </div>
     {latest ? <p className={styles.note}>最近一次运行：{formatDateTime(latest.finished_at ?? latest.started_at)}，触发方式 {latest.trigger}；检查 {latest.checked_count} 个来源，发现变化 {latest.changed_count} 个，失败 {latest.failed_count} 个。</p> : <p className={styles.note}>生产库尚无巡检记录。Cron 已部署，但需要等到首个计划时刻执行后，才能从 D1 历史记录证明生产定时任务已实际触发。</p>}

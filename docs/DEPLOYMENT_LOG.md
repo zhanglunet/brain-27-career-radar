@@ -1,5 +1,20 @@
 # 部署记录
 
+## 2026-08-01 · P1 五来源灰度
+
+- 发布前 Worker 版本：`3b714c42-86d7-476f-83b2-7fa9d94adb15`。
+- 发布前使用 `wrangler d1 export` 导出远程 D1 SQL 回滚基线到部署机临时目录，未提交 Git。
+- 远程迁移预检只显示 `0003_futuristic_inhumans.sql`；迁移成功后确认 `candidate_records`、`field_evidence`、`change_sets` 均存在。
+- 5 个试点来源：OPPO 健康机器学习、OPPO 健康算法、清华心理与认知科学系、上海 AI Lab 招聘、BrainCo 招聘。
+- 5 个试点的 `discovery_enabled=1`、`adapter_key` 已配置，`auto_merge_low_risk=0`，因此灰度期不会自动写回公开机会。
+- 发布前全新本地 D1 真实 scheduled 回放：15/15 来源成功、0 失败；生成 6 个候选、25 条字段证据、6 个待审变更、0 个自动发布。
+- 完整质量门通过：TypeScript、ESLint、生产构建及 12 个测试全部成功。
+- 新 Worker 版本：`79a270c9-0414-416b-bd3b-ae6f14652338`；启动时间 20 ms。
+- 生产绑定：D1、Images、Assets；Cron 保持 `0 1 * * *`；主域名保持 `https://radar.openagent.hk`。
+- 线上验收：首页、`/system`、`/prd`、`/api/radar`、`/api/system-status` 全部 HTTP 200；状态 API 为 `Cache-Control: no-store`。
+- 发布时生产 P1 聚合数为 5 个试点、0 个候选、0 条证据、0 个待决策；这是首次自然 Cron 尚未执行新代码的预期基线。下一次日本时间 10:00 后核对生产候选与 `trigger=cron` 运行记录。
+- P1.6 尚未完成：需执行 7 天抽样观察并达到准确率不低于 95%、重复率低于 1%，之后才可扩展剩余来源或考虑开启低风险自动合并。
+
 ## 2026-08-01 · 自动更新 P0
 
 - Cloudflare 账户：`Zhanglu.net@gmail.com's Account`

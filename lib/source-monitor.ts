@@ -1,3 +1,5 @@
+import { processSourceDocument } from "./p1/pipeline.ts";
+
 const MAX_BODY_BYTES = 512 * 1024;
 const MAX_EXCERPT_CHARS = 1_500;
 const REQUEST_TIMEOUT_MS = 12_000;
@@ -6,7 +8,11 @@ const CONCURRENCY = 4;
 type SourceRow = {
   id: string;
   name: string;
+  source_type: "detail" | "listing" | "api" | "rss";
   url: string;
+  adapter_key: string | null;
+  discovery_enabled: number;
+  auto_merge_low_risk: number;
   etag: string | null;
   last_modified: string | null;
   content_hash: string | null;
@@ -56,7 +62,8 @@ export async function monitorSources(
 
   try {
     const query = await db.prepare(
-      `SELECT id, name, url, etag, last_modified, content_hash, final_url, consecutive_failures
+      `SELECT id, name, source_type, url, adapter_key, discovery_enabled, auto_merge_low_risk,
+              etag, last_modified, content_hash, final_url, consecutive_failures
        FROM sources
        WHERE enabled = 1
        ORDER BY id`,
@@ -148,13 +155,14 @@ async function checkSource(
     const etag = response.headers.get("etag");
     const lastModified = response.headers.get("last-modified");
 
+    const proposedSnapshotId = crypto.randomUUID();
     await db.prepare(
       `INSERT INTO source_snapshots
        (id, source_id, run_id, content_hash, status_code, final_url, excerpt, captured_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(source_id, content_hash) DO NOTHING`,
     ).bind(
-      crypto.randomUUID(),
+      proposedSnapshotId,
       source.id,
       runId,
       contentHash,
@@ -164,8 +172,38 @@ async function checkSource(
       checkedAt,
     ).run();
 
+    const snapshot = await db.prepare(
+      "SELECT id FROM source_snapshots WHERE source_id = ? AND content_hash = ? LIMIT 1",
+    ).bind(source.id, contentHash).first<{ id: string }>();
+    if (!snapshot) throw new Error(`source snapshot was not persisted for ${source.id}`);
+
     await markSuccess(db, source.id, checkedAt, response.status, finalUrl, etag, lastModified, contentHash);
     await markLinkedRecordsVerified(db, source.id, checkedAt);
+
+    if (source.discovery_enabled === 1 && source.adapter_key) {
+      try {
+        const p1 = await processSourceDocument(db, {
+          source: {
+            id: source.id,
+            name: source.name,
+            url: source.url,
+            source_type: source.source_type,
+            adapter_key: source.adapter_key,
+            auto_merge_low_risk: source.auto_merge_low_risk,
+          },
+          runId,
+          snapshotId: snapshot.id,
+          html: body.text,
+          finalUrl,
+          capturedAt: checkedAt,
+        });
+        console.log(JSON.stringify({ event: "radar.p1.extracted", runId, sourceId: source.id, ...p1 }));
+      } catch (error) {
+        const message = errorMessage(error);
+        await createReviewItem(db, source.id, runId, "parse_conflict", { error: message, adapterKey: source.adapter_key });
+        console.error(JSON.stringify({ event: "radar.p1.failed", runId, sourceId: source.id, error: message }));
+      }
+    }
 
     if (changed) {
       await createReviewItem(db, source.id, runId, "content_changed", {
@@ -234,7 +272,7 @@ async function createReviewItem(
   db: D1Database,
   sourceId: string,
   runId: string,
-  reason: "content_changed" | "repeated_failure",
+  reason: "content_changed" | "repeated_failure" | "new_source" | "parse_conflict",
   payload: Record<string, unknown>,
 ) {
   await db.prepare(

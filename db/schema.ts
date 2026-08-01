@@ -10,6 +10,9 @@ export const sources = sqliteTable("sources", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   sourceType: text("source_type", { enum: ["detail", "listing", "api", "rss"] }).notNull(),
+  adapterKey: text("adapter_key"),
+  discoveryEnabled: integer("discovery_enabled", { mode: "boolean" }).notNull().default(false),
+  autoMergeLowRisk: integer("auto_merge_low_risk", { mode: "boolean" }).notNull().default(false),
   url: text("url").notNull(),
   trustLevel: integer("trust_level").notNull().default(100),
   enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
@@ -105,4 +108,59 @@ export const reviewQueue = sqliteTable("review_queue", {
   resolvedAt: text("resolved_at"),
 }, (table) => [
   index("review_queue_status_idx").on(table.status, table.createdAt),
+]);
+
+export const candidateRecords = sqliteTable("candidate_records", {
+  id: text("id").primaryKey(),
+  sourceId: text("source_id").notNull().references(() => sources.id, { onDelete: "cascade" }),
+  snapshotId: text("snapshot_id").references(() => sourceSnapshots.id, { onDelete: "set null" }),
+  canonicalUrl: text("canonical_url").notNull(),
+  dedupeKey: text("dedupe_key").notNull(),
+  title: text("title").notNull(),
+  org: text("org").notNull(),
+  kind: text("kind", { enum: ["博士", "联培博士", "校招", "实习", "研究岗位"] }),
+  location: text("location"),
+  deadline: text("deadline"),
+  opportunityStatus: text("opportunity_status", { enum: ["立即行动", "等待开放", "持续关注"] }),
+  extractedJson: text("extracted_json").notNull().default("{}"),
+  state: text("state", { enum: ["observed", "review", "published", "rejected"] }).notNull().default("observed"),
+  firstSeenAt: text("first_seen_at").notNull(),
+  lastSeenAt: text("last_seen_at").notNull(),
+  ...timestamps,
+}, (table) => [
+  uniqueIndex("candidate_records_dedupe_unique").on(table.dedupeKey),
+  index("candidate_records_source_idx").on(table.sourceId, table.lastSeenAt),
+  index("candidate_records_state_idx").on(table.state, table.lastSeenAt),
+]);
+
+export const fieldEvidence = sqliteTable("field_evidence", {
+  id: text("id").primaryKey(),
+  candidateId: text("candidate_id").notNull().references(() => candidateRecords.id, { onDelete: "cascade" }),
+  snapshotId: text("snapshot_id").references(() => sourceSnapshots.id, { onDelete: "set null" }),
+  fieldName: text("field_name").notNull(),
+  fieldValue: text("field_value").notNull(),
+  excerpt: text("excerpt").notNull(),
+  extractor: text("extractor").notNull(),
+  confidence: integer("confidence").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  uniqueIndex("field_evidence_value_unique").on(table.candidateId, table.snapshotId, table.fieldName, table.fieldValue),
+  index("field_evidence_candidate_idx").on(table.candidateId, table.fieldName),
+]);
+
+export const changeSets = sqliteTable("change_sets", {
+  id: text("id").primaryKey(),
+  candidateId: text("candidate_id").notNull().references(() => candidateRecords.id, { onDelete: "cascade" }),
+  opportunityId: text("opportunity_id").references(() => opportunities.id, { onDelete: "set null" }),
+  runId: text("run_id").references(() => syncRuns.id, { onDelete: "set null" }),
+  riskLevel: text("risk_level", { enum: ["low", "medium", "high"] }).notNull(),
+  status: text("status", { enum: ["pending", "applied", "rejected", "superseded"] }).notNull().default("pending"),
+  patchJson: text("patch_json").notNull(),
+  patchHash: text("patch_hash").notNull(),
+  evidenceJson: text("evidence_json").notNull().default("[]"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  resolvedAt: text("resolved_at"),
+}, (table) => [
+  uniqueIndex("change_sets_patch_unique").on(table.candidateId, table.patchHash),
+  index("change_sets_status_idx").on(table.status, table.riskLevel, table.createdAt),
 ]);

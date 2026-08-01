@@ -13,7 +13,7 @@ export default function SystemPage() {
     <DocsNav active="system" />
     <header className={styles.hero}>
       <div><p className={styles.eyebrow}>SYSTEM / OPERATIONS</p><h1>系统如何<span>自动运行</span></h1><p className={styles.lede}>这不是一个直接让模型改网页的黑盒。系统每天检查已登记的官方来源，保留证据与运行记录；高风险内容变化先进入审核，页面始终保留最后一次可信数据。</p></div>
-      <aside className={styles.heroAside}><strong>P0 ONLINE</strong><p>D1、动态 API、每日 Cron、来源健康检查、内容哈希、审核队列与静态降级已上线。自动字段抽取和新来源发现属于下一阶段。</p></aside>
+      <aside className={styles.heroAside}><strong>P1 PILOT</strong><p>P0 已稳定运行；P1 已对 5 个来源启用结构化抽取、同站候选发现、证据链、字段差异和风险路由，当前处于 7 天灰度观察。</p></aside>
     </header>
 
     <div className={styles.content}>
@@ -27,18 +27,18 @@ export default function SystemPage() {
         <div className={styles.flow}>
           <div className={styles.flowStep}><b>01 / TRIGGER</b><h3>定时触发</h3><p>Cloudflare Cron 调用 Worker 的 scheduled 处理器。</p></div>
           <div className={styles.flowStep}><b>02 / FETCH</b><h3>检查来源</h3><p>四路并发、12 秒超时、512 KiB 上限，并使用 ETag 与 Last-Modified。</p></div>
-          <div className={styles.flowStep}><b>03 / COMPARE</b><h3>比较变化</h3><p>规范化正文后计算哈希；304 响应不会产生重复快照。</p></div>
-          <div className={styles.flowStep}><b>04 / AUDIT</b><h3>保存证据</h3><p>D1 记录运行、快照、失败次数和待审核变化；失败不删除旧内容。</p></div>
+          <div className={styles.flowStep}><b>03 / EXTRACT</b><h3>抽取候选</h3><p>5 个试点适配器解析 JSON-LD、页面标题和同站链接，并规范化 URL。</p></div>
+          <div className={styles.flowStep}><b>04 / AUDIT</b><h3>比较并留证</h3><p>D1 保存候选、字段证据与变更集；日期、开放状态等高风险变化只进入审核。</p></div>
           <div className={styles.flowStep}><b>05 / SERVE</b><h3>页面展示</h3><p>API 返回已发布机会；D1 异常时浏览器退回静态可信快照。</p></div>
         </div>
       </section>
 
       <section className={styles.section}>
-        <div className={styles.sectionHead}><h2>自动化边界</h2><p>当前版本自动发现“页面是否变化”，但不会未经审核自动改写截止日期、开放状态或职业建议。</p></div>
+        <div className={styles.sectionHead}><h2>自动化边界</h2><p>P1 已能把部分来源变化转成结构化候选，但不会未经审核自动改写截止日期、开放状态或职业建议。</p></div>
         <div className={styles.cardGrid}>
           <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>已自动化</span><h3>来源健康与变更监控</h3><p>每日访问 15 个登记来源，记录状态码、重定向、响应标识、内容哈希、验证时间和连续失败。</p></article>
-          <article className={`${styles.card} ${styles.cardNext}`}><span className={styles.cardLabel}>下一阶段 P1</span><h3>内容字段自动更新</h3><p>还需为各招聘/招生站建立适配器，抽取标题、地点、批次、截止日期与证据，并处理冲突。</p></article>
-          <article className={`${styles.card} ${styles.cardNext}`}><span className={styles.cardLabel}>下一阶段 P1/P2</span><h3>新信息源与审核后台</h3><p>新域名发现、批准流程、人工编辑、通知和模型辅助建议尚未上线，不应视为已全自动。</p></article>
+          <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>P1 灰度中</span><h3>候选发现与字段抽取</h3><p>5 个来源已启用适配器，抽取标题、机构、类别、地点、截止日期、状态与证据，并生成字段级变更集。</p></article>
+          <article className={`${styles.card} ${styles.cardNext}`}><span className={styles.cardLabel}>P2 · 待开发</span><h3>外部新来源与审核后台</h3><p>跨域候选来源批准、人工编辑、通知和模型辅助建议尚未上线；同站候选也不会直接公开。</p></article>
         </div>
       </section>
 
@@ -46,8 +46,8 @@ export default function SystemPage() {
         <div className={styles.sectionHead}><h2>你还需要做什么</h2><p>当前生产运行没有阻塞性配置；以下是运行确认与后续产品选择。</p></div>
         <ul className={styles.checklist}>
           <li><span>01</span><div><strong>等待首个生产 Cron 留痕</strong><br /><small>日本时间 10:00 后刷新本页，确认出现最近一次巡检及 15 个来源的检查结果。</small></div><span className={`${styles.tag} ${styles.tagPending}`}>需观察</span></li>
-          <li><span>02</span><div><strong>处理待审核变化</strong><br /><small>当前尚无可视化后台；P1 前可通过 Cloudflare D1 控制台查看 review_queue。系统不会自动发布高风险语义变更。</small></div><span className={styles.tag}>运维动作</span></li>
-          <li><span>03</span><div><strong>决定是否继续 P1</strong><br /><small>若目标是“机会内容和新来源都自动更新”，下一步需要开发站点适配器、字段抽取、候选来源发现和审核工作台。</small></div><span className={`${styles.tag} ${styles.tagPending}`}>产品决策</span></li>
+          <li><span>02</span><div><strong>处理待审核变化</strong><br /><small>P2 可视化后台尚未开发；灰度期通过 Cloudflare D1 控制台查看 review_queue 和 change_sets。高风险语义变更不会自动发布。</small></div><span className={styles.tag}>运维动作</span></li>
+          <li><span>03</span><div><strong>完成 P1 七天观察</strong><br /><small>核对 5 个试点来源的抽取准确率、重复率与误报；达到门槛后再扩展到其余 10 个来源。</small></div><span className={`${styles.tag} ${styles.tagPending}`}>观察中</span></li>
           <li><span>04</span><div><strong>自定义域名已配置</strong><br /><small>生产入口使用 radar.openagent.hk；workers.dev 地址保留为故障诊断和备用入口。</small></div><span className={styles.tag}>已完成</span></li>
         </ul>
       </section>

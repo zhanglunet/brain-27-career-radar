@@ -23,7 +23,7 @@ export async function GET() {
     const { env } = await import("cloudflare:workers");
     if (!env.DB) throw new Error("D1 binding DB is unavailable");
 
-    const [sourceStats, opportunityStats, institutionStats, reviewStats, snapshotStats, latestRun] = await Promise.all([
+    const [sourceStats, opportunityStats, institutionStats, reviewStats, snapshotStats, candidateStats, evidenceStats, changeSetStats, pilotStats, latestRun] = await Promise.all([
       env.DB.prepare(
         `SELECT COUNT(*) AS total,
                 SUM(CASE WHEN enabled = 1 THEN 1 ELSE 0 END) AS enabled,
@@ -35,6 +35,10 @@ export async function GET() {
       env.DB.prepare("SELECT COUNT(*) AS total FROM institutions WHERE published = 1").first<CountRow>(),
       env.DB.prepare("SELECT COUNT(*) AS total FROM review_queue WHERE status = 'pending'").first<CountRow>(),
       env.DB.prepare("SELECT COUNT(*) AS total FROM source_snapshots").first<CountRow>(),
+      env.DB.prepare("SELECT COUNT(*) AS total FROM candidate_records").first<CountRow>(),
+      env.DB.prepare("SELECT COUNT(*) AS total FROM field_evidence").first<CountRow>(),
+      env.DB.prepare("SELECT COUNT(*) AS total FROM change_sets WHERE status = 'pending'").first<CountRow>(),
+      env.DB.prepare("SELECT COUNT(*) AS total FROM sources WHERE enabled = 1 AND discovery_enabled = 1 AND adapter_key IS NOT NULL").first<CountRow>(),
       env.DB.prepare(
         `SELECT id, trigger, status, started_at, finished_at, checked_count, changed_count, failed_count
          FROM sync_runs ORDER BY started_at DESC LIMIT 1`,
@@ -54,6 +58,10 @@ export async function GET() {
         institutions: number(institutionStats?.total),
         snapshots: number(snapshotStats?.total),
         pendingReviews: number(reviewStats?.total),
+        candidates: number(candidateStats?.total),
+        fieldEvidence: number(evidenceStats?.total),
+        pendingChangeSets: number(changeSetStats?.total),
+        pilotSources: number(pilotStats?.total),
       },
       automation: {
         configured: true,
@@ -67,8 +75,10 @@ export async function GET() {
       capability: {
         sourceMonitoring: true,
         changeDetection: true,
+        structuredExtraction: true,
+        sameSiteCandidateDiscovery: true,
         automaticContentPublishing: false,
-        automaticSourceDiscovery: false,
+        automaticExternalSourceApproval: false,
       },
     }, {
       headers: { "Cache-Control": "no-store" },

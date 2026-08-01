@@ -22,7 +22,7 @@ npm run dev
 
 - edit site code under `app/`
 - `vite.config.ts` 定义 Cloudflare Worker 入口与本地开发配置
-- `db/schema.ts` starts intentionally empty
+- `db/schema.ts` defines the auditable P0/P1 D1 data model
 - `examples/d1/` contains an optional D1 example surface
 - `drizzle.config.ts` supports local migration generation when needed
 
@@ -39,7 +39,7 @@ npm run dev
 
 ## Automatic updates
 
-The radar stores sources, opportunities, institutions, source snapshots, review items, and sync runs in D1. A Cloudflare Cron trigger runs every day at `01:00 UTC`. Source checks use bounded response reads, request timeouts, conditional requests, and structured logs. A failed source check preserves the last trusted opportunity content.
+The radar stores sources, opportunities, institutions, source snapshots, review items, sync runs, extraction candidates, field evidence, and change sets in D1. A Cloudflare Cron trigger runs every day at `01:00 UTC`. Source checks use bounded response reads, request timeouts, conditional requests, and structured logs. Five P1 pilot sources additionally run deterministic adapters and risk routing; automatic merge is disabled by default. A failed source check or extraction preserves the last trusted opportunity content.
 
 Local D1 uses a fixed preview UUID and persists under `.wrangler/state`, so builds, Wrangler commands, and the dev server share the same database. Production requires a real D1 database ID:
 

@@ -30,7 +30,7 @@ npx wrangler dev --config dist/server/wrangler.json --persist-to .wrangler/state
 按 Wrangler 启动提示请求本地 scheduled endpoint；Wrangler 4.118.0 当前使用：
 
 ```bash
-curl http://localhost:8787/cdn-cgi/local/scheduled
+curl 'http://localhost:8787/cdn-cgi/handler/scheduled?cron=0+1+*+*+*'
 ```
 
 如需由本地 Worker 受控连接远程 D1 验证，必须同时显式设置真实数据库 ID 和远程开关；不要在日常开发中默认连接生产数据：
@@ -51,6 +51,17 @@ npx wrangler d1 execute brain-27-career-radar --local \
   --command "SELECT * FROM sync_runs ORDER BY started_at DESC LIMIT 5"
 ```
 
+查询 P1 灰度结果：
+
+```bash
+npx wrangler d1 execute brain-27-career-radar --local \
+  --persist-to .wrangler/state \
+  --config dist/server/wrangler.json \
+  --command "SELECT source_id, title, kind, state, canonical_url FROM candidate_records ORDER BY last_seen_at DESC; SELECT risk_level, status, COUNT(*) AS total FROM change_sets GROUP BY risk_level, status"
+```
+
+灰度期重点检查：候选标题是否准确、URL 是否重复、证据是否能回到对应快照、`change_sets` 是否正确分级，以及 `applied` 数量是否保持 0。不要在完成 7 天抽样验收前开启 `auto_merge_low_risk`。
+
 ## 生产发布
 
 1. 使用 `wrangler d1 create brain-27-career-radar` 创建真实数据库。
@@ -60,6 +71,7 @@ npx wrangler d1 execute brain-27-career-radar --local \
 5. 验证 `/api/radar` 返回 `dataOrigin=database`。
 6. 在 Workers Logs 中检查 `radar.sync.*` 和 `radar.source.*` 结构化事件。
 7. 打开 `/system`，确认 D1 正常并在首个计划时刻后出现最近一次巡检记录。
+8. P1 发布后确认 `pilotSources=5`，并检查候选、证据和待决策聚合数；前 7 天每日抽样复核。
 
 ## 生产域名
 
@@ -73,6 +85,8 @@ npx wrangler d1 execute brain-27-career-radar --local \
 - 单来源失败：检查 `sources.consecutive_failures`，系统会保留最后可信内容。
 - 连续三次失败：系统创建 `repeated_failure` 审核项。
 - 内容变化：系统保存新快照并创建 `content_changed` 审核项，不自动覆盖高风险语义字段。
+- P1 解析失败：P0 来源巡检仍保持成功，同时创建 `parse_conflict` 审核项并记录适配器键和有限错误摘要。
+- P1 候选误报：在 `change_sets` 和 `review_queue` 中保留待审状态，不修改公开机会；修正规则后回放验证。
 - D1/API 不可用：浏览器保留静态种子，并显示 `STATIC/静态快照`。
 - 紧急停更：在 Worker 配置中移除或暂时禁用 Cron，再重新部署；不要删除 D1。
 
