@@ -33,6 +33,8 @@ test("server-renders the opportunity radar", async () => {
   assert.match(html, /北京智源人工智能研究院/);
   assert.match(html, /2027 级联合培养博士/);
   assert.match(html, /实验心理学/);
+  assert.match(html, /科研助理/);
+  assert.match(html, /支持先在高校积累研究成果，再申请博士/);
 });
 
 test("server-renders the source directory and collection log pages", async () => {

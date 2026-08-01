@@ -1,6 +1,6 @@
 # 2027 脑科学与人工智能机会雷达
 
-面向 2027 年毕业的实验心理学硕士，汇总脑科学、脑机接口、脑与人工智能方向的企业校招和博士招生机会。
+面向 2027 年毕业的实验心理学硕士，汇总脑科学、脑机接口、脑与人工智能方向的博士、奖学金、高校科研助理和企业校招机会。
 
 项目基于 [vinext](https://github.com/cloudflare/vinext)，部署到 Cloudflare Workers。
 
@@ -39,9 +39,11 @@ npm run dev
 
 ## Automatic updates
 
-The radar stores sources, opportunities, institutions, source snapshots, per-source check logs, review items, sync runs, extraction candidates, field evidence, and change sets in D1. Cloudflare Cron triggers every six hours. Due-time filtering checks normal sources every 24 hours and 14 priority sources every 6 hours; 41 of 47 official sources are automatic and six access-restricted sites remain visible for manual verification. Page-level changes enter automatic stability observation, while new opportunities and semantic conflicts remain human-reviewed. Automatic content publishing stays disabled by default.
+The radar stores sources, opportunities, institutions, source snapshots, per-source check logs, review items, sync runs, extraction candidates, field evidence, and change sets in D1. Cloudflare Cron triggers every six hours. Due-time filtering checks normal sources every 24 hours and 31 priority sources every 6 hours; 51 of 57 official sources are automatic and six access-restricted sites remain visible for manual verification. Priority coverage includes Oxford, Cambridge, UCL, Tsinghua, Peking University, Hong Kong, Shanghai, and Shenzhen. Page-level changes enter automatic stability observation, while new opportunities and semantic conflicts remain human-reviewed. Automatic content publishing stays disabled by default.
 
 Doctoral opportunities expose structured funding labels (`full`, `partial`, `mixed`, `self_funded`, `unknown`) with human-readable coverage notes. Home-fee-only awards and international fee gaps are never presented as universal full scholarships.
+
+Research-assistant opportunities use a separate `科研助理` kind with `masters_eligible`, degree requirements, and a clearly worded PhD-bridge note. The public radar currently seeds nine official university or institute routes suitable for master's applicants; employment never implies later PhD admission.
 
 Local D1 uses a fixed preview UUID and persists under `.wrangler/state`, so builds, Wrangler commands, and the dev server share the same database. Production requires a real D1 database ID:
 

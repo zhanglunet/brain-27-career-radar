@@ -30,7 +30,7 @@ export async function GET() {
       })),
       institutions: institutionRows,
     }, {
-      headers: { "Cache-Control": "public, max-age=300, stale-while-revalidate=3600" },
+      headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
     console.error(JSON.stringify({ event: "radar.api.failed", error: errorMessage(error) }));

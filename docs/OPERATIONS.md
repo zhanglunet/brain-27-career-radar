@@ -71,7 +71,7 @@ npx wrangler d1 execute brain-27-career-radar --local \
   --command "SELECT outcome, COUNT(*) FROM source_check_logs GROUP BY outcome; SELECT coverage, COUNT(*) FROM sources GROUP BY coverage"
 ```
 
-网页运维入口：`/sources` 查看全部 47 个来源、优先级与采集状态，`/logs` 按来源、结果、类型、地区和 UTC 日期检索历史及审核状态。旧版 `sync_runs` 仍保留；逐来源日志只从 `source_check_logs` 上线后的首次运行开始，不回填虚构历史。
+网页运维入口：`/sources` 查看全部 57 个来源、优先级与采集状态，`/logs` 按来源、结果、类型、地区和 UTC 日期检索历史及审核状态。旧版 `sync_runs` 仍保留；逐来源日志只从 `source_check_logs` 上线后的首次运行开始，不回填虚构历史。
 
 ## 生产发布
 
@@ -81,7 +81,7 @@ npx wrangler d1 execute brain-27-career-radar --local \
 4. 运行 `npm run deploy`；预检会拒绝缺少生产 D1 ID 的部署。
 5. 验证 `/api/radar` 返回 `dataOrigin=database`。
 6. 在 Workers Logs 中检查 `radar.sync.*` 和 `radar.source.*` 结构化事件。
-7. 打开 `/system`，确认 D1 正常；再用 `/sources` 核对 47 个来源、用 `/logs` 核对自动观察、人工审核和逐来源记录。
+7. 打开 `/system`，确认 D1 正常；再用 `/sources` 核对 57 个来源、用 `/logs` 核对自动观察、人工审核和逐来源记录。
 8. P1 发布后确认 `pilotSources=5`，并检查候选、证据和待决策聚合数；前 7 天每日抽样复核。
 
 ## 生产域名
@@ -112,5 +112,5 @@ npx wrangler d1 execute brain-27-career-radar --local \
 ## 调度频率
 
 - Cron：`0 1,7,13,19 * * *`。
-- 重点来源：每 6 小时到期，包括牛津、剑桥、UCL、清华、北大。
+- 重点来源：每 6 小时到期，包括牛津、剑桥、UCL、清华、北大、香港，以及上海、深圳高校和企业。
 - 普通来源：每 24 小时到期；Cron 触发但未到期时不会重复访问。

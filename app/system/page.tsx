@@ -12,8 +12,8 @@ export default function SystemPage() {
   return <main className={styles.page}>
     <DocsNav active="system" />
     <header className={styles.hero}>
-      <div><p className={styles.eyebrow}>SYSTEM / OPERATIONS</p><h1>系统如何<span>自动运行</span></h1><p className={styles.lede}>系统按来源优先级和间隔检查官方页面，保留证据与运行记录；页面稳定性可自动审查，高风险语义变化仍需人工判断，页面始终保留最后一次可信数据。</p></div>
-      <aside className={styles.heroAside}><strong>47 SOURCES</strong><p>41 个来源自动检查；14 个重点来源每 6 小时检查，覆盖牛津、剑桥、UCL、清华、北大。6 个受限入口保留人工核对。</p></aside>
+      <div><p className={styles.eyebrow}>SYSTEM / OPERATIONS</p><h1>系统如何<span>自动运行</span></h1><p className={styles.lede}>系统按来源优先级和间隔检查官方页面，保留证据与运行记录；博士、奖学金、科研助理和校招共用审计链，页面在电脑和手机上均可完整使用。</p></div>
+      <aside className={styles.heroAside}><strong>57 SOURCES</strong><p>51 个来源自动检查；31 个重点来源每 6 小时检查，覆盖牛津、剑桥、UCL、清华、北大、香港、上海与深圳。6 个受限入口保留人工核对。</p></aside>
     </header>
 
     <div className={styles.content}>
@@ -23,7 +23,7 @@ export default function SystemPage() {
       </section>
 
       <section className={styles.section}>
-        <div className={styles.sectionHead}><h2>一次更新如何发生</h2><p>Cron 每 6 小时触发一次；调度器按来源间隔取数，普通来源每日检查，牛津、剑桥、UCL、清华、北大等重点来源每 6 小时检查。写入采用可追溯记录和去重约束。</p></div>
+        <div className={styles.sectionHead}><h2>一次更新如何发生</h2><p>Cron 每 6 小时触发一次；普通来源每日检查，重点高校及香港、上海、深圳高校和企业每 6 小时检查。写入采用可追溯记录和去重约束。</p></div>
         <div className={styles.flow}>
           <div className={styles.flowStep}><b>01 / TRIGGER</b><h3>定时触发</h3><p>Cloudflare Cron 调用 Worker 的 scheduled 处理器。</p></div>
           <div className={styles.flowStep}><b>02 / FETCH</b><h3>检查来源</h3><p>四路并发、12 秒超时、512 KiB 上限，并使用 ETag 与 Last-Modified。</p></div>
@@ -36,9 +36,10 @@ export default function SystemPage() {
       <section className={styles.section}>
         <div className={styles.sectionHead}><h2>自动化边界</h2><p>P1 已能把部分来源变化转成结构化候选，但不会未经审核自动改写截止日期、开放状态或职业建议。</p></div>
         <div className={styles.cardGrid}>
-          <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>已自动化</span><h3>来源健康与变更监控</h3><p>41 个自动来源按间隔检查，记录状态码、重定向、响应标识、内容哈希、验证时间、连续失败和逐来源结果。</p></article>
+          <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>已自动化</span><h3>来源健康与变更监控</h3><p>51 个自动来源按间隔检查，记录状态码、重定向、响应标识、内容哈希、验证时间、连续失败和逐来源结果。</p></article>
           <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>P1 灰度中</span><h3>候选发现与字段抽取</h3><p>5 个来源已启用适配器，抽取标题、机构、类别、地点、截止日期、状态与证据，并生成字段级变更集。</p></article>
           <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>P1.8 · 已实现</span><h3>自动审查与重点监控</h3><p>页面变化自动观察并在稳定后结案；<Link href="/logs">日志页</Link>区分自动观察和人工审核，重点高校每 6 小时检查。</p></article>
+          <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>P1.9 · 已实现</span><h3>科研助理与多端页面</h3><p>硕士资格、学历条件和博士过渡价值独立展示；电脑多列、手机单列，筛选在触屏上可横向滚动。</p></article>
         </div>
       </section>
 

@@ -17,7 +17,7 @@ const SOURCE_PROFILES: Record<string, SourceProfile> = {
   "brainco-recruit": { adapterKey: "career-listing", organization: "BrainCo 强脑科技", mode: "listing" },
 };
 
-const RELEVANT_LINK = /(博士|实习|校招|招聘|岗位|研究员|工程师|scientist|intern(?:ship)?|career|jobs?|position)/i;
+const RELEVANT_LINK = /(博士|实习|校招|招聘|岗位|科研助理|研究助理|research assistant|研究员|工程师|scientist|intern(?:ship)?|career|jobs?|position)/i;
 const GENERIC_LINK_TITLES = /^(招聘|加入我们|社会招聘|校园招聘|社会招聘和校园招聘|职位列表|全部职位|查看岗位列表|查看更多)$/i;
 const GENERIC_PAGE_TITLES = /^(新闻动态|招聘|校园招聘|社会招聘|职位详情|oppo招聘|brainco)$/i;
 const CITY_NAMES = ["北京", "上海", "深圳", "杭州", "广州", "南京", "天津", "武汉", "成都", "苏州", "哈尔滨"];
@@ -145,6 +145,7 @@ function buildCandidate(input: {
 function inferKind(value: string, fallback?: OpportunityKind): OpportunityKind | null {
   if (/联合培养|联培/.test(value)) return "联培博士";
   if (/博士|ph\.?d/i.test(value)) return "博士";
+  if (/科研助理|研究助理|research assistant|psychology assistant/i.test(value)) return "科研助理";
   if (/实习|intern/i.test(value)) return "实习";
   if (/校招|应届|graduate|campus/i.test(value)) return "校招";
   if (/研究员|研究岗位|scientist|research/i.test(value)) return "研究岗位";

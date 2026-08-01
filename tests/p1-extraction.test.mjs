@@ -65,6 +65,22 @@ test("listing adapter discovers relevant same-site links and deduplicates URLs",
   assert.equal(candidates[0].kind, "实习");
 });
 
+test("listing adapter classifies research assistant roles separately", () => {
+  const adapter = getAdapter("career-listing");
+  assert.ok(adapter);
+  const [candidate] = adapter.extract({
+    sourceId: "shlab-jobs",
+    sourceName: "高校科研岗位",
+    sourceUrl: "https://www.shlab.org.cn/joinus",
+    finalUrl: "https://www.shlab.org.cn/joinus",
+    sourceType: "listing",
+    adapterKey: "career-listing",
+    html: `<a href="/joinus/research-assistant">Research Assistant in Cognitive Neuroscience</a>`,
+  });
+
+  assert.equal(candidate.kind, "科研助理");
+});
+
 test("listing adapter rejects template expressions and generic navigation", () => {
   const adapter = getAdapter("career-listing");
   assert.ok(adapter);

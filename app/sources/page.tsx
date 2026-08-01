@@ -5,14 +5,14 @@ import SourcesExplorer from "./SourcesExplorer";
 
 export const metadata: Metadata = {
   title: "信息源清单｜BRAIN / 27",
-  description: "博士、科研机构与企业校招信息源的地区、主题、采集状态和历史证据清单。",
+  description: "博士、高校科研助理、科研机构与企业校招信息源的地区、主题、采集状态和历史证据清单。",
 };
 
 export default function SourcesPage() {
   return <main className={styles.page}>
     <DocsNav />
     <header className={styles.hero}>
-      <div><p className={styles.eyebrow}>SOURCE DIRECTORY / LIVE D1</p><h1>信息源<span>清单</span></h1><p className={styles.lede}>集中查看系统当前维护的高校、科研机构、奖学金和企业校招官方入口。可以按类型、地区、状态和关键词检索；自动访问受限的官网仍保留为人工核对来源。</p></div>
+      <div><p className={styles.eyebrow}>SOURCE DIRECTORY / LIVE D1</p><h1>信息源<span>清单</span></h1><p className={styles.lede}>集中查看系统当前维护的高校、科研助理、科研机构、奖学金和企业校招官方入口。可以按类型、地区、状态和关键词检索；自动访问受限的官网仍保留为人工核对来源。</p></div>
       <aside className={styles.heroAside}><strong>4 REGIONS</strong><p>重点覆盖英国、爱尔兰、中国大陆与中国香港。来源清单不等于已发布机会；新发现内容仍需经过证据和风险规则。</p></aside>
     </header>
     <div className={styles.content}>

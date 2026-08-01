@@ -1,4 +1,4 @@
-export const opportunityKinds = ["博士", "联培博士", "校招", "实习", "研究岗位"] as const;
+export const opportunityKinds = ["博士", "联培博士", "科研助理", "校招", "实习", "研究岗位"] as const;
 export const opportunityStatuses = ["立即行动", "等待开放", "持续关注"] as const;
 
 export type OpportunityKind = typeof opportunityKinds[number];

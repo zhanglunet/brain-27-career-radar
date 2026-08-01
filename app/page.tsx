@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 type Opportunity = {
   name: string;
   org: string;
-  kind: "博士" | "联培博士" | "校招" | "实习" | "研究岗位";
+  kind: "博士" | "联培博士" | "科研助理" | "校招" | "实习" | "研究岗位";
   status: "立即行动" | "等待开放" | "持续关注";
   fit: "高度匹配" | "匹配" | "转型匹配";
   location: string;
@@ -13,6 +13,9 @@ type Opportunity = {
   fundingType?: "full" | "partial" | "mixed" | "self_funded" | "unknown";
   fundingDetails?: string;
   fundingVerifiedAt?: string | null;
+  mastersEligible?: boolean;
+  eligibilityDetails?: string;
+  phdBridgeDetails?: string | null;
   why: string;
   action: string;
   tags: string[];
@@ -261,7 +264,7 @@ const institutions = [
 ];
 
 const statusOptions = ["全部", "立即行动", "等待开放", "持续关注"] as const;
-const kindOptions = ["全部", "博士", "联培博士", "校招", "实习", "研究岗位"] as const;
+const kindOptions = ["全部", "博士", "联培博士", "科研助理", "校招", "实习", "研究岗位"] as const;
 
 export default function Home() {
   const [status, setStatus] = useState<(typeof statusOptions)[number]>("全部");
@@ -279,7 +282,7 @@ export default function Home() {
     const controller = new AbortController();
     async function loadRadar() {
       try {
-        const response = await fetch("/api/radar", { signal: controller.signal });
+        const response = await fetch("/api/radar?v=p1.9", { signal: controller.signal, cache: "no-store" });
         if (!response.ok) return;
         const payload: unknown = await response.json();
         if (!isRadarPayload(payload)) return;
@@ -303,7 +306,7 @@ export default function Home() {
   const filtered = useMemo(() => radar.opportunities.filter((item) => {
     const statusMatch = status === "全部" || item.status === status;
     const kindMatch = kind === "全部" || item.kind === kind;
-    const haystack = `${item.name}${item.org}${item.location}${item.fundingDetails ?? ""}${item.tags.join("")}`.toLowerCase();
+    const haystack = `${item.name}${item.org}${item.location}${item.fundingDetails ?? ""}${item.eligibilityDetails ?? ""}${item.phdBridgeDetails ?? ""}${item.tags.join("")}`.toLowerCase();
     return statusMatch && kindMatch && haystack.includes(query.trim().toLowerCase());
   }), [status, kind, query, radar.opportunities]);
 
@@ -321,14 +324,14 @@ export default function Home() {
         <div className="hero-copy">
           <p className="eyebrow">2027 硕士毕业 · 城市不限</p>
           <h1>从实验心理学<br />走向<span>脑科学 × AI</span></h1>
-          <p className="lede">一份聚焦实验心理学、认知神经、脑机接口与脑启发人工智能的博士申请和科研就业雷达。每个机会都标明状态、匹配度与下一步。</p>
+          <p className="lede">一份聚焦实验心理学、认知神经、脑机接口与脑启发人工智能的博士申请、科研助理和科研就业雷达。支持先在高校积累研究成果，再申请博士。</p>
           <div className="hero-actions"><a className="primary" href="#radar">查看立即行动项 ↘</a><a className="secondary" href="#institutes">研究机构地图</a></div>
         </div>
         <div className="hero-panel">
           <div className="panel-head"><span>PROFILE SIGNAL</span><span className="live">{freshnessBadge(radar.origin, radar.syncStatus)}</span></div>
           <div className="profile-line"><b>背景</b><span>实验心理学 · 2027 硕士</span></div>
           <div className="profile-line"><b>主航道</b><span>认知神经 / BCI / Brain × AI</span></div>
-          <div className="profile-line"><b>当前窗口</b><span>秋招投递 + 联培博士初筛</span></div>
+          <div className="profile-line"><b>当前窗口</b><span>科研助理 + 秋招 + 博士初筛</span></div>
           <div className="signal"><div style={{width:"86%"}} /><small>方向匹配强度 86%</small></div>
           <div className="mini-grid"><div><strong>{radar.opportunities.length}</strong><span>精选机会</span></div><div><strong>{immediateCount}</strong><span>立即行动</span></div><div><strong>{radar.institutions.length}</strong><span>重点机构</span></div></div>
         </div>
@@ -336,7 +339,7 @@ export default function Home() {
 
       <section className="alert-strip">
         <span>NOW</span>
-        <p><b>最短路径：</b>先投 OPPO 健康算法与 BrainCo；同步向智源发送联培简历；8—9 月准备北京脑所与清华第二批材料。</p>
+        <p><b>最短路径：</b>先投硕士可申请的高校科研助理，优先北京、上海、深圳和香港；积累数据、论文与推荐信，同时准备 2027 博士申请。</p>
       </section>
 
       <section className="section" id="radar">
@@ -355,6 +358,7 @@ export default function Home() {
               <div className="meta"><span>{item.kind}</span><span>{item.location}</span><span className={`fit fit-${item.fit}`}>{item.fit}</span></div>
               <p className="deadline">◷ {item.deadline}</p>
               {(item.kind === "博士" || item.kind === "联培博士") && item.fundingType ? <div className={`funding funding-${item.fundingType}`}><b>{fundingLabel(item.fundingType)}</b><span>{item.fundingDetails}</span></div> : null}
+              {item.kind === "科研助理" ? <div className="bridge"><b>{item.mastersEligible ? "硕士可申请" : "学历要求待核对"}</b><span>{item.eligibilityDetails ?? "以官方岗位要求为准"}</span>{item.phdBridgeDetails ? <small>博士过渡价值：{item.phdBridgeDetails}</small> : null}</div> : null}
               {item.sourceVerifiedAt ? <p className="deadline">来源验证于 {formatDate(item.sourceVerifiedAt)}</p> : null}
               <p className="why">{item.why}</p>
               <div className="tag-row">{item.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
@@ -377,8 +381,8 @@ export default function Home() {
       <section className="section plan" id="plan">
         <div className="section-title"><div><p className="eyebrow">90-DAY PLAN</p><h2>未来 90 天</h2></div><p>把“同时准备”变成有截止时间的节奏。</p></div>
         <div className="timeline">
-          <div><span>01</span><p className="time">8 月上旬</p><h3>快速投递</h3><p>OPPO 两岗、BrainCo、上海 AI Lab 实习；向智源发送研究型简历。</p></div>
-          <div><span>02</span><p className="time">8—9 月</p><h3>研究计划成型</h3><p>完成 5000 字博士计划；围绕“实验范式 × 脑信号 × 可解释 AI”形成一页研究提案。</p></div>
+          <div><span>01</span><p className="time">8 月上旬</p><h3>科研助理优先投递</h3><p>先处理有明确截止时间的清华、北大、复旦、港大岗位，并为英港高校招聘门户建立提醒。</p></div>
+          <div><span>02</span><p className="time">8—9 月</p><h3>双轨材料成型</h3><p>准备科研助理简历和 5000 字博士计划；围绕“实验范式 × 脑信号 × 可解释 AI”形成一页研究提案。</p></div>
           <div><span>03</span><p className="time">9—10 月</p><h3>导师与机构匹配</h3><p>筛选北京脑所实验室；跟踪上交心理、天大深圳与各联培高校招生页。</p></div>
           <div><span>04</span><p className="time">10—11 月</p><h3>博士批次提交</h3><p>重点处理北京脑所联招；若清华心理第二批开放，于 11 月完成申请。</p></div>
         </div>
@@ -418,6 +422,9 @@ function isOpportunity(value: unknown): value is Opportunity {
     && typeof item.deadline === "string"
     && (item.fundingType === undefined || ["full", "partial", "mixed", "self_funded", "unknown"].includes(String(item.fundingType)))
     && (item.fundingDetails === undefined || typeof item.fundingDetails === "string")
+    && (item.mastersEligible === undefined || typeof item.mastersEligible === "boolean")
+    && (item.eligibilityDetails === undefined || typeof item.eligibilityDetails === "string")
+    && (item.phdBridgeDetails === undefined || item.phdBridgeDetails === null || typeof item.phdBridgeDetails === "string")
     && typeof item.why === "string"
     && typeof item.action === "string"
     && typeof item.url === "string"
