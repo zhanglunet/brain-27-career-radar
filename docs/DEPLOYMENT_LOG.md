@@ -1,5 +1,16 @@
 # 部署记录
 
+## 2026-08-01 · v0.5.0 六数据库自动采集
+
+- 从已提交的干净分支构建生产包；发布前导出生产 D1 SQL 回滚基线：301,102 bytes，SHA-256 `abbfc7a295960be1d635387f39ec8216c89792646625f0e37759be96ebf958e9`，仅保存在部署机临时目录。
+- 远程应用 `0013_parallel_living_lightning.sql`：新增 `papers.pmcid` 唯一键，并把 arXiv、PubMed、PMC、DOAJ 升级为 `active + enabled + discovery_enabled`。
+- 生产 D1 核对：13 个论文数据库、6 个自动提供方；Crossref、Europe PMC、arXiv、PubMed、PMC、DOAJ 均已启用。
+- 完整质量门通过：TypeScript、ESLint、生产构建与 23/23 自动化测试；全新 D1 从 `0000` 到 `0013` 顺序迁移成功。
+- 真实本地六库 Cron 完成 96 次导师—数据库检查，发现 99 条候选、新增 20 条、0 失败，耗时约 175 秒；逐库候选为 1 / 32 / 4 / 33 / 24 / 5。
+- 发布 Worker 版本 `f92b15fd-41ca-428a-bc62-ae5f6945c49a`，D1、Assets、Images 与 `0 1,7,13,19 * * *` Cron 绑定正常，启动时间 21 ms。
+- 线上 `/paper-sources`、`/papers`、`/prd/academic`、`/api/paper-providers`、`/api/papers`、`/api/system-status` 均返回 HTTP 200；API 返回 13 个数据库、6 个自动提供方。
+- 发布时生产学术同步仍为 0 次、论文候选为 0；下一次自然 Cron 为 UTC 07:00 / 日本时间 16:00。必须以生产逐库日志确认真实运行，不以本地 Cron 冒充生产证据。
+
 ## 2026-08-01 · v0.4.0 论文数据库目录与 Europe PMC 自动采集
 
 - 发布前导出生产 D1 SQL 回滚基线：287,571 bytes，SHA-256 `032042a12065df9ae125a4de55b45e35572e21f5c1219133519697d4a938150b`；备份仅保存在部署机临时目录，未提交 Git。
