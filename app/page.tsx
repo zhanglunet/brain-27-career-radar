@@ -10,6 +10,9 @@ type Opportunity = {
   fit: "高度匹配" | "匹配" | "转型匹配";
   location: string;
   deadline: string;
+  fundingType?: "full" | "partial" | "mixed" | "self_funded" | "unknown";
+  fundingDetails?: string;
+  fundingVerifiedAt?: string | null;
   why: string;
   action: string;
   tags: string[];
@@ -300,7 +303,7 @@ export default function Home() {
   const filtered = useMemo(() => radar.opportunities.filter((item) => {
     const statusMatch = status === "全部" || item.status === status;
     const kindMatch = kind === "全部" || item.kind === kind;
-    const haystack = `${item.name}${item.org}${item.location}${item.tags.join("")}`.toLowerCase();
+    const haystack = `${item.name}${item.org}${item.location}${item.fundingDetails ?? ""}${item.tags.join("")}`.toLowerCase();
     return statusMatch && kindMatch && haystack.includes(query.trim().toLowerCase());
   }), [status, kind, query, radar.opportunities]);
 
@@ -351,6 +354,7 @@ export default function Home() {
               <p className="org">{item.org}</p><h3>{item.name}</h3>
               <div className="meta"><span>{item.kind}</span><span>{item.location}</span><span className={`fit fit-${item.fit}`}>{item.fit}</span></div>
               <p className="deadline">◷ {item.deadline}</p>
+              {(item.kind === "博士" || item.kind === "联培博士") && item.fundingType ? <div className={`funding funding-${item.fundingType}`}><b>{fundingLabel(item.fundingType)}</b><span>{item.fundingDetails}</span></div> : null}
               {item.sourceVerifiedAt ? <p className="deadline">来源验证于 {formatDate(item.sourceVerifiedAt)}</p> : null}
               <p className="why">{item.why}</p>
               <div className="tag-row">{item.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
@@ -412,6 +416,8 @@ function isOpportunity(value: unknown): value is Opportunity {
     && typeof item.fit === "string"
     && typeof item.location === "string"
     && typeof item.deadline === "string"
+    && (item.fundingType === undefined || ["full", "partial", "mixed", "self_funded", "unknown"].includes(String(item.fundingType)))
+    && (item.fundingDetails === undefined || typeof item.fundingDetails === "string")
     && typeof item.why === "string"
     && typeof item.action === "string"
     && typeof item.url === "string"
@@ -427,6 +433,10 @@ function isInstitution(value: unknown): value is Institution {
     && typeof item.summary === "string"
     && typeof item.note === "string"
     && typeof item.url === "string";
+}
+
+function fundingLabel(value: NonNullable<Opportunity["fundingType"]>): string {
+  return ({ full: "全奖", partial: "部分资助", mixed: "全奖 / 半奖视资格", self_funded: "自费", unknown: "资助待确认" })[value];
 }
 
 function formatDate(value: string): string {

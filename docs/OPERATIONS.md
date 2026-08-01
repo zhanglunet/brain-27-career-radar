@@ -71,7 +71,7 @@ npx wrangler d1 execute brain-27-career-radar --local \
   --command "SELECT outcome, COUNT(*) FROM source_check_logs GROUP BY outcome; SELECT coverage, COUNT(*) FROM sources GROUP BY coverage"
 ```
 
-网页运维入口：`/sources` 查看全部 39 个来源与采集状态，`/logs` 按来源、结果、类型、地区和 UTC 日期检索历史。旧版 `sync_runs` 仍保留；逐来源日志只从 `source_check_logs` 上线后的首次运行开始，不回填虚构历史。
+网页运维入口：`/sources` 查看全部 47 个来源、优先级与采集状态，`/logs` 按来源、结果、类型、地区和 UTC 日期检索历史及审核状态。旧版 `sync_runs` 仍保留；逐来源日志只从 `source_check_logs` 上线后的首次运行开始，不回填虚构历史。
 
 ## 生产发布
 
@@ -81,7 +81,7 @@ npx wrangler d1 execute brain-27-career-radar --local \
 4. 运行 `npm run deploy`；预检会拒绝缺少生产 D1 ID 的部署。
 5. 验证 `/api/radar` 返回 `dataOrigin=database`。
 6. 在 Workers Logs 中检查 `radar.sync.*` 和 `radar.source.*` 结构化事件。
-7. 打开 `/system`，确认 D1 正常；再用 `/sources` 核对 39 个来源、用 `/logs` 核对最近一次 Cron 的 33 条逐来源记录。
+7. 打开 `/system`，确认 D1 正常；再用 `/sources` 核对 47 个来源、用 `/logs` 核对自动观察、人工审核和逐来源记录。
 8. P1 发布后确认 `pilotSources=5`，并检查候选、证据和待决策聚合数；前 7 天每日抽样复核。
 
 ## 生产域名
@@ -98,6 +98,8 @@ npx wrangler d1 execute brain-27-career-radar --local \
 - 内容变化：系统保存新快照并创建 `content_changed` 审核项，不自动覆盖高风险语义字段。
 - P1 解析失败：P0 来源巡检仍保持成功，同时创建 `parse_conflict` 审核项并记录适配器键和有限错误摘要。
 - P1 候选误报：在 `change_sets` 和 `review_queue` 中保留待审状态，不修改公开机会；修正规则后回放验证。
+- 自动观察：`content_changed` 首次进入 `observing`，下一轮相同哈希自动 `approved`；若期间再次变化，旧观察项自动 `rejected` 并由新哈希取代。
+- 资助标注：全奖/半奖变化属于语义信息，不依据单纯哈希自动更新；国际生需重点核对 overseas fee 差额与名额上限。
 - D1/API 不可用：浏览器保留静态种子，并显示 `STATIC/静态快照`。
 - 紧急停更：在 Worker 配置中移除或暂时禁用 Cron，再重新部署；不要删除 D1。
 
@@ -106,3 +108,9 @@ npx wrangler d1 execute brain-27-career-radar --local \
 - Worker 日志只记录运行 ID、来源 ID、状态、计数、最终 URL和有限错误信息。
 - 不把完整网页正文写入日志；数据库快照只保存有限长度纯文本摘要。
 - `.wrangler/`、`.env*` 和构建产物均不提交。
+
+## 调度频率
+
+- Cron：`0 1,7,13,19 * * *`。
+- 重点来源：每 6 小时到期，包括牛津、剑桥、UCL、清华、北大。
+- 普通来源：每 24 小时到期；Cron 触发但未到期时不会重复访问。

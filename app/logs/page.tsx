@@ -12,7 +12,7 @@ export default function LogsPage() {
   return <main className={styles.page}>
     <DocsNav />
     <header className={styles.hero}>
-      <div><p className={styles.eyebrow}>COLLECTION LOG / AUDIT TRAIL</p><h1>采集与<span>发布日志</span></h1><p className={styles.lede}>查看每次 Cron 运行和每个信息源的检查结果，检索历史成功、304、内容变化和失败记录，并追踪候选、字段证据、待审决策与实际发布数量。</p></div>
+      <div><p className={styles.eyebrow}>COLLECTION LOG / AUDIT TRAIL</p><h1>采集与<span>发布日志</span></h1><p className={styles.lede}>查看每次 Cron 和逐来源结果，追踪候选、证据与发布数量；同时区分页面稳定性自动观察和必须人工判断的语义审核。</p></div>
       <aside className={styles.heroAside}><strong>UTC AUDIT</strong><p>数据库统一使用 UTC 留痕，页面按日本时间显示。日志只保存有限错误摘要，不公开响应正文或凭据。</p></aside>
     </header>
     <div className={styles.content}>

@@ -39,6 +39,19 @@ type RunRow = {
   failed_count: number;
 };
 
+type ReviewRow = {
+  id: string;
+  source_name: string | null;
+  reason: "content_changed" | "repeated_failure" | "new_source" | "parse_conflict";
+  status: "pending" | "observing" | "approved" | "rejected";
+  review_mode: "automatic" | "human";
+  resolution_code: string | null;
+  resolution_note: string | null;
+  resolved_by: string | null;
+  created_at: string;
+  resolved_at: string | null;
+};
+
 export async function GET(request: Request) {
   try {
     const { env } = await import("cloudflare:workers");
@@ -109,10 +122,18 @@ export async function GET(request: Request) {
        FROM sync_runs
        ORDER BY started_at DESC LIMIT 30`,
     );
-    const [items, counts, runs] = await Promise.all([
+    const reviewsStatement = env.DB.prepare(
+      `SELECT rq.id, s.name AS source_name, rq.reason, rq.status, rq.review_mode,
+              rq.resolution_code, rq.resolution_note, rq.resolved_by, rq.created_at, rq.resolved_at
+       FROM review_queue rq LEFT JOIN sources s ON s.id = rq.source_id
+       ORDER BY CASE rq.status WHEN 'pending' THEN 0 WHEN 'observing' THEN 1 ELSE 2 END, rq.created_at DESC
+       LIMIT 50`,
+    );
+    const [items, counts, runs, reviews] = await Promise.all([
       listStatement.all<CheckLogRow>(),
       countStatement.first<CountRow>(),
       runsStatement.all<RunRow>(),
+      reviewsStatement.all<ReviewRow>(),
     ]);
 
     return Response.json({
@@ -130,6 +151,18 @@ export async function GET(request: Request) {
         published: number(counts?.published),
       },
       runs: runs.results,
+      reviews: reviews.results.map((row) => ({
+        id: row.id,
+        sourceName: row.source_name ?? "未知来源",
+        reason: row.reason,
+        status: row.status,
+        reviewMode: row.review_mode,
+        resolutionCode: row.resolution_code,
+        resolutionNote: row.resolution_note,
+        resolvedBy: row.resolved_by,
+        createdAt: row.created_at,
+        resolvedAt: row.resolved_at,
+      })),
       checks: items.results.map((row) => ({
         id: row.id,
         runId: row.run_id,

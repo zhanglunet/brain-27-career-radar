@@ -7,6 +7,7 @@ type SourceRow = {
   regions_json: string;
   topics_json: string;
   description: string;
+  priority: "normal" | "high" | "critical";
   url: string;
   enabled: number;
   adapter_key: string | null;
@@ -30,6 +31,7 @@ export async function GET(request: Request) {
     const coverage = enumValue(url.searchParams.get("coverage"), ["phd", "campus", "mixed"] as const);
     const region = enumValue(url.searchParams.get("region"), ["CN", "HK", "UK", "IE"] as const);
     const state = enumValue(url.searchParams.get("state"), ["active", "manual", "failing"] as const);
+    const priority = enumValue(url.searchParams.get("priority"), ["normal", "high", "critical"] as const);
     const clauses: string[] = [];
     const bindings: Array<string | number> = [];
 
@@ -49,18 +51,22 @@ export async function GET(request: Request) {
     if (state === "active") clauses.push("s.enabled = 1 AND s.consecutive_failures = 0");
     if (state === "manual") clauses.push("s.enabled = 0");
     if (state === "failing") clauses.push("s.enabled = 1 AND s.consecutive_failures > 0");
+    if (priority) {
+      clauses.push("s.priority = ?");
+      bindings.push(priority);
+    }
 
     const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
     const statement = env.DB.prepare(
       `SELECT s.id, s.name, s.source_type, s.coverage, s.organization_type, s.regions_json,
               s.topics_json, s.description, s.url, s.enabled, s.adapter_key, s.discovery_enabled,
-              s.last_checked_at, s.last_success_at, s.last_status_code, s.consecutive_failures,
+              s.priority, s.last_checked_at, s.last_success_at, s.last_status_code, s.consecutive_failures,
               s.final_url,
               (SELECT COUNT(*) FROM source_snapshots ss WHERE ss.source_id = s.id) AS snapshot_count,
               (SELECT COUNT(*) FROM source_check_logs scl WHERE scl.source_id = s.id) AS check_count
        FROM sources s
        ${where}
-       ORDER BY s.enabled DESC, s.coverage, s.name
+       ORDER BY CASE s.priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 ELSE 2 END, s.enabled DESC, s.coverage, s.name
        LIMIT 200`,
     );
     const result = await (bindings.length ? statement.bind(...bindings) : statement).all<SourceRow>();
@@ -77,6 +83,7 @@ export async function GET(request: Request) {
         regions: parseStringArray(row.regions_json),
         topics: parseStringArray(row.topics_json),
         description: row.description,
+        priority: row.priority,
         url: row.url,
         finalUrl: row.final_url,
         enabled: row.enabled === 1,

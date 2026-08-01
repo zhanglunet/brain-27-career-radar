@@ -15,6 +15,7 @@ export const sources = sqliteTable("sources", {
   regionsJson: text("regions_json").notNull().default("[]"),
   topicsJson: text("topics_json").notNull().default("[]"),
   description: text("description").notNull().default(""),
+  priority: text("priority", { enum: ["normal", "high", "critical"] }).notNull().default("normal"),
   adapterKey: text("adapter_key"),
   discoveryEnabled: integer("discovery_enabled", { mode: "boolean" }).notNull().default(false),
   autoMergeLowRisk: integer("auto_merge_low_risk", { mode: "boolean" }).notNull().default(false),
@@ -34,6 +35,7 @@ export const sources = sqliteTable("sources", {
 }, (table) => [
   uniqueIndex("sources_url_unique").on(table.url),
   index("sources_enabled_idx").on(table.enabled),
+  index("sources_priority_idx").on(table.priority, table.enabled),
 ]);
 
 export const opportunities = sqliteTable("opportunities", {
@@ -46,6 +48,9 @@ export const opportunities = sqliteTable("opportunities", {
   fit: text("fit", { enum: ["高度匹配", "匹配", "转型匹配"] }).notNull(),
   location: text("location").notNull(),
   deadline: text("deadline").notNull(),
+  fundingType: text("funding_type", { enum: ["full", "partial", "mixed", "self_funded", "unknown"] }).notNull().default("unknown"),
+  fundingDetails: text("funding_details").notNull().default("资助情况待官方确认"),
+  fundingVerifiedAt: text("funding_verified_at"),
   why: text("why").notNull(),
   action: text("action").notNull(),
   tagsJson: text("tags_json").notNull().default("[]"),
@@ -130,8 +135,12 @@ export const reviewQueue = sqliteTable("review_queue", {
   sourceId: text("source_id").references(() => sources.id, { onDelete: "set null" }),
   runId: text("run_id").references(() => syncRuns.id, { onDelete: "set null" }),
   reason: text("reason", { enum: ["content_changed", "repeated_failure", "new_source", "parse_conflict"] }).notNull(),
-  status: text("status", { enum: ["pending", "approved", "rejected"] }).notNull().default("pending"),
+  status: text("status", { enum: ["pending", "observing", "approved", "rejected"] }).notNull().default("pending"),
+  reviewMode: text("review_mode", { enum: ["automatic", "human"] }).notNull().default("human"),
   payloadJson: text("payload_json").notNull().default("{}"),
+  resolutionCode: text("resolution_code"),
+  resolutionNote: text("resolution_note"),
+  resolvedBy: text("resolved_by"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   resolvedAt: text("resolved_at"),
 }, (table) => [

@@ -11,6 +11,7 @@ type SourceItem = {
   regions: string[];
   topics: string[];
   description: string;
+  priority: "normal" | "high" | "critical";
   url: string;
   finalUrl: string | null;
   enabled: boolean;
@@ -30,6 +31,7 @@ export default function SourcesExplorer() {
   const [coverage, setCoverage] = useState("");
   const [region, setRegion] = useState("");
   const [state, setState] = useState("");
+  const [priority, setPriority] = useState("");
   const [payload, setPayload] = useState<SourcesPayload | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -40,6 +42,7 @@ export default function SourcesExplorer() {
     if (coverage) parameters.set("coverage", coverage);
     if (region) parameters.set("region", region);
     if (state) parameters.set("state", state);
+    if (priority) parameters.set("priority", priority);
     fetch(`/api/sources?${parameters}`, { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error(`sources API returned ${response.status}`);
@@ -51,7 +54,7 @@ export default function SourcesExplorer() {
         setFailed(true);
       });
     return () => controller.abort();
-  }, [query, coverage, region, state]);
+  }, [query, coverage, region, state, priority]);
 
   const summary = useMemo(() => {
     const sources = payload?.sources ?? [];
@@ -69,6 +72,7 @@ export default function SourcesExplorer() {
       <label><span>类型</span><select value={coverage} onChange={(event) => setCoverage(event.target.value)}><option value="">全部</option><option value="phd">博士 / 科研</option><option value="campus">企业校招</option><option value="mixed">综合</option></select></label>
       <label><span>地区</span><select value={region} onChange={(event) => setRegion(event.target.value)}><option value="">全部</option><option value="CN">中国大陆</option><option value="HK">中国香港</option><option value="UK">英国</option><option value="IE">爱尔兰</option></select></label>
       <label><span>状态</span><select value={state} onChange={(event) => setState(event.target.value)}><option value="">全部</option><option value="active">自动采集正常</option><option value="failing">自动采集失败</option><option value="manual">人工核对</option></select></label>
+      <label><span>优先级</span><select value={priority} onChange={(event) => setPriority(event.target.value)}><option value="">全部</option><option value="critical">最高优先</option><option value="high">高优先</option><option value="normal">常规</option></select></label>
     </div>
 
     <div className={styles.statusGrid}>
@@ -80,7 +84,7 @@ export default function SourcesExplorer() {
 
     {failed ? <p className={styles.loading}>信息源目录暂时不可用，请稍后刷新。</p> : !payload ? <p className={styles.loading}>正在读取 D1 信息源目录…</p> :
       <div className={styles.directoryGrid}>{payload.sources.map((source) => <article className={styles.sourceCard} key={source.id}>
-        <div className={styles.sourceCardTop}><span className={`${styles.healthDot} ${styles[`health_${source.health}`]}`}>{healthLabel(source.health)}</span><span>{coverageLabel(source.coverage)}</span></div>
+        <div className={styles.sourceCardTop}><span className={`${styles.healthDot} ${styles[`health_${source.health}`]}`}>{healthLabel(source.health)}</span><span>{priorityLabel(source.priority)} · {coverageLabel(source.coverage)}</span></div>
         <h3><a href={source.url} target="_blank" rel="noreferrer">{source.name}</a></h3>
         <p>{source.description}</p>
         <div className={styles.chips}>{source.regions.map((item) => <span key={item}>{regionLabel(item)}</span>)}{source.topics.slice(0, 3).map((item) => <span key={item}>{item}</span>)}</div>
@@ -106,8 +110,14 @@ function coverageLabel(value: SourceItem["coverage"]): string {
 function healthLabel(value: SourceItem["health"]): string {
   if (value === "healthy") return "自动正常";
   if (value === "failing") return "自动失败";
-  if (value === "waiting") return "等待首次检查";
+  if (value === "waiting") return "已排队自动检查";
   return "人工核对";
+}
+
+function priorityLabel(value: SourceItem["priority"]): string {
+  if (value === "critical") return "最高优先 / 6小时";
+  if (value === "high") return "高优先 / 6小时";
+  return "常规 / 每日";
 }
 
 function regionLabel(value: string): string {

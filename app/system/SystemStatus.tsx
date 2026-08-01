@@ -14,6 +14,9 @@ type SystemStatusPayload = {
     snapshots?: number;
     sourceCheckLogs?: number;
     pendingReviews?: number;
+    automaticObservations?: number;
+    automaticallyResolved?: number;
+    prioritySources?: number;
     candidates?: number;
     fieldEvidence?: number;
     pendingChangeSets?: number;
@@ -75,9 +78,10 @@ export default function SystemStatus() {
     <div className={styles.statusGrid}>
       <article className={styles.statusCard}><span>D1 数据库</span><strong>{status.database.configured ? "正常" : "异常"}</strong><p>{status.database.sources ?? 0} 个来源，{status.database.opportunities ?? 0} 个公开机会</p></article>
       <article className={styles.statusCard}><span>已成功巡检来源</span><strong>{status.automation.checkedSources ?? 0}/{status.database.enabledSources ?? 0}</strong><p>当前失败来源 {status.automation.failingSources ?? 0} 个</p></article>
-      <article className={styles.statusCard}><span>逐来源日志</span><strong>{status.database.sourceCheckLogs ?? 0}</strong><p>证据快照 {status.database.snapshots ?? 0} 个，待审核 {status.database.pendingReviews ?? 0} 项</p></article>
+      <article className={styles.statusCard}><span>自动审查 / 人工审核</span><strong>{status.database.automaticObservations ?? 0}/{status.database.pendingReviews ?? 0}</strong><p>自动结案 {status.database.automaticallyResolved ?? 0} 项；前者等待稳定性复核</p></article>
       <article className={styles.statusCard}><span>P1 灰度抽取</span><strong>{status.database.candidates ?? 0}</strong><p>{status.database.pilotSources ?? 0} 个试点来源，证据 {status.database.fieldEvidence ?? 0} 条，待决策 {status.database.pendingChangeSets ?? 0} 项</p></article>
       <article className={styles.statusCard}><span>下次自动运行</span><strong>{formatTime(status.automation.nextScheduledAt)}</strong><p>{status.automation.scheduleLabel ?? status.automation.schedule}</p></article>
+      <article className={styles.statusCard}><span>重点来源</span><strong>{status.database.prioritySources ?? 0}</strong><p>牛津、剑桥、UCL、清华、北大等每 6 小时检查</p></article>
     </div>
     {latest ? <p className={styles.note}>最近一次运行：{formatDateTime(latest.finished_at ?? latest.started_at)}，触发方式 {latest.trigger}；检查 {latest.checked_count} 个来源，发现变化 {latest.changed_count} 个，失败 {latest.failed_count} 个。</p> : <p className={styles.note}>生产库尚无巡检记录。Cron 已部署，但需要等到首个计划时刻执行后，才能从 D1 历史记录证明生产定时任务已实际触发。</p>}
   </div>;

@@ -62,13 +62,15 @@ export async function monitorSources(
   console.log(JSON.stringify({ event: "radar.sync.started", runId, trigger: options.trigger, startedAt }));
 
   try {
-    const query = await db.prepare(
+    const sourceQuery = db.prepare(
       `SELECT id, name, source_type, url, adapter_key, discovery_enabled, auto_merge_low_risk,
               etag, last_modified, content_hash, final_url, consecutive_failures
        FROM sources
        WHERE enabled = 1
-       ORDER BY id`,
-    ).all<SourceRow>();
+         ${options.trigger === "cron" ? "AND (last_checked_at IS NULL OR datetime(last_checked_at) <= datetime(?, '-' || check_interval_hours || ' hours'))" : ""}
+       ORDER BY CASE priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 ELSE 2 END, id`,
+    );
+    const query = await (options.trigger === "cron" ? sourceQuery.bind(startedAt) : sourceQuery).all<SourceRow>();
     const sources = query.results;
     const results: SourceResult[] = [];
 
@@ -82,7 +84,7 @@ export async function monitorSources(
 
     const changedCount = results.filter((result) => result.changed).length;
     const failed = results.filter((result) => !result.ok);
-    const status = failed.length === 0 ? "succeeded" : failed.length === results.length ? "failed" : "partial";
+    const status = failed.length === 0 ? "succeeded" : failed.length === results.length && results.length > 0 ? "failed" : "partial";
     const finishedAt = now().toISOString();
     const errorSummary = failed.slice(0, 10).map((result) => `${result.sourceId}: ${result.error ?? "unknown error"}`).join("\n");
 
@@ -140,6 +142,7 @@ async function checkSource(
     if (response.status === 304) {
       await markSuccess(db, source.id, checkedAt, 304, source.final_url ?? source.url, source.etag, source.last_modified, source.content_hash);
       await markLinkedRecordsVerified(db, source.id, checkedAt);
+      if (source.content_hash) await resolveStableAutomaticReviews(db, source.id, source.content_hash, checkedAt);
       await writeSourceCheckLog(db, {
         sourceId: source.id,
         runId,
@@ -218,13 +221,16 @@ async function checkSource(
     }
 
     if (changed) {
-      await createReviewItem(db, source.id, runId, "content_changed", {
+      await supersedeAutomaticObservations(db, source.id, checkedAt);
+      await createAutomaticObservation(db, source.id, runId, {
         previousHash: source.content_hash,
         contentHash,
         previousUrl: source.final_url,
         finalUrl,
         truncated: body.truncated,
       });
+    } else if (!isBaseline) {
+      await resolveStableAutomaticReviews(db, source.id, contentHash, checkedAt);
     }
 
     await writeSourceCheckLog(db, {
@@ -365,6 +371,67 @@ async function createReviewItem(
     `INSERT INTO review_queue (id, source_id, run_id, reason, payload_json)
      VALUES (?, ?, ?, ?, ?)`,
   ).bind(crypto.randomUUID(), sourceId, runId, reason, JSON.stringify(payload)).run();
+}
+
+async function createAutomaticObservation(
+  db: D1Database,
+  sourceId: string,
+  runId: string,
+  payload: Record<string, unknown>,
+) {
+  await db.prepare(
+    `INSERT INTO review_queue
+     (id, source_id, run_id, reason, status, review_mode, payload_json, resolution_note)
+     VALUES (?, ?, ?, 'content_changed', 'observing', 'automatic', ?, ?)`,
+  ).bind(
+    crypto.randomUUID(),
+    sourceId,
+    runId,
+    JSON.stringify(payload),
+    "等待下一次相同内容哈希确认稳定；不会自动修改公开语义字段。",
+  ).run();
+}
+
+async function supersedeAutomaticObservations(db: D1Database, sourceId: string, resolvedAt: string) {
+  await db.prepare(
+    `UPDATE review_queue
+     SET status = 'rejected', resolved_at = ?, resolution_code = 'superseded_by_new_change',
+         resolution_note = '观察期间再次变化，旧观察项由新内容哈希取代。', resolved_by = 'automatic-policy-v1'
+     WHERE source_id = ? AND reason = 'content_changed' AND status = 'observing' AND review_mode = 'automatic'`,
+  ).bind(resolvedAt, sourceId).run();
+}
+
+async function resolveStableAutomaticReviews(
+  db: D1Database,
+  sourceId: string,
+  contentHash: string,
+  resolvedAt: string,
+) {
+  const pending = await db.prepare(
+    `SELECT id, payload_json FROM review_queue
+     WHERE source_id = ? AND reason = 'content_changed' AND status = 'observing' AND review_mode = 'automatic'`,
+  ).bind(sourceId).all<{ id: string; payload_json: string }>();
+
+  for (const item of pending.results) {
+    const payload = parseObject(item.payload_json);
+    if (payload.contentHash !== contentHash) continue;
+    await db.prepare(
+      `UPDATE review_queue
+       SET status = 'approved', resolved_at = ?, resolution_code = 'stable_on_repeat',
+           resolution_note = '连续两轮内容哈希一致，自动确认页面已稳定；未自动发布语义字段。',
+           resolved_by = 'automatic-policy-v1'
+       WHERE id = ? AND status = 'observing'`,
+    ).bind(resolvedAt, item.id).run();
+  }
+}
+
+function parseObject(value: string): Record<string, unknown> {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+  } catch {
+    return {};
+  }
 }
 
 async function markLinkedRecordsVerified(db: D1Database, sourceId: string, checkedAt: string) {

@@ -15,8 +15,9 @@ class FakeStatement {
   }
 
   async all() {
-    if (!this.sql.includes("FROM sources")) throw new Error(`Unexpected all(): ${this.sql}`);
-    return { results: this.database.sources.map((source) => ({ ...source })) };
+    if (this.sql.includes("FROM sources")) return { results: this.database.sources.map((source) => ({ ...source })) };
+    if (this.sql.includes("FROM review_queue")) return { results: this.database.reviewRows.map((row) => ({ ...row })) };
+    throw new Error(`Unexpected all(): ${this.sql}`);
   }
 
   async first() {
@@ -34,6 +35,7 @@ class FakeDatabase {
   constructor(source) {
     this.sources = [source];
     this.operations = [];
+    this.reviewRows = [];
   }
 
   prepare(sql) {
@@ -80,7 +82,7 @@ test("monitor stores a baseline snapshot without creating a review item", async 
   assert.equal(checkLog?.params[5], 1);
 });
 
-test("monitor queues a review when known source content changes", async () => {
+test("monitor creates an automatic observation when known source content changes", async () => {
   const database = new FakeDatabase(source({ content_hash: "old-hash" }));
   const result = await monitorSources(database, {
     trigger: "test",
@@ -90,7 +92,26 @@ test("monitor queues a review when known source content changes", async () => {
   assert.equal(result.status, "succeeded");
   assert.equal(result.changedCount, 1);
   const review = database.operations.find((operation) => operation.sql.startsWith("INSERT INTO review_queue"));
-  assert.equal(review?.params[3], "content_changed");
+  assert.match(review?.sql ?? "", /'content_changed', 'observing', 'automatic'/);
+});
+
+test("stable repeated content automatically resolves an observation without publishing", async () => {
+  const body = "stable official content";
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(body));
+  const contentHash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  const database = new FakeDatabase(source({ content_hash: contentHash }));
+  database.reviewRows = [{ id: "review-auto-1", payload_json: JSON.stringify({ contentHash }) }];
+
+  const result = await monitorSources(database, {
+    trigger: "test",
+    now: () => new Date("2026-08-01T06:00:00.000Z"),
+    fetcher: async () => new Response(body, { status: 200 }),
+  });
+
+  assert.equal(result.status, "succeeded");
+  const resolution = database.operations.find((operation) => operation.sql.includes("resolution_code = 'stable_on_repeat'"));
+  assert.equal(resolution?.params[1], "review-auto-1");
+  assert.equal(database.operations.some((operation) => operation.sql.startsWith("UPDATE opportunities SET url")), false);
 });
 
 test("304 response refreshes verification without creating a duplicate snapshot", async () => {

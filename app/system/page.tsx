@@ -12,8 +12,8 @@ export default function SystemPage() {
   return <main className={styles.page}>
     <DocsNav active="system" />
     <header className={styles.hero}>
-      <div><p className={styles.eyebrow}>SYSTEM / OPERATIONS</p><h1>系统如何<span>自动运行</span></h1><p className={styles.lede}>这不是一个直接让模型改网页的黑盒。系统每天检查已登记的官方来源，保留证据与运行记录；高风险内容变化先进入审核，页面始终保留最后一次可信数据。</p></div>
-      <aside className={styles.heroAside}><strong>39 SOURCES</strong><p>33 个来源由 Cron 每日自动检查，6 个受官网访问限制的来源保留为人工核对；5 个来源继续进行 P1 结构化抽取灰度。</p></aside>
+      <div><p className={styles.eyebrow}>SYSTEM / OPERATIONS</p><h1>系统如何<span>自动运行</span></h1><p className={styles.lede}>系统按来源优先级和间隔检查官方页面，保留证据与运行记录；页面稳定性可自动审查，高风险语义变化仍需人工判断，页面始终保留最后一次可信数据。</p></div>
+      <aside className={styles.heroAside}><strong>47 SOURCES</strong><p>41 个来源自动检查；14 个重点来源每 6 小时检查，覆盖牛津、剑桥、UCL、清华、北大。6 个受限入口保留人工核对。</p></aside>
     </header>
 
     <div className={styles.content}>
@@ -23,7 +23,7 @@ export default function SystemPage() {
       </section>
 
       <section className={styles.section}>
-        <div className={styles.sectionHead}><h2>一次更新如何发生</h2><p>Cron 使用 UTC。当前计划为每天 01:00 UTC，即日本时间 10:00；Cloudflare 按至少一次语义投递，因此写入采用可追溯记录和去重约束。</p></div>
+        <div className={styles.sectionHead}><h2>一次更新如何发生</h2><p>Cron 每 6 小时触发一次；调度器按来源间隔取数，普通来源每日检查，牛津、剑桥、UCL、清华、北大等重点来源每 6 小时检查。写入采用可追溯记录和去重约束。</p></div>
         <div className={styles.flow}>
           <div className={styles.flowStep}><b>01 / TRIGGER</b><h3>定时触发</h3><p>Cloudflare Cron 调用 Worker 的 scheduled 处理器。</p></div>
           <div className={styles.flowStep}><b>02 / FETCH</b><h3>检查来源</h3><p>四路并发、12 秒超时、512 KiB 上限，并使用 ETag 与 Last-Modified。</p></div>
@@ -36,17 +36,17 @@ export default function SystemPage() {
       <section className={styles.section}>
         <div className={styles.sectionHead}><h2>自动化边界</h2><p>P1 已能把部分来源变化转成结构化候选，但不会未经审核自动改写截止日期、开放状态或职业建议。</p></div>
         <div className={styles.cardGrid}>
-          <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>已自动化</span><h3>来源健康与变更监控</h3><p>每日访问 33 个自动来源，记录状态码、重定向、响应标识、内容哈希、验证时间、连续失败和逐来源结果。</p></article>
+          <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>已自动化</span><h3>来源健康与变更监控</h3><p>41 个自动来源按间隔检查，记录状态码、重定向、响应标识、内容哈希、验证时间、连续失败和逐来源结果。</p></article>
           <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>P1 灰度中</span><h3>候选发现与字段抽取</h3><p>5 个来源已启用适配器，抽取标题、机构、类别、地点、截止日期、状态与证据，并生成字段级变更集。</p></article>
-          <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>P1.7 · 已实现</span><h3>来源目录与历史日志</h3><p><Link href="/sources">信息源页</Link>可按地区和类型筛选；<Link href="/logs">日志页</Link>可检索历史运行与逐来源采集、证据、决策和发布计数。</p></article>
+          <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>P1.8 · 已实现</span><h3>自动审查与重点监控</h3><p>页面变化自动观察并在稳定后结案；<Link href="/logs">日志页</Link>区分自动观察和人工审核，重点高校每 6 小时检查。</p></article>
         </div>
       </section>
 
       <section className={styles.section}>
         <div className={styles.sectionHead}><h2>你还需要做什么</h2><p>当前生产运行没有阻塞性配置；以下是运行确认与后续产品选择。</p></div>
         <ul className={styles.checklist}>
-          <li><span>01</span><div><strong>每天查看采集日志</strong><br /><small>日本时间 10:00 后打开日志页，确认出现 trigger=cron 的运行摘要与 33 个自动来源的逐条结果。</small></div><span className={`${styles.tag} ${styles.tagPending}`}>需观察</span></li>
-          <li><span>02</span><div><strong>处理待审核变化</strong><br /><small>P2 可视化后台尚未开发；灰度期通过 Cloudflare D1 控制台查看 review_queue 和 change_sets。高风险语义变更不会自动发布。</small></div><span className={styles.tag}>运维动作</span></li>
+          <li><span>01</span><div><strong>查看采集日志</strong><br /><small>Cron 每 6 小时运行；普通来源达到 24 小时间隔才检查，重点来源每轮检查。</small></div><span className={`${styles.tag} ${styles.tagPending}`}>持续观察</span></li>
+          <li><span>02</span><div><strong>只处理人工审核项</strong><br /><small>页面哈希变化会先自动观察，下一轮稳定后自动结案；新增机会、字段冲突和高风险语义变化仍需人工判断。</small></div><span className={styles.tag}>按需处理</span></li>
           <li><span>03</span><div><strong>完成 P1 七天观察</strong><br /><small>核对 5 个试点来源的抽取准确率、重复率与误报；达到门槛后再为更多来源开发结构化适配器。</small></div><span className={`${styles.tag} ${styles.tagPending}`}>观察中</span></li>
           <li><span>04</span><div><strong>自定义域名已配置</strong><br /><small>生产入口使用 radar.openagent.hk；workers.dev 地址保留为故障诊断和备用入口。</small></div><span className={styles.tag}>已完成</span></li>
         </ul>

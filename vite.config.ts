@@ -27,7 +27,7 @@ const localBindingConfig = {
   routes: productionD1Id
     ? [{ pattern: "radar.openagent.hk", custom_domain: true }]
     : [],
-  triggers: { crons: ["0 1 * * *"] },
+  triggers: { crons: ["0 1,7,13,19 * * *"] },
   observability: {
     enabled: true,
     logs: { head_sampling_rate: 1 },

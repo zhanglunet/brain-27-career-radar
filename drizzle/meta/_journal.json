@@ -29,6 +29,20 @@
       "when": 1785545780805,
       "tag": "0004_nosy_mastermind",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1785547861322,
+      "tag": "0005_misty_apocalypse",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1785548359902,
+      "tag": "0006_aromatic_scarlet_witch",
+      "breakpoints": true
     }
   ]
 }

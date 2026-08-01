@@ -5,7 +5,8 @@ import styles from "../documentation.module.css";
 
 type Run = { id: string; trigger: string; status: string; started_at: string; finished_at: string | null; checked_count: number; changed_count: number; failed_count: number };
 type Check = { id: string; sourceName: string; coverage: string; regions: string[]; checkedAt: string; outcome: string; statusCode: number | null; errorSummary: string | null; candidatesCount: number; evidenceCount: number; changeSetsCount: number; appliedCount: number; trigger: string };
-type LogsPayload = { page: number; pageSize: number; total: number; summary: { succeeded: number; failed: number; changed: number; candidates: number; evidence: number; decisions: number; published: number }; runs: Run[]; checks: Check[] };
+type Review = { id: string; sourceName: string; reason: string; status: string; reviewMode: "automatic" | "human"; resolutionNote: string | null; createdAt: string; resolvedAt: string | null };
+type LogsPayload = { page: number; pageSize: number; total: number; summary: { succeeded: number; failed: number; changed: number; candidates: number; evidence: number; decisions: number; published: number }; runs: Run[]; reviews: Review[]; checks: Check[] };
 
 export default function LogsExplorer() {
   const [query, setQuery] = useState("");
@@ -60,6 +61,8 @@ export default function LogsExplorer() {
 
     {payload && payload.runs.length > 0 ? <div className={styles.logSection}><h3>历史运行</h3><div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>时间</th><th>触发</th><th>状态</th><th>检查</th><th>变化</th><th>失败</th></tr></thead><tbody>{payload.runs.map((run) => <tr key={run.id}><td>{formatDateTime(run.finished_at ?? run.started_at)}</td><td>{run.trigger}</td><td>{run.status}</td><td>{run.checked_count}</td><td>{run.changed_count}</td><td>{run.failed_count}</td></tr>)}</tbody></table></div></div> : null}
 
+    {payload && payload.reviews.length > 0 ? <div className={styles.logSection}><h3>审核与自动观察</h3><div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>创建时间</th><th>来源</th><th>原因</th><th>处理方式</th><th>状态 / 结论</th></tr></thead><tbody>{payload.reviews.map((review) => <tr key={review.id}><td>{formatDateTime(review.createdAt)}</td><td>{review.sourceName}</td><td>{reviewReasonLabel(review.reason)}</td><td>{review.reviewMode === "automatic" ? "自动审查" : "人工审核"}</td><td><span className={review.status === "pending" ? styles.pending : styles.good}>{reviewStatusLabel(review.status)}</span>{review.resolutionNote ? <><br /><small>{review.resolutionNote}</small></> : null}</td></tr>)}</tbody></table></div></div> : null}
+
     <div className={styles.logSection}><h3>逐来源采集日志</h3>
       {failed ? <p className={styles.loading}>采集日志暂时不可用，请稍后刷新。</p> : !payload ? <p className={styles.loading}>正在读取 D1 历史日志…</p> : payload.checks.length === 0 ? <p className={styles.loading}>尚无符合条件的逐来源日志。新日志从该功能上线后的首次 Cron 开始记录；上方仍保留旧的运行摘要。</p> :
         <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>检查时间</th><th>来源</th><th>地区</th><th>结果</th><th>HTTP</th><th>候选 / 证据 / 决策 / 发布</th></tr></thead><tbody>{payload.checks.map((check) => <tr key={check.id}><td>{formatDateTime(check.checkedAt)}</td><td>{check.sourceName}<br /><small>{check.trigger} · {check.coverage === "phd" ? "博士/科研" : "企业校招"}</small></td><td>{check.regions.map(regionLabel).join(" / ")}</td><td><span className={check.outcome === "failed" ? styles.pending : styles.good}>{outcomeLabel(check.outcome)}</span>{check.errorSummary ? <><br /><small>{check.errorSummary}</small></> : null}</td><td>{check.statusCode ?? "—"}</td><td>{check.candidatesCount} / {check.evidenceCount} / {check.changeSetsCount} / {check.appliedCount}</td></tr>)}</tbody></table></div>}
@@ -69,7 +72,8 @@ export default function LogsExplorer() {
 }
 
 function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Tokyo", dateStyle: "short", timeStyle: "short" }).format(new Date(value));
+  const normalized = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value) ? `${value.replace(" ", "T")}Z` : value;
+  return new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Tokyo", dateStyle: "short", timeStyle: "short" }).format(new Date(normalized));
 }
 
 function regionLabel(value: string): string {
@@ -78,4 +82,12 @@ function regionLabel(value: string): string {
 
 function outcomeLabel(value: string): string {
   return ({ unchanged: "成功 / 未变化", not_modified: "304 未修改", changed: "发现变化", failed: "失败" } as Record<string, string>)[value] ?? value;
+}
+
+function reviewReasonLabel(value: string): string {
+  return ({ content_changed: "页面内容变化", repeated_failure: "连续失败", new_source: "新机会候选", parse_conflict: "字段冲突" } as Record<string, string>)[value] ?? value;
+}
+
+function reviewStatusLabel(value: string): string {
+  return ({ pending: "等待人工审核", observing: "自动观察中", approved: "已自动/人工确认", rejected: "已驳回或被新变化取代" } as Record<string, string>)[value] ?? value;
 }

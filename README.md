@@ -39,7 +39,9 @@ npm run dev
 
 ## Automatic updates
 
-The radar stores sources, opportunities, institutions, source snapshots, per-source check logs, review items, sync runs, extraction candidates, field evidence, and change sets in D1. A Cloudflare Cron trigger runs every day at `01:00 UTC`. It automatically checks 33 of 39 catalogued official sources; six sites that block Worker access remain visible for manual verification. Five P1 pilot sources additionally run deterministic adapters and risk routing; automatic merge is disabled by default. A failed source check or extraction preserves the last trusted opportunity content.
+The radar stores sources, opportunities, institutions, source snapshots, per-source check logs, review items, sync runs, extraction candidates, field evidence, and change sets in D1. Cloudflare Cron triggers every six hours. Due-time filtering checks normal sources every 24 hours and 14 priority sources every 6 hours; 41 of 47 official sources are automatic and six access-restricted sites remain visible for manual verification. Page-level changes enter automatic stability observation, while new opportunities and semantic conflicts remain human-reviewed. Automatic content publishing stays disabled by default.
+
+Doctoral opportunities expose structured funding labels (`full`, `partial`, `mixed`, `self_funded`, `unknown`) with human-readable coverage notes. Home-fee-only awards and international fee gaps are never presented as universal full scholarships.
 
 Local D1 uses a fixed preview UUID and persists under `.wrangler/state`, so builds, Wrangler commands, and the dev server share the same database. Production requires a real D1 database ID:
 

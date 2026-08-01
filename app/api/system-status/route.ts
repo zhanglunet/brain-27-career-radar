@@ -16,14 +16,14 @@ type LatestRunRow = {
   failed_count: number;
 };
 
-const SCHEDULE = "0 1 * * *";
+const SCHEDULE = "0 1,7,13,19 * * *";
 
 export async function GET() {
   try {
     const { env } = await import("cloudflare:workers");
     if (!env.DB) throw new Error("D1 binding DB is unavailable");
 
-    const [sourceStats, opportunityStats, institutionStats, reviewStats, snapshotStats, checkLogStats, candidateStats, evidenceStats, changeSetStats, pilotStats, latestRun] = await Promise.all([
+    const [sourceStats, opportunityStats, institutionStats, reviewStats, observationStats, autoResolvedStats, priorityStats, snapshotStats, checkLogStats, candidateStats, evidenceStats, changeSetStats, pilotStats, latestRun] = await Promise.all([
       env.DB.prepare(
         `SELECT COUNT(*) AS total,
                 SUM(CASE WHEN enabled = 1 THEN 1 ELSE 0 END) AS enabled,
@@ -34,6 +34,9 @@ export async function GET() {
       env.DB.prepare("SELECT COUNT(*) AS total FROM opportunities WHERE published = 1").first<CountRow>(),
       env.DB.prepare("SELECT COUNT(*) AS total FROM institutions WHERE published = 1").first<CountRow>(),
       env.DB.prepare("SELECT COUNT(*) AS total FROM review_queue WHERE status = 'pending'").first<CountRow>(),
+      env.DB.prepare("SELECT COUNT(*) AS total FROM review_queue WHERE status = 'observing' AND review_mode = 'automatic'").first<CountRow>(),
+      env.DB.prepare("SELECT COUNT(*) AS total FROM review_queue WHERE status IN ('approved','rejected') AND resolved_by = 'automatic-policy-v1'").first<CountRow>(),
+      env.DB.prepare("SELECT COUNT(*) AS total FROM sources WHERE enabled = 1 AND priority IN ('critical','high')").first<CountRow>(),
       env.DB.prepare("SELECT COUNT(*) AS total FROM source_snapshots").first<CountRow>(),
       env.DB.prepare("SELECT COUNT(*) AS total FROM source_check_logs").first<CountRow>(),
       env.DB.prepare("SELECT COUNT(*) AS total FROM candidate_records").first<CountRow>(),
@@ -47,7 +50,7 @@ export async function GET() {
     ]);
 
     const generatedAt = new Date();
-    const nextScheduledAt = nextDailyUtcHour(generatedAt, 1).toISOString();
+    const nextScheduledAt = nextScheduledUtcHour(generatedAt, [1, 7, 13, 19]).toISOString();
 
     return Response.json({
       generatedAt: generatedAt.toISOString(),
@@ -60,6 +63,9 @@ export async function GET() {
         snapshots: number(snapshotStats?.total),
         sourceCheckLogs: number(checkLogStats?.total),
         pendingReviews: number(reviewStats?.total),
+        automaticObservations: number(observationStats?.total),
+        automaticallyResolved: number(autoResolvedStats?.total),
+        prioritySources: number(priorityStats?.total),
         candidates: number(candidateStats?.total),
         fieldEvidence: number(evidenceStats?.total),
         pendingChangeSets: number(changeSetStats?.total),
@@ -68,7 +74,7 @@ export async function GET() {
       automation: {
         configured: true,
         schedule: SCHEDULE,
-        scheduleLabel: "每日 01:00 UTC / 日本时间 10:00",
+        scheduleLabel: "每 6 小时触发；普通来源每日、重点来源每 6 小时",
         nextScheduledAt,
         checkedSources: number(sourceStats?.ever_succeeded),
         failingSources: number(sourceStats?.currently_failing),
@@ -80,6 +86,7 @@ export async function GET() {
         structuredExtraction: true,
         sameSiteCandidateDiscovery: true,
         automaticContentPublishing: false,
+        automaticReview: true,
         automaticExternalSourceApproval: false,
       },
     }, {
@@ -96,10 +103,15 @@ export async function GET() {
   }
 }
 
-function nextDailyUtcHour(now: Date, hour: number): Date {
+function nextScheduledUtcHour(now: Date, hours: number[]): Date {
+  for (const hour of hours) {
+    const candidate = new Date(now);
+    candidate.setUTCHours(hour, 0, 0, 0);
+    if (candidate.getTime() > now.getTime()) return candidate;
+  }
   const next = new Date(now);
-  next.setUTCHours(hour, 0, 0, 0);
-  if (next.getTime() <= now.getTime()) next.setUTCDate(next.getUTCDate() + 1);
+  next.setUTCDate(next.getUTCDate() + 1);
+  next.setUTCHours(hours[0] ?? 1, 0, 0, 0);
   return next;
 }
 
