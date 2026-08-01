@@ -41,7 +41,7 @@ export default function PrdPage() {
         <div className={styles.cardGrid}>
           <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>P0 · 已上线</span><h3>可靠监控与动态展示</h3><p>D1 数据模型、分频 Cron、51 个自动来源巡检、逐来源日志、条件请求、哈希快照、审核队列、动态 API 和静态降级。</p></article>
           <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>P1 · 灰度观察</span><h3>列表发现与字段抽取</h3><p>5 个来源已启用适配器，候选与证据进入 D1；待完成 7 天准确率、重复率和安全边界验收。</p></article>
-          <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>P2.1 / P2.2 · 已开发</span><h3>导师与论文雷达</h3><p>16 位重点导师、官方主页、Crossref 论文候选、DOI 去重、核验状态与学术同步日志。<br/><Link href="/prd/academic">查看独立 PRD →</Link></p></article>
+          <article className={`${styles.card} ${styles.cardDone}`}><span className={styles.cardLabel}>P2.1 / P2.2 · 已开发</span><h3>导师与论文雷达</h3><p>16 位重点导师、官方主页、6 个论文数据库、跨库去重、核验状态与学术同步日志。<br/><Link href="/prd/academic">查看独立 PRD →</Link></p></article>
         </div>
       </section>
 

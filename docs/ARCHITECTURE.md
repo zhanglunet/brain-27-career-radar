@@ -74,11 +74,15 @@ Crossref 查询结果必须同时通过作者规范化匹配和主题阈值，�
 
 ### ADR-015：论文数据库采用注册表和多来源关系
 
-数据库能力与运行状态保存在 `paper_providers`，逐提供方运行保存在 `paper_provider_sync_logs`。论文不复制成多条：按 DOI、PMID、arXiv ID 合并到 `papers`，再用 `paper_provider_records` 保留 Crossref、Europe PMC 等各自的外部 ID、来源 URL 和首次/最近发现时间。
+数据库能力与运行状态保存在 `paper_providers`，逐提供方运行保存在 `paper_provider_sync_logs`。论文不复制成多条：按 DOI、PMID、PMCID、arXiv ID 合并到 `papers`，再用 `paper_provider_records` 保留 Crossref、Europe PMC、arXiv、PubMed、PMC、DOAJ 等各自的外部 ID、来源 URL 和首次/最近发现时间。
 
 ### ADR-016：开放网站不等于可自动抓取 API
 
 只有具备稳定官方 API、明确机器访问边界和可实现限流的提供方才能开启 `discovery_enabled`。CORE、OpenAlex 等需要密钥时明确显示配置变量；东壁和 OALib 在未确认公开 API 与条款前只进入研究清单，不通过网页抓取绕过产品界面。
+
+### ADR-017：多数据库接入遵守能力边界和共享限流
+
+arXiv 使用公开 Atom API，但响应不含机构字段，因此高同名风险导师不产生 arXiv 候选。PubMed 与 PMC 共用 NCBI E-utilities，在没有 API key 时两次请求之间至少等待 400 ms，并附带 `tool` 与联系邮箱；PMC 只把可检索记录标为开放全文来源。DOAJ 使用 v4 文章检索 API。所有提供方仍需通过作者、时间和主题阈值，外部失败按库隔离并保留既有数据。
 
 ## 部署边界
 
