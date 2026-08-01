@@ -1,6 +1,6 @@
 # P2 学术情报雷达 PRD
 
-- 版本：v0.1.0
+- 版本：v0.2.0
 - 日期：2026-08-01
 - 状态：P2.1 导师雷达与 P2.2 最新论文开发中
 - 网页版：`/prd/academic`
@@ -47,10 +47,21 @@
 ### P2.2 最新论文
 
 - `papers` 与 `paper_authors`：DOI/PMID/arXiv 去重键、作者关系、出版日期、版本状态、主题、摘要、来源和核验状态。
-- Cron 调用 Crossref，按每位导师近 18 个月、最多 5 条结果进行有限发现。
+- Cron 调用已启用论文数据库；当前为 Crossref 与 Europe PMC，按每位导师近 18 个月、每库最多 5 条结果进行有限发现。
 - 作者规范化匹配 + 神经/脑/认知/学习/BCI 等标题关键词匹配；低于阈值不写入。
 - 新发现默认 `candidate`、`published=false`，页面可作为透明候选展示，但不得标为已核验。
 - `/papers` 与 `/api/papers`：关键词、核验状态筛选及最新同步摘要。
+
+### P2.2.1 论文数据库目录
+
+- `paper_providers` 保存数据库能力、覆盖、认证方式、配置项、启用状态和最近同步健康。
+- `paper_provider_sync_logs` 保存每次 Cron 中每个数据库的检查数、候选、新增和失败。
+- `paper_provider_records` 保存论文在不同数据库中的记录关系；同一 DOI/PMID 合并为一篇论文，但来源不丢失。
+- `/paper-sources` 与 `/api/paper-providers` 公开显示已启用、可接入、需配置和规划中的全部数据库。
+- 自动发现：Crossref、Europe PMC。
+- 无需密钥可继续接入：arXiv、PubMed/PMC、DOAJ；须先完成作者消歧、重复控制或全文按需策略。
+- 需要配置：OpenAlex、Semantic Scholar、ORCID、Unpaywall、CORE。
+- 研究中：OALib、东壁；未确认稳定公开 API 与机器访问许可前不自动抓取。
 
 ## 5. 后续范围
 

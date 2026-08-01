@@ -72,6 +72,14 @@ Crossref 查询结果必须同时通过作者规范化匹配和主题阈值，�
 
 同一 Cron 并行触发来源巡检和学术同步，但分别写入 `sync_runs` 与 `academic_sync_runs`。Crossref 失败不会中断职业来源更新，单导师失败不会中断其他导师；学术实体级事件写入 `academic_events`。
 
+### ADR-015：论文数据库采用注册表和多来源关系
+
+数据库能力与运行状态保存在 `paper_providers`，逐提供方运行保存在 `paper_provider_sync_logs`。论文不复制成多条：按 DOI、PMID、arXiv ID 合并到 `papers`，再用 `paper_provider_records` 保留 Crossref、Europe PMC 等各自的外部 ID、来源 URL 和首次/最近发现时间。
+
+### ADR-016：开放网站不等于可自动抓取 API
+
+只有具备稳定官方 API、明确机器访问边界和可实现限流的提供方才能开启 `discovery_enabled`。CORE、OpenAlex 等需要密钥时明确显示配置变量；东壁和 OALib 在未确认公开 API 与条款前只进入研究清单，不通过网页抓取绕过产品界面。
+
 ## 部署边界
 
 - D1 binding：`DB`

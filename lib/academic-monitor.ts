@@ -1,30 +1,11 @@
-const REQUEST_TIMEOUT_MS = 12_000;
+import { discoverProviderPapers } from "./paper-providers.ts";
+import type { EnabledPaperProvider, PaperCandidate, PaperResearcher } from "./paper-providers.ts";
+
 const MAX_RESEARCHERS_PER_RUN = 16;
-const MAX_WORKS_PER_RESEARCHER = 5;
-const CROSSREF_ROWS_PER_QUERY = 20;
+const PROVIDER_PAUSE_MS = 300;
 
 type AcademicTrigger = "cron" | "manual" | "test";
-
-type ResearcherRow = {
-  id: string;
-  name: string;
-  external_id: string;
-};
-
-type CrossrefAuthor = { given?: string; family?: string; name?: string };
-type CrossrefWork = {
-  DOI?: string;
-  title?: string[];
-  author?: CrossrefAuthor[];
-  published?: { "date-parts"?: number[][] };
-  "published-online"?: { "date-parts"?: number[][] };
-  "published-print"?: { "date-parts"?: number[][] };
-  "container-title"?: string[];
-  type?: string;
-  URL?: string;
-  abstract?: string;
-};
-
+type ProviderRow = { id: EnabledPaperProvider };
 type AcademicSyncSummary = {
   runId: string;
   status: "succeeded" | "partial" | "failed";
@@ -42,183 +23,156 @@ export async function syncAcademicPapers(
   const now = options.now ?? (() => new Date());
   const runId = crypto.randomUUID();
   const startedAt = now().toISOString();
-  await db.prepare(
-    `INSERT INTO academic_sync_runs (id, trigger, status, started_at) VALUES (?, ?, 'running', ?)`,
-  ).bind(runId, options.trigger, startedAt).run();
-
+  await db.prepare(`INSERT INTO academic_sync_runs (id, trigger, status, started_at) VALUES (?, ?, 'running', ?)`).bind(runId, options.trigger, startedAt).run();
   console.log(JSON.stringify({ event: "radar.academic_sync.started", runId, trigger: options.trigger, startedAt }));
 
-  const rows = await db.prepare(
-    `SELECT r.id, r.name, ri.external_id
-     FROM researchers r
-     JOIN researcher_identities ri ON ri.researcher_id = r.id AND ri.provider = 'crossref'
-     WHERE r.published = 1
-     ORDER BY CASE r.priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 ELSE 2 END, r.id
-     LIMIT ?`,
-  ).bind(MAX_RESEARCHERS_PER_RUN).all<ResearcherRow>();
-
-  let candidatesFound = 0;
-  let papersInserted = 0;
-  const failures: string[] = [];
-
-  for (const researcher of rows.results) {
-    try {
-      const works = await fetchCrossrefWorks(fetcher, researcher.external_id, now());
-      let acceptedForResearcher = 0;
-      for (const work of works) {
-        if (acceptedForResearcher >= MAX_WORKS_PER_RESEARCHER) break;
-        const candidate = normalizeCandidate(work, researcher);
-        if (!candidate) continue;
-        acceptedForResearcher += 1;
-        candidatesFound += 1;
-        const paperId = `doi-${candidate.doi.replace(/[^a-z0-9]+/gi, "-").slice(0, 120)}`;
-        const existingBefore = await db.prepare("SELECT id FROM papers WHERE doi = ?").bind(candidate.doi).first<{ id: string }>();
-        await db.prepare(
-          `INSERT INTO papers
-           (id, doi, title, abstract, venue, publication_date, paper_type, version_status,
-            source_url, source_provider, topics_json, takeaway, relevance_score, review_status,
-            published, source_verified_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, 'published', ?, 'crossref', ?, ?, ?, 'candidate', 0, ?)
-           ON CONFLICT(doi) DO UPDATE SET
-             title = excluded.title, abstract = excluded.abstract, venue = excluded.venue,
-             publication_date = excluded.publication_date, source_url = excluded.source_url,
-             relevance_score = MAX(papers.relevance_score, excluded.relevance_score),
-             source_verified_at = excluded.source_verified_at, updated_at = CURRENT_TIMESTAMP`,
-        ).bind(
-          paperId, candidate.doi, candidate.title, candidate.abstract, candidate.venue,
-          candidate.publicationDate, candidate.paperType, candidate.sourceUrl,
-          JSON.stringify(candidate.topics), candidate.takeaway, candidate.confidence, startedAt,
-        ).run();
-        if (!existingBefore) papersInserted += 1;
-
-        const existing = await db.prepare("SELECT id FROM papers WHERE doi = ?").bind(candidate.doi).first<{ id: string }>();
-        const resolvedPaperId = existing?.id ?? paperId;
-        await db.prepare(
-          `INSERT INTO paper_authors (paper_id, researcher_id, author_name, author_order, corresponding)
-           VALUES (?, ?, ?, 0, 0) ON CONFLICT(paper_id, author_order) DO UPDATE SET researcher_id = excluded.researcher_id, author_name = excluded.author_name`,
-        ).bind(resolvedPaperId, researcher.id, researcher.name).run();
-        await db.prepare(
-          `INSERT INTO academic_events (id, run_id, researcher_id, paper_id, event_type, confidence, message, payload_json)
-           VALUES (?, ?, ?, ?, 'paper_candidate', ?, ?, ?)`,
-        ).bind(
-          crypto.randomUUID(), runId, researcher.id, resolvedPaperId, candidate.confidence,
-          `发现 ${researcher.name} 的论文候选`, JSON.stringify({ doi: candidate.doi, title: candidate.title }),
-        ).run();
-      }
-    } catch (error) {
-      const message = errorMessage(error);
-      failures.push(`${researcher.id}: ${message}`);
-      await db.prepare(
-        `INSERT INTO academic_events (id, run_id, researcher_id, event_type, message)
-         VALUES (?, ?, ?, 'sync_failed', ?)`,
-      ).bind(crypto.randomUUID(), runId, researcher.id, message).run();
-    }
-    await pause(400);
-  }
-
-  const status: AcademicSyncSummary["status"] = failures.length === 0 ? "succeeded" : failures.length === rows.results.length ? "failed" : "partial";
-  const finishedAt = now().toISOString();
-  await db.prepare(
-    `UPDATE academic_sync_runs SET status = ?, finished_at = ?, researchers_checked = ?,
-      candidates_found = ?, papers_inserted = ?, failed_count = ?, error_summary = ? WHERE id = ?`,
-  ).bind(status, finishedAt, rows.results.length, candidatesFound, papersInserted, failures.length, failures.slice(0, 10).join("\n") || null, runId).run();
-
-  const summary = { runId, status, researchersChecked: rows.results.length, candidatesFound, papersInserted, failedCount: failures.length };
-  console.log(JSON.stringify({ event: "radar.academic_sync.finished", ...summary, finishedAt }));
-  return summary;
-}
-
-async function fetchCrossrefWorks(fetcher: typeof fetch, author: string, now: Date): Promise<CrossrefWork[]> {
-  const from = new Date(now);
-  from.setUTCMonth(from.getUTCMonth() - 18);
-  const url = new URL("https://api.crossref.org/works");
-  url.searchParams.set("query.author", author);
-  url.searchParams.set("query.bibliographic", "brain neural cognition neuroscience memory learning decision intelligence interface");
-  url.searchParams.set("filter", `from-pub-date:${from.toISOString().slice(0, 10)}`);
-  url.searchParams.set("select", "DOI,title,author,published,published-online,published-print,container-title,type,URL,abstract");
-  url.searchParams.set("sort", "published");
-  url.searchParams.set("order", "desc");
-  url.searchParams.set("rows", String(CROSSREF_ROWS_PER_QUERY));
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort("Crossref request timed out"), REQUEST_TIMEOUT_MS);
   try {
-    const response = await fetcher(url, {
-      headers: { Accept: "application/json", "User-Agent": "Brain27CareerRadar/0.3 (+https://radar.openagent.hk)" },
-      signal: controller.signal,
-    });
-    if (response.status === 429) {
-      const retryAfter = Math.min(3_000, Math.max(1_250, Number(response.headers.get("retry-after") ?? 0) * 1_000));
-      await pause(retryAfter);
-      const retry = await fetcher(url, {
-        headers: { Accept: "application/json", "User-Agent": "Brain27CareerRadar/0.3 (+https://radar.openagent.hk)" },
-        signal: controller.signal,
-      });
-      if (!retry.ok) throw new Error(`Crossref HTTP ${retry.status} after retry`);
-      const payload = await retry.json() as { message?: { items?: CrossrefWork[] } };
-      return payload.message?.items?.slice(0, CROSSREF_ROWS_PER_QUERY) ?? [];
+    const [providersResult, researchersResult] = await Promise.all([
+      db.prepare(
+        `SELECT id FROM paper_providers WHERE enabled = 1 AND discovery_enabled = 1 AND status = 'active'
+         ORDER BY priority, id`,
+      ).all<ProviderRow>(),
+      db.prepare(
+        `SELECT id, name FROM researchers WHERE published = 1
+         ORDER BY CASE priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 ELSE 2 END, id LIMIT ?`,
+      ).bind(MAX_RESEARCHERS_PER_RUN).all<PaperResearcher>(),
+    ]);
+
+    let candidatesFound = 0;
+    let papersInserted = 0;
+    let failedCount = 0;
+    const allErrors: string[] = [];
+
+    for (const provider of providersResult.results) {
+      const providerStartedAt = now().toISOString();
+      let providerCandidates = 0;
+      let providerInserted = 0;
+      const providerErrors: string[] = [];
+
+      for (const researcher of researchersResult.results) {
+        try {
+          const candidates = await discoverProviderPapers(provider.id, researcher, fetcher, now());
+          for (const candidate of candidates) {
+            providerCandidates += 1;
+            const inserted = await upsertPaperCandidate(db, runId, researcher, candidate, providerStartedAt);
+            if (inserted) providerInserted += 1;
+          }
+        } catch (error) {
+          const message = `${researcher.id}: ${errorMessage(error)}`;
+          providerErrors.push(message);
+          await db.prepare(
+            `INSERT INTO academic_events (id, run_id, researcher_id, event_type, message, payload_json)
+             VALUES (?, ?, ?, 'sync_failed', ?, ?)`,
+          ).bind(crypto.randomUUID(), runId, researcher.id, message, JSON.stringify({ provider: provider.id })).run();
+        }
+        await pause(PROVIDER_PAUSE_MS);
+      }
+
+      const providerFinishedAt = now().toISOString();
+      const providerStatus = statusFromFailures(providerErrors.length, researchersResult.results.length);
+      await db.prepare(
+        `INSERT INTO paper_provider_sync_logs
+         (id, run_id, provider_id, status, started_at, finished_at, researchers_checked, candidates_found, papers_inserted, failed_count, error_summary)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).bind(
+        crypto.randomUUID(), runId, provider.id, providerStatus, providerStartedAt, providerFinishedAt,
+        researchersResult.results.length, providerCandidates, providerInserted, providerErrors.length,
+        providerErrors.slice(0, 10).join("\n") || null,
+      ).run();
+      await db.prepare(
+        `UPDATE paper_providers SET last_sync_at = ?, last_sync_status = ?,
+         consecutive_failures = CASE WHEN ? = 'failed' THEN consecutive_failures + 1 ELSE 0 END,
+         last_error = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      ).bind(providerFinishedAt, providerStatus, providerStatus, providerErrors.slice(0, 3).join("\n") || null, provider.id).run();
+
+      candidatesFound += providerCandidates;
+      papersInserted += providerInserted;
+      failedCount += providerErrors.length;
+      allErrors.push(...providerErrors.map((message) => `${provider.id}/${message}`));
     }
-    if (!response.ok) throw new Error(`Crossref HTTP ${response.status}`);
-    const payload = await response.json() as { message?: { items?: CrossrefWork[] } };
-    return payload.message?.items?.slice(0, CROSSREF_ROWS_PER_QUERY) ?? [];
-  } finally {
-    clearTimeout(timeout);
+
+    const checks = providersResult.results.length * researchersResult.results.length;
+    const status = statusFromFailures(failedCount, checks);
+    const finishedAt = now().toISOString();
+    await db.prepare(
+      `UPDATE academic_sync_runs SET status = ?, finished_at = ?, researchers_checked = ?, candidates_found = ?,
+       papers_inserted = ?, failed_count = ?, error_summary = ? WHERE id = ?`,
+    ).bind(status, finishedAt, checks, candidatesFound, papersInserted, failedCount, allErrors.slice(0, 10).join("\n") || null, runId).run();
+    const summary: AcademicSyncSummary = { runId, status, researchersChecked: checks, candidatesFound, papersInserted, failedCount };
+    console.log(JSON.stringify({ event: "radar.academic_sync.finished", ...summary, providers: providersResult.results.length, finishedAt }));
+    return summary;
+  } catch (error) {
+    const message = errorMessage(error);
+    const finishedAt = now().toISOString();
+    await db.prepare(`UPDATE academic_sync_runs SET status = 'failed', finished_at = ?, error_summary = ? WHERE id = ?`).bind(finishedAt, message, runId).run();
+    console.error(JSON.stringify({ event: "radar.academic_sync.failed", runId, error: message, finishedAt }));
+    throw error;
   }
 }
 
-function normalizeCandidate(work: CrossrefWork, researcher: ResearcherRow) {
-  const doi = work.DOI?.trim().toLowerCase();
-  const title = work.title?.[0]?.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-  if (!doi || !title || !hasMatchingAuthor(work.author ?? [], researcher.name)) return null;
-  const topicKeywords = ["brain", "neural", "neuron", "cognit", "memory", "learning", "decision", "intelligence", "interface", "hippocamp", "cort", "synap"];
-  const matches = topicKeywords.filter((keyword) => title.toLowerCase().includes(keyword));
-  const confidence = Math.min(95, 72 + matches.length * 6);
-  if (confidence < 84) return null;
-  const dateParts = work.published?.["date-parts"]?.[0] ?? work["published-online"]?.["date-parts"]?.[0] ?? work["published-print"]?.["date-parts"]?.[0];
-  const publicationDate = dateParts ? dateParts.map((part, index) => String(part).padStart(index === 0 ? 4 : 2, "0")).join("-") : null;
-  const abstract = (work.abstract ?? "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 4_000);
-  return {
-    doi, title, abstract, publicationDate,
-    venue: work["container-title"]?.[0] ?? "",
-    paperType: crossrefType(work.type),
-    sourceUrl: work.URL ?? `https://doi.org/${doi}`,
-    topics: matches,
-    confidence,
-    takeaway: `Crossref 自动发现的近期论文候选；作者身份与主题相关性置信度 ${confidence}%，待进一步核验。`,
-  };
+async function upsertPaperCandidate(
+  db: D1Database,
+  runId: string,
+  researcher: PaperResearcher,
+  candidate: PaperCandidate,
+  seenAt: string,
+): Promise<boolean> {
+  const existing = await db.prepare(
+    `SELECT id FROM papers WHERE (? IS NOT NULL AND doi = ?) OR (? IS NOT NULL AND pmid = ?) LIMIT 1`,
+  ).bind(candidate.doi, candidate.doi, candidate.pmid, candidate.pmid).first<{ id: string }>();
+  const paperId = existing?.id ?? paperIdFor(candidate);
+
+  if (existing) {
+    await db.prepare(
+      `UPDATE papers SET doi = COALESCE(doi, ?), pmid = COALESCE(pmid, ?), arxiv_id = COALESCE(arxiv_id, ?),
+       title = ?, abstract = CASE WHEN length(?) > length(abstract) THEN ? ELSE abstract END,
+       venue = CASE WHEN venue = '' THEN ? ELSE venue END, publication_date = COALESCE(publication_date, ?),
+       open_access_url = COALESCE(open_access_url, ?), relevance_score = MAX(relevance_score, ?),
+       source_verified_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+    ).bind(
+      candidate.doi, candidate.pmid, candidate.arxivId, candidate.title, candidate.abstract, candidate.abstract,
+      candidate.venue, candidate.publicationDate, candidate.openAccessUrl, candidate.confidence, seenAt, paperId,
+    ).run();
+  } else {
+    await db.prepare(
+      `INSERT INTO papers
+       (id, doi, pmid, arxiv_id, title, abstract, venue, publication_date, paper_type, version_status,
+        open_access_url, source_url, source_provider, topics_json, takeaway, relevance_score, review_status, published, source_verified_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'candidate', 0, ?)`,
+    ).bind(
+      paperId, candidate.doi, candidate.pmid, candidate.arxivId, candidate.title, candidate.abstract, candidate.venue,
+      candidate.publicationDate, candidate.paperType, candidate.versionStatus, candidate.openAccessUrl,
+      candidate.sourceUrl, candidate.provider, JSON.stringify(candidate.topics), candidate.takeaway, candidate.confidence, seenAt,
+    ).run();
+  }
+
+  await db.prepare(
+    `INSERT INTO paper_authors (paper_id, researcher_id, author_name, author_order, corresponding)
+     VALUES (?, ?, ?, 0, 0)
+     ON CONFLICT(paper_id, author_order) DO UPDATE SET researcher_id = excluded.researcher_id, author_name = excluded.author_name`,
+  ).bind(paperId, researcher.id, researcher.name).run();
+  await db.prepare(
+    `INSERT INTO paper_provider_records (id, provider_id, paper_id, external_id, source_url, first_seen_at, last_seen_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(provider_id, external_id) DO UPDATE SET paper_id = excluded.paper_id, source_url = excluded.source_url,
+       last_seen_at = excluded.last_seen_at, updated_at = CURRENT_TIMESTAMP`,
+  ).bind(recordIdFor(candidate), candidate.provider, paperId, candidate.externalId, candidate.sourceUrl, seenAt, seenAt).run();
+  await db.prepare(
+    `INSERT INTO academic_events (id, run_id, researcher_id, paper_id, event_type, confidence, message, payload_json)
+     VALUES (?, ?, ?, ?, 'paper_candidate', ?, ?, ?)`,
+  ).bind(
+    crypto.randomUUID(), runId, researcher.id, paperId, candidate.confidence,
+    `${candidate.provider} 发现 ${researcher.name} 的论文候选`,
+    JSON.stringify({ provider: candidate.provider, externalId: candidate.externalId, doi: candidate.doi, pmid: candidate.pmid, title: candidate.title }),
+  ).run();
+  return !existing;
 }
 
-function hasMatchingAuthor(authors: CrossrefAuthor[], expected: string): boolean {
-  const normalizedExpected = normalizeName(expected);
-  const expectedParts = normalizedExpected.split(" ");
-  return authors.some((author) => {
-    const value = author.name ?? [author.given, author.family].filter(Boolean).join(" ");
-    const normalized = normalizeName(value);
-    if (normalized === normalizedExpected || expectedParts.every((part) => normalized.includes(part))) return true;
-    const actualParts = normalized.split(" ");
-    const expectedFirst = expectedParts[0] ?? "";
-    const expectedFamily = expectedParts.at(-1) ?? "";
-    const actualFirst = actualParts[0] ?? "";
-    const actualFamily = actualParts.at(-1) ?? "";
-    return expectedFamily.length > 1 && actualFamily === expectedFamily && actualFirst[0] === expectedFirst[0];
-  });
+function paperIdFor(candidate: PaperCandidate): string {
+  return `${candidate.provider}-${safeId(candidate.doi ?? candidate.pmid ?? candidate.arxivId ?? candidate.externalId)}`;
 }
-
-function normalizeName(value: string): string {
-  return value.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, " ").trim();
-}
-
-function crossrefType(value?: string): "journal" | "conference" | "preprint" | "review" | "other" {
-  if (value === "journal-article") return "journal";
-  if (value === "proceedings-article") return "conference";
-  if (value === "posted-content") return "preprint";
-  return "other";
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500);
-}
-
-function pause(milliseconds: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, milliseconds));
-}
+function recordIdFor(candidate: PaperCandidate): string { return `${candidate.provider}-${safeId(candidate.externalId)}`; }
+function safeId(value: string): string { return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 150); }
+function statusFromFailures(failed: number, total: number): AcademicSyncSummary["status"] { return failed === 0 ? "succeeded" : failed >= total && total > 0 ? "failed" : "partial"; }
+function errorMessage(error: unknown): string { return error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500); }
+function pause(milliseconds: number): Promise<void> { return new Promise((resolve) => setTimeout(resolve, milliseconds)); }

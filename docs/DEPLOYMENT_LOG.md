@@ -1,5 +1,15 @@
 # 部署记录
 
+## 2026-08-01 · v0.4.0 论文数据库目录与 Europe PMC 自动采集
+
+- 发布前导出生产 D1 SQL 回滚基线：287,571 bytes，SHA-256 `032042a12065df9ae125a4de55b45e35572e21f5c1219133519697d4a938150b`；备份仅保存在部署机临时目录，未提交 Git。
+- 远程应用 `0010_ancient_speed_demon.sql`、`0011_adorable_nehzno.sql` 与 `0012_attached_provider_catalog.sql`，建立数据库目录、逐提供方同步日志和论文多来源关系。
+- 生产 D1 核对：13 个论文数据库，其中 Crossref、Europe PMC 共 2 个处于 `active + enabled`；arXiv、PubMed、PMC、DOAJ 为可继续接入；OpenAlex、CORE、Semantic Scholar、ORCID、Unpaywall 需要配置；OALib 与东壁暂列研究计划。
+- 发布 Worker 版本 `a0e8a717-a354-4ce3-8c39-a2ad172b733a`，绑定 D1、Assets、Images 和 `0 1,7,13,19 * * *` Cron。
+- 线上 `/paper-sources`、`/papers`、`/api/paper-providers`、`/api/papers` 与 `/api/system-status` 均返回 HTTP 200；目录 API 返回 13 个数据库，状态 API 返回 2 个自动提供方。
+- 桌面与 375 × 812 手机视口完成页面验收：13 张数据库卡片完整显示，无横向溢出；论文页面可以显示 Crossref 与 Europe PMC 来源标签。
+- 上线时生产学术同步仍为 0 次、论文为 0 条；这是新学术 Cron 尚未自然触发的真实状态。下一次自然 Cron 后再确认生产候选、逐库日志和论文来源关系，不以本地测试冒充生产运行。
+
 ## 2026-08-01 · v0.3.0 P2 学术情报雷达
 
 - 发布前导出远程 D1 SQL 备份，并在本机临时目录保存 SHA-256；备份未进入 Git。
