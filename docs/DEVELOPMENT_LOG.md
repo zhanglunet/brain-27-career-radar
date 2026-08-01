@@ -1,5 +1,15 @@
 # 开发日志
 
+## 2026-08-01 · 首次生产论文同步与根域名持久化
+
+- 手工触发生产学术同步，六个已启用数据库共写入 99 条来源记录；按 DOI、PMID、PMCID 和规范化标题合并后，得到 54 篇唯一论文。
+- 各数据库来源记录为 Crossref 1、Europe PMC 32、arXiv 4、PubMed 33、PMC 24、DOAJ 5；同一论文可同时关联多个数据库，因此来源记录数大于唯一论文数。
+- 首次长任务在客户端窗口结束后，将已完成部分审计为 `partial`，并单独恢复 PMC、DOAJ；开发热重载产生的空运行明确标记为 `failed`，不伪装成成功运行。
+- 恢复运行中 NCBI 对 6 个导师查询返回 HTTP 429。通用请求层增加最多 3 次有界重试，优先遵循 `Retry-After`，并增加自动化回归测试。
+- 学术同步增加可选数据库子集参数，供人工恢复或定向诊断使用；自然 Cron 仍默认执行全部已启用数据库。
+- 域名核查发现权威 DNS 只有 `radar.openagent.hk`，根域名和 `www` 没有记录。原因是生产 `routes` 只声明雷达子域，Dashboard 临时配置没有版本化保护。
+- 将 `openagent.hk`、`www.openagent.hk`、`radar.openagent.hk` 全部写入生产 Custom Domain 配置；以后以仓库配置为唯一事实来源。
+
 ## 2026-08-01 · P2.2.2 四数据库自动接入
 
 - 将 arXiv、PubMed、PMC、DOAJ 从“可接入”升级为 `active + discovery_enabled`，学术 Cron 自动提供方从 2 个增加到 6 个。

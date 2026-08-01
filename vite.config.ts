@@ -25,7 +25,11 @@ const localBindingConfig = {
   assets: { binding: "ASSETS" },
   images: { binding: "IMAGES" },
   routes: productionD1Id
-    ? [{ pattern: "radar.openagent.hk", custom_domain: true }]
+    ? [
+        { pattern: "openagent.hk", custom_domain: true },
+        { pattern: "www.openagent.hk", custom_domain: true },
+        { pattern: "radar.openagent.hk", custom_domain: true },
+      ]
     : [],
   triggers: { crons: ["0 1,7,13,19 * * *"] },
   observability: {

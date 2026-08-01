@@ -4,6 +4,8 @@
 
 ### Added
 
+- 根域名 `openagent.hk`、`www.openagent.hk` 与 `radar.openagent.hk` 的版本化 Custom Domain 配置。
+- 学术同步可按提供方子集执行，便于对被限流的数据库做有审计记录的恢复同步。
 - arXiv、PubMed、PMC、DOAJ 四个自动论文发现适配器。
 - PMCID 存储、跨库去重、NCBI 限速与多导师共同署名保护。
 
@@ -30,6 +32,7 @@
 
 ### Changed
 
+- 通用论文 HTTP 客户端对 `429 Too Many Requests` 遵循 `Retry-After` 并执行有界重试。
 - 页面更新时间、机会数、立即行动数和机构数改为数据驱动。
 - Cloudflare binding 类型改为由 Wrangler 生成。
 - Wrangler 升级至 4.118.0、Cloudflare Vite 插件升级至 1.50.0、Next.js 升级至 16.2.12。

@@ -284,13 +284,23 @@ async function fetchText(url: URL, fetcher: typeof fetch, label: string, accept:
 }
 
 async function fetchResponse(url: URL, fetcher: typeof fetch, label: string, accept: string): Promise<Response> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(`${label} request timed out`), REQUEST_TIMEOUT_MS);
-  try {
-    const response = await fetcher(url, { headers: { Accept: accept, "User-Agent": "Brain27CareerRadar/0.5 (+https://radar.openagent.hk; admin@openagent.hk)" }, signal: controller.signal });
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(`${label} request timed out`), REQUEST_TIMEOUT_MS);
+    let response: Response;
+    try {
+      response = await fetcher(url, { headers: { Accept: accept, "User-Agent": "Brain27CareerRadar/0.5 (+https://radar.openagent.hk; admin@openagent.hk)" }, signal: controller.signal });
+    } finally { clearTimeout(timeout); }
+    if (response.status === 429 && attempt < 2) {
+      const retryAfter = Number(response.headers.get("Retry-After"));
+      await response.arrayBuffer().catch(() => undefined);
+      await pause(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1_000 : 1_250 * (attempt + 1));
+      continue;
+    }
     if (!response.ok) throw new Error(`${label} HTTP ${response.status}`);
     return response;
-  } finally { clearTimeout(timeout); }
+  }
+  throw new Error(`${label} request exhausted retries`);
 }
 
 async function fetchJsonWithRetry<T>(url: URL, fetcher: typeof fetch, label: string): Promise<T> {

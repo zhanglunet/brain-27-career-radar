@@ -86,9 +86,13 @@ npx wrangler d1 execute brain-27-career-radar --local \
 
 ## 生产域名
 
-- 主入口：`https://radar.openagent.hk`
+- 根域入口：`https://openagent.hk`
+- www 入口：`https://www.openagent.hk`
+- 雷达入口：`https://radar.openagent.hk`
 - 备用入口：`https://brain-27-career-radar.zhanglu-net.workers.dev`
-- `www.openagent.hk` 已有现存站点，不由本 Worker 接管。
+
+三个自定义域名必须同时保留在 `vite.config.ts` 的生产 `routes` 中。Wrangler 部署会把版本化路由同步到 Cloudflare；只在 Dashboard 临时增加、但没有写入配置的域名，后续部署可能被覆盖删除。
+- 三个域名当前均由本 Worker 接管并提供同一套雷达页面；如未来要把根域名或 `www` 交给其他站点，必须先修改并发布本配置，再调整 DNS，避免路由争用。
 - Custom Domain 由生产构建中的 `routes[].custom_domain=true` 管理，发布时由 Cloudflare 创建 DNS 与证书。
 
 ## 故障处理
