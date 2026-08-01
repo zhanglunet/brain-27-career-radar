@@ -4,6 +4,9 @@
 
 ### Added
 
+- arXiv、PubMed、PMC、DOAJ 四个自动论文发现适配器。
+- PMCID 存储、跨库去重、NCBI 限速与多导师共同署名保护。
+
 - 论文数据库目录、提供方 API、逐数据库同步日志和论文多来源关系。
 - Europe PMC 自动发现适配器，以及 DOI/PMID 跨数据库合并。
 - CORE、PMC、DOAJ、OALib、东壁等附件数据库的接入状态与配置说明。

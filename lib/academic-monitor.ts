@@ -2,7 +2,7 @@ import { discoverProviderPapers } from "./paper-providers.ts";
 import type { EnabledPaperProvider, PaperCandidate, PaperResearcher } from "./paper-providers.ts";
 
 const MAX_RESEARCHERS_PER_RUN = 16;
-const PROVIDER_PAUSE_MS = 300;
+const PROVIDER_PAUSE_MS = 400;
 
 type AcademicTrigger = "cron" | "manual" | "test";
 type ProviderRow = { id: EnabledPaperProvider };
@@ -118,39 +118,45 @@ async function upsertPaperCandidate(
   seenAt: string,
 ): Promise<boolean> {
   const existing = await db.prepare(
-    `SELECT id FROM papers WHERE (? IS NOT NULL AND doi = ?) OR (? IS NOT NULL AND pmid = ?) LIMIT 1`,
-  ).bind(candidate.doi, candidate.doi, candidate.pmid, candidate.pmid).first<{ id: string }>();
+    `SELECT id FROM papers WHERE (? IS NOT NULL AND doi = ?) OR (? IS NOT NULL AND pmid = ?)
+     OR (? IS NOT NULL AND pmcid = ?) OR (? IS NOT NULL AND arxiv_id = ?) LIMIT 1`,
+  ).bind(
+    candidate.doi, candidate.doi, candidate.pmid, candidate.pmid,
+    candidate.pmcid, candidate.pmcid, candidate.arxivId, candidate.arxivId,
+  ).first<{ id: string }>();
   const paperId = existing?.id ?? paperIdFor(candidate);
 
   if (existing) {
     await db.prepare(
-      `UPDATE papers SET doi = COALESCE(doi, ?), pmid = COALESCE(pmid, ?), arxiv_id = COALESCE(arxiv_id, ?),
+      `UPDATE papers SET doi = COALESCE(doi, ?), pmid = COALESCE(pmid, ?), pmcid = COALESCE(pmcid, ?), arxiv_id = COALESCE(arxiv_id, ?),
        title = ?, abstract = CASE WHEN length(?) > length(abstract) THEN ? ELSE abstract END,
        venue = CASE WHEN venue = '' THEN ? ELSE venue END, publication_date = COALESCE(publication_date, ?),
        open_access_url = COALESCE(open_access_url, ?), relevance_score = MAX(relevance_score, ?),
        source_verified_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
     ).bind(
-      candidate.doi, candidate.pmid, candidate.arxivId, candidate.title, candidate.abstract, candidate.abstract,
+      candidate.doi, candidate.pmid, candidate.pmcid, candidate.arxivId, candidate.title, candidate.abstract, candidate.abstract,
       candidate.venue, candidate.publicationDate, candidate.openAccessUrl, candidate.confidence, seenAt, paperId,
     ).run();
   } else {
     await db.prepare(
       `INSERT INTO papers
-       (id, doi, pmid, arxiv_id, title, abstract, venue, publication_date, paper_type, version_status,
+       (id, doi, pmid, pmcid, arxiv_id, title, abstract, venue, publication_date, paper_type, version_status,
         open_access_url, source_url, source_provider, topics_json, takeaway, relevance_score, review_status, published, source_verified_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'candidate', 0, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'candidate', 0, ?)`,
     ).bind(
-      paperId, candidate.doi, candidate.pmid, candidate.arxivId, candidate.title, candidate.abstract, candidate.venue,
+      paperId, candidate.doi, candidate.pmid, candidate.pmcid, candidate.arxivId, candidate.title, candidate.abstract, candidate.venue,
       candidate.publicationDate, candidate.paperType, candidate.versionStatus, candidate.openAccessUrl,
       candidate.sourceUrl, candidate.provider, JSON.stringify(candidate.topics), candidate.takeaway, candidate.confidence, seenAt,
     ).run();
   }
 
+  const authorOrder = authorSlotFor(researcher.id);
+  await db.prepare(`DELETE FROM paper_authors WHERE paper_id = ? AND researcher_id = ?`).bind(paperId, researcher.id).run();
   await db.prepare(
     `INSERT INTO paper_authors (paper_id, researcher_id, author_name, author_order, corresponding)
-     VALUES (?, ?, ?, 0, 0)
+     VALUES (?, ?, ?, ?, 0)
      ON CONFLICT(paper_id, author_order) DO UPDATE SET researcher_id = excluded.researcher_id, author_name = excluded.author_name`,
-  ).bind(paperId, researcher.id, researcher.name).run();
+  ).bind(paperId, researcher.id, researcher.name, authorOrder).run();
   await db.prepare(
     `INSERT INTO paper_provider_records (id, provider_id, paper_id, external_id, source_url, first_seen_at, last_seen_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -163,16 +169,17 @@ async function upsertPaperCandidate(
   ).bind(
     crypto.randomUUID(), runId, researcher.id, paperId, candidate.confidence,
     `${candidate.provider} 发现 ${researcher.name} 的论文候选`,
-    JSON.stringify({ provider: candidate.provider, externalId: candidate.externalId, doi: candidate.doi, pmid: candidate.pmid, title: candidate.title }),
+    JSON.stringify({ provider: candidate.provider, externalId: candidate.externalId, doi: candidate.doi, pmid: candidate.pmid, pmcid: candidate.pmcid, arxivId: candidate.arxivId, title: candidate.title }),
   ).run();
   return !existing;
 }
 
 function paperIdFor(candidate: PaperCandidate): string {
-  return `${candidate.provider}-${safeId(candidate.doi ?? candidate.pmid ?? candidate.arxivId ?? candidate.externalId)}`;
+  return `${candidate.provider}-${safeId(candidate.doi ?? candidate.pmid ?? candidate.pmcid ?? candidate.arxivId ?? candidate.externalId)}`;
 }
 function recordIdFor(candidate: PaperCandidate): string { return `${candidate.provider}-${safeId(candidate.externalId)}`; }
 function safeId(value: string): string { return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 150); }
+function authorSlotFor(value: string): number { let hash = 0; for (const char of value) hash = (hash * 31 + char.charCodeAt(0)) | 0; return Math.abs(hash) + 1; }
 function statusFromFailures(failed: number, total: number): AcademicSyncSummary["status"] { return failed === 0 ? "succeeded" : failed >= total && total > 0 ? "failed" : "partial"; }
 function errorMessage(error: unknown): string { return error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500); }
 function pause(milliseconds: number): Promise<void> { return new Promise((resolve) => setTimeout(resolve, milliseconds)); }

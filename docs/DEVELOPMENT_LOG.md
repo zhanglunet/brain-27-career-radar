@@ -1,5 +1,17 @@
 # 开发日志
 
+## 2026-08-01 · P2.2.2 四数据库自动接入
+
+- 将 arXiv、PubMed、PMC、DOAJ 从“可接入”升级为 `active + discovery_enabled`，学术 Cron 自动提供方从 2 个增加到 6 个。
+- arXiv 使用官方 Atom API，保存 arXiv ID、版本、摘要、PDF 与可用 DOI；由于接口没有机构字段，6 位高同名风险导师安全跳过，不以模糊姓名制造候选。
+- PubMed 与 PMC 使用 NCBI ESearch + EFetch；请求附带工具标识和联系邮箱，两次请求之间等待 400 ms，低于无 API key 的每秒 3 次限制。
+- 新增 `pmcid` 唯一键；跨库合并顺序扩展为 DOI、PMID、PMCID、arXiv ID，`paper_provider_records` 继续保留各库来源关系。
+- DOAJ 使用当前 v4 文章检索 API，保存 DOI、开放全文链接、期刊与元数据；只接收近 18 个月并通过作者和主题阈值的结果。
+- 真实官方接口抽样：PubMed 对 Tim Behrens 返回 3 条近期匹配；PMC 对 Neil Burgess 返回 2 条、Leigh Hochberg 与 Ila Fiete 各返回 5 条；DOAJ 与 arXiv 在严格近 18 个月阈值下允许返回 0 条而不视为失败。
+- 论文作者关系改用稳定的导师槽位，避免同一论文被多位重点导师共同署名时相互覆盖。
+- 六库真实本地 Cron 完成 96 次导师—数据库检查，耗时约 175 秒：99 条候选、20 条新增、0 失败。逐库候选为 Crossref 1、Europe PMC 32、arXiv 4、PubMed 33、PMC 24、DOAJ 5；全部写入独立同步日志。
+- 该时长低于 Cloudflare Scheduled Worker 单次 15 分钟 wall-time 上限；网络等待不计 CPU 时间。继续保留逐库故障隔离，生产首次自然运行后再依据真实日志调整并发。
+
 ## 2026-08-01 · P1.9 科研助理路径与响应式页面
 
 - 新增独立机会类型“科研助理”，不再与博士或一般企业研究岗位混用；候选抽取规则可识别科研助理、研究助理、Research Assistant 和 Psychology Assistant。

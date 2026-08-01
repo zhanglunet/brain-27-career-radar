@@ -1,6 +1,6 @@
 # P2 学术情报雷达 PRD
 
-- 版本：v0.2.0
+- 版本：v0.3.0
 - 日期：2026-08-01
 - 状态：P2.1 导师雷达与 P2.2 最新论文开发中
 - 网页版：`/prd/academic`
@@ -46,8 +46,8 @@
 
 ### P2.2 最新论文
 
-- `papers` 与 `paper_authors`：DOI/PMID/arXiv 去重键、作者关系、出版日期、版本状态、主题、摘要、来源和核验状态。
-- Cron 调用已启用论文数据库；当前为 Crossref 与 Europe PMC，按每位导师近 18 个月、每库最多 5 条结果进行有限发现。
+- `papers` 与 `paper_authors`：DOI/PMID/PMCID/arXiv 去重键、作者关系、出版日期、版本状态、主题、摘要、来源和核验状态。
+- Cron 调用已启用论文数据库；当前为 Crossref、Europe PMC、arXiv、PubMed、PMC、DOAJ，按每位导师近 18 个月、每库最多 5 条结果进行有限发现。
 - 作者规范化匹配 + 神经/脑/认知/学习/BCI 等标题关键词匹配；低于阈值不写入。
 - 新发现默认 `candidate`、`published=false`，页面可作为透明候选展示，但不得标为已核验。
 - `/papers` 与 `/api/papers`：关键词、核验状态筛选及最新同步摘要。
@@ -56,10 +56,10 @@
 
 - `paper_providers` 保存数据库能力、覆盖、认证方式、配置项、启用状态和最近同步健康。
 - `paper_provider_sync_logs` 保存每次 Cron 中每个数据库的检查数、候选、新增和失败。
-- `paper_provider_records` 保存论文在不同数据库中的记录关系；同一 DOI/PMID 合并为一篇论文，但来源不丢失。
+- `paper_provider_records` 保存论文在不同数据库中的记录关系；同一 DOI/PMID/PMCID/arXiv ID 合并为一篇论文，但来源不丢失。
 - `/paper-sources` 与 `/api/paper-providers` 公开显示已启用、可接入、需配置和规划中的全部数据库。
-- 自动发现：Crossref、Europe PMC。
-- 无需密钥可继续接入：arXiv、PubMed/PMC、DOAJ；须先完成作者消歧、重复控制或全文按需策略。
+- 自动发现：Crossref、Europe PMC、arXiv、PubMed、PMC、DOAJ。
+- arXiv 不提供机构字段，高同名风险导师安全跳过；PubMed/PMC 使用 NCBI 无密钥限速；PMC 只声明可用开放全文，不承诺全库全文。
 - 需要配置：OpenAlex、Semantic Scholar、ORCID、Unpaywall、CORE。
 - 研究中：OALib、东壁；未确认稳定公开 API 与机器访问许可前不自动抓取。
 
@@ -73,7 +73,7 @@
 ## 6. 业务规则
 
 - 导师“优先级”表示用户匹配和监控频率，不表示学术排名。
-- 论文去重顺序为 DOI > PMID > arXiv ID > 规范化题目、作者和年份。
+- 论文去重顺序为 DOI > PMID > PMCID > arXiv ID > 规范化题目、作者和年份。
 - 预印本与正式论文保留版本关系；撤稿、更正不得覆盖为普通论文。
 - 官方主页失败不会删除导师；外部 API 失败不会清空既有论文。
 - 未核验外部身份只能产生候选，不能自动升级为已核验。
@@ -86,7 +86,7 @@ Cron 为 `0 1,7,13,19 * * *`。每次触发并行执行：
 1. 现有来源健康检查、快照、字段抽取和审核路由。
 2. 导师论文发现；写入 `academic_sync_runs` 和 `academic_events`。
 
-请求限制为 12 秒，单次最多 16 位导师、每位最多 5 篇论文。日志不得保存密钥、完整网页正文或私人联系方式。
+请求限制为 15 秒，单次最多 16 位导师、每位每库最多 5 篇论文。NCBI 请求在无密钥模式下主动限速；日志不得保存密钥、完整网页正文或私人联系方式。
 
 ## 8. 验收标准
 
