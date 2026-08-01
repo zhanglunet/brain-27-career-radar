@@ -1,0 +1,6 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import styles from "../documentation.module.css";
+import PaperProvidersExplorer from "./PaperProvidersExplorer";
+export const metadata:Metadata={title:"论文数据库｜BRAIN / 27",description:"查看当前启用、可新增和需要配置的论文数据库及自动同步状态。"};
+export default function PaperSourcesPage(){return <main className={styles.page}><nav className={styles.nav}><Link href="/" className={styles.brand}>BRAIN / 27</Link><div className={styles.navLinks}><Link href="/papers">最新论文</Link><Link href="/researchers">导师雷达</Link><Link href="/logs">日志</Link><Link href="/prd/academic">P2 PRD</Link></div></nav><header className={styles.hero}><div><p className={styles.eyebrow}>PAPER DATA PROVIDERS</p><h1>论文数据库<br/><span>启用、可新增与配置状态</span></h1><p className={styles.lead}>这里列出系统知道的全部论文数据库。已启用提供方由 Cron 自动增加论文候选；需要密钥或授权的提供方会明确说明配置项，不会静默失败。</p></div><div className={styles.heroMeta}><span>当前自动发现</span><strong>Crossref + Europe PMC</strong><p>下一候选：arXiv / OpenAlex</p></div></header><div className={styles.content}><PaperProvidersExplorer/></div><footer className={styles.footer}><span>BRAIN / 27 · PAPER SOURCES</span><p>同一论文按 DOI、PMID 等标识合并，来源关系单独保留。</p></footer></main>}

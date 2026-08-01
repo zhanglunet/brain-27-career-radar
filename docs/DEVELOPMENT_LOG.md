@@ -21,6 +21,15 @@
 - 全新 D1 迁移后为 47 个来源、41 个自动来源、14 个重点自动来源、22 个公开机会和 10 个重点机构。
 - 真实 Worker 首轮 41 个来源中 40 成功；北大心理学院 `www` 域名运行时异常。改用同一官方站的无 `www` URL 后单独回放 HTTP 200，保留自动监控。
 
+## 2026-08-01 · P2.2.1 论文数据库目录与自动扩展
+
+- 新增 `paper_providers`、`paper_provider_sync_logs`、`paper_provider_records`，把数据库配置、逐库日志和论文多来源关系分开保存。
+- 新增 `/paper-sources` 与 `/api/paper-providers`，公开显示 13 个数据库的启用、认证、能力、配置和同步状态。
+- Crossref 继续自动发现；新增 Europe PMC 自动适配器，保存 PMID、DOI、开放获取链接和摘要，并与 Crossref 按 DOI/PMID 合并。
+- 真实本地 Cron：2 个数据库 × 16 位导师共 32 次检查，发现 38 条候选、实际新增 37 条、0 失败；Crossref 与 Europe PMC 均写入独立运行日志。
+- 针对 Bin He、Jianfeng Feng、Luping Shi、Nancy Ip、Mu-ming Poo、Edward Chang 等高同名风险导师，Europe PMC 额外要求机构 affiliation 命中。
+- 根据用户附件与官方文档新增 CORE、PMC、DOAJ、OALib、东壁评估；开放网页不自动等同于可用 API。
+
 ## 2026-08-01 · P2.1/P2.2 学术情报雷达
 
 - 新建独立 PRD `docs/PRD_P2_ACADEMIC.md` 和网页版 `/prd/academic`，明确导师、论文、项目、议题与科研政策的阶段边界。

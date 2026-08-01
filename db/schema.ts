@@ -328,3 +328,64 @@ export const academicEvents = sqliteTable("academic_events", {
   index("academic_events_created_idx").on(table.createdAt),
   index("academic_events_researcher_idx").on(table.researcherId, table.createdAt),
 ]);
+
+export const paperProviders = sqliteTable("paper_providers", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  category: text("category", { enum: ["metadata", "biomedical", "preprint", "identity", "citation", "fulltext"] }).notNull(),
+  homepageUrl: text("homepage_url").notNull(),
+  apiDocsUrl: text("api_docs_url").notNull(),
+  description: text("description").notNull(),
+  coverage: text("coverage").notNull(),
+  authMode: text("auth_mode", { enum: ["none", "api_key", "oauth", "paid"] }).notNull().default("none"),
+  credentialEnv: text("credential_env"),
+  status: text("status", { enum: ["active", "available", "requires_config", "planned", "blocked"] }).notNull().default("planned"),
+  enabled: integer("enabled", { mode: "boolean" }).notNull().default(false),
+  discoveryEnabled: integer("discovery_enabled", { mode: "boolean" }).notNull().default(false),
+  priority: integer("priority").notNull().default(100),
+  capabilitiesJson: text("capabilities_json").notNull().default("[]"),
+  notes: text("notes").notNull().default(""),
+  lastSyncAt: text("last_sync_at"),
+  lastSyncStatus: text("last_sync_status", { enum: ["succeeded", "partial", "failed"] }),
+  consecutiveFailures: integer("consecutive_failures").notNull().default(0),
+  lastError: text("last_error"),
+  ...timestamps,
+}, (table) => [
+  index("paper_providers_status_idx").on(table.status, table.priority),
+  index("paper_providers_enabled_idx").on(table.enabled, table.discoveryEnabled),
+]);
+
+export const paperProviderSyncLogs = sqliteTable("paper_provider_sync_logs", {
+  id: text("id").primaryKey(),
+  runId: text("run_id").notNull().references(() => academicSyncRuns.id, { onDelete: "cascade" }),
+  providerId: text("provider_id").notNull().references(() => paperProviders.id, { onDelete: "cascade" }),
+  status: text("status", { enum: ["succeeded", "partial", "failed"] }).notNull(),
+  startedAt: text("started_at").notNull(),
+  finishedAt: text("finished_at").notNull(),
+  researchersChecked: integer("researchers_checked").notNull().default(0),
+  candidatesFound: integer("candidates_found").notNull().default(0),
+  papersInserted: integer("papers_inserted").notNull().default(0),
+  failedCount: integer("failed_count").notNull().default(0),
+  errorSummary: text("error_summary"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  uniqueIndex("paper_provider_sync_run_unique").on(table.runId, table.providerId),
+  index("paper_provider_sync_provider_idx").on(table.providerId, table.startedAt),
+]);
+
+export const paperProviderRecords = sqliteTable("paper_provider_records", {
+  id: text("id").primaryKey(),
+  providerId: text("provider_id").notNull().references(() => paperProviders.id, { onDelete: "cascade" }),
+  paperId: text("paper_id").notNull().references(() => papers.id, { onDelete: "cascade" }),
+  externalId: text("external_id").notNull(),
+  sourceUrl: text("source_url").notNull(),
+  firstSeenAt: text("first_seen_at").notNull(),
+  lastSeenAt: text("last_seen_at").notNull(),
+  metadataHash: text("metadata_hash"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  uniqueIndex("paper_provider_records_external_unique").on(table.providerId, table.externalId),
+  uniqueIndex("paper_provider_records_paper_unique").on(table.providerId, table.paperId),
+  index("paper_provider_records_paper_idx").on(table.paperId),
+]);

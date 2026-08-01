@@ -2,7 +2,7 @@
 
 面向 2027 年毕业的实验心理学硕士，持续汇总全球脑科学、认知神经科学、脑机接口与脑启发人工智能方向的博士、奖学金、高校科研助理和企业校招机会。
 
-[访问线上网站](https://radar.openagent.hk) · [导师雷达](https://radar.openagent.hk/researchers) · [最新论文](https://radar.openagent.hk/papers) · [查看信息源](https://radar.openagent.hk/sources) · [查看采集日志](https://radar.openagent.hk/logs) · [系统说明](https://radar.openagent.hk/system) · [需求文档](https://radar.openagent.hk/prd)
+[访问线上网站](https://radar.openagent.hk) · [导师雷达](https://radar.openagent.hk/researchers) · [最新论文](https://radar.openagent.hk/papers) · [论文数据库](https://radar.openagent.hk/paper-sources) · [查看信息源](https://radar.openagent.hk/sources) · [查看采集日志](https://radar.openagent.hk/logs) · [系统说明](https://radar.openagent.hk/system) · [需求文档](https://radar.openagent.hk/prd)
 
 ![BRAIN / 27 脑科学与人工智能机会雷达首页](docs/images/brain-27-radar.jpg)
 
@@ -10,7 +10,7 @@
 
 BRAIN / 27 不是简单的招聘链接集合，而是一套可审计、可追踪的机会情报系统。系统以高校、科研机构和企业官方页面为主要信息源，通过 Cloudflare Cron 定时检查内容变化，将来源快照、逐来源日志、候选记录、字段证据和审核结论保存在 D1 数据库中。
 
-当前版本为 `v0.3.0`，重点覆盖：
+当前版本为 `v0.4.0`，重点覆盖：
 
 - 英国：中国学生重点关注的 Oxford、Cambridge、UCL 等高校与研究机构；
 - 中国大陆：清华、北大，以及北京、上海、深圳的高校、科研机构和科技企业；
@@ -38,6 +38,7 @@ BRAIN / 27 不是简单的招聘链接集合，而是一套可审计、可追踪
 - 机会雷达：按状态、机会类型和关键词筛选博士、科研助理及就业机会；
 - 导师雷达：按地区、机构、主题和研究方法跟踪 16 位重点导师及官方主页；
 - 最新论文：通过 Crossref 发现近 18 个月成果候选，以 DOI 去重并透明区分候选和已核验状态；
+- 论文数据库：Crossref 与 Europe PMC 自动发现；网页列出 arXiv、OpenAlex、CORE、PMC、DOAJ 等可新增来源及配置条件；
 - 奖学金标注：展示资助类型、覆盖范围、核验时间和国际学生适用边界；
 - 科研助理路径：独立标注硕士申请条件、学历要求和博士过渡价值，但不承诺受聘后自动转博；
 - 信息源目录：按地区、覆盖类型、机构类型、自动状态和失败状态检索全部来源；

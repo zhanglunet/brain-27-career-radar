@@ -1,0 +1,7 @@
+INSERT OR IGNORE INTO `paper_providers`
+(`id`,`name`,`category`,`homepage_url`,`api_docs_url`,`description`,`coverage`,`auth_mode`,`credential_env`,`status`,`enabled`,`discovery_enabled`,`priority`,`capabilities_json`,`notes`) VALUES
+('core','CORE','fulltext','https://core.ac.uk/','https://core.ac.uk/documentation/api','开放获取仓储聚合，提供论文元数据和可合法访问的开放全文。','全球机构仓储与开放获取论文','api_key','CORE_API_KEY','requires_config',0,0,55,'["开放全文","仓储元数据","DOI","文本挖掘"]','官方要求注册 API key；配置后适合作为全文增强源，不宜在当前 Cron 中高频逐导师搜索。'),
+('pmc','PubMed Central Open Access','fulltext','https://pmc.ncbi.nlm.nih.gov/','https://www.ncbi.nlm.nih.gov/research/bionlp/APIs/BioC-PMC/','NIH/NLM 维护的生物医学全文档案；BioC API 可读取开放获取子集的结构化全文。','生物医学与生命科学开放全文','none',NULL,'available',0,0,42,'["PMCID","开放全文","BioC JSON","文本挖掘"]','Europe PMC 已负责论文发现；PMC 更适合在命中 PMCID 后按需补充合法全文，避免重复抓取。'),
+('doaj','DOAJ','metadata','https://doaj.org/','https://doaj.org/api/','开放获取期刊与文章目录，元数据采用开放许可。','全球开放获取期刊与文章元数据','none',NULL,'available',0,0,65,'["开放期刊","文章元数据","DOI","开放许可"]','适合核验期刊 OA 状态；不作为导师论文的首选发现源。'),
+('oalib','Open Access Library','fulltext','https://www.oalib.com/','https://www.oalib.com/','开放获取论文检索网站。','跨学科开放获取论文','none',NULL,'planned',0,0,90,'["开放获取检索"]','未确认稳定、公开且适合自动化的官方 API；暂只列入研究清单，不自动抓取。'),
+('dbdata','东壁全球科技文献数据平台','metadata','https://www.dbdata.com/','https://www.dbdata.com/agreement.html','中文全球科技文献检索与 AI 解读平台。','全球科技文献元数据与中文检索','none',NULL,'planned',0,0,95,'["中文检索","科技文献","AI 解读"]','目前未发现公开开发者 API；需先确认服务条款和机器访问许可，不能直接把网页搜索当作 API 抓取。');

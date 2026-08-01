@@ -59,4 +59,8 @@ test("server-renders the academic intelligence pages", async () => {
   const prd = await render("/prd/academic");
   assert.equal(prd.status, 200);
   assert.match(await prd.text(), /学术情报雷达/);
+
+  const providers = await render("/paper-sources");
+  assert.equal(providers.status, 200);
+  assert.match(await providers.text(), /论文数据库/);
 });

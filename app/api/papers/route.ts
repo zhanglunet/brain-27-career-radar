@@ -1,7 +1,7 @@
 type Row = {
   id: string; doi: string | null; title: string; venue: string; publication_date: string | null; paper_type: string;
-  version_status: string; source_url: string; topics_json: string; takeaway: string; relevance_score: number;
-  review_status: string; source_verified_at: string | null; authors: string | null; researcher_ids: string | null;
+  version_status: string; source_url: string; source_provider: string; topics_json: string; takeaway: string; relevance_score: number;
+  review_status: string; source_verified_at: string | null; authors: string | null; researcher_ids: string | null; providers: string | null;
 };
 
 export async function GET(request: Request) {
@@ -18,7 +18,8 @@ export async function GET(request: Request) {
     if (researcher) { clauses.push("EXISTS (SELECT 1 FROM paper_authors pa2 JOIN researchers r2 ON r2.id = pa2.researcher_id WHERE pa2.paper_id = p.id AND r2.slug = ?)"); bindings.push(researcher); }
     if (status) { clauses.push("p.review_status = ?"); bindings.push(status); }
     const statement = env.DB.prepare(
-      `SELECT p.*, GROUP_CONCAT(pa.author_name, '、') AS authors, GROUP_CONCAT(pa.researcher_id) AS researcher_ids
+      `SELECT p.*, GROUP_CONCAT(pa.author_name, '、') AS authors, GROUP_CONCAT(pa.researcher_id) AS researcher_ids,
+        (SELECT GROUP_CONCAT(provider_id) FROM paper_provider_records WHERE paper_id = p.id) AS providers
        FROM papers p LEFT JOIN paper_authors pa ON pa.paper_id = p.id
        WHERE ${clauses.join(" AND ")} GROUP BY p.id
        ORDER BY COALESCE(p.publication_date, p.created_at) DESC, p.relevance_score DESC LIMIT 100`,
@@ -33,7 +34,8 @@ export async function GET(request: Request) {
         publicationDate: row.publication_date, paperType: row.paper_type, versionStatus: row.version_status,
         sourceUrl: row.source_url, topics: array(row.topics_json), takeaway: row.takeaway,
         relevanceScore: row.relevance_score, reviewStatus: row.review_status, sourceVerifiedAt: row.source_verified_at,
-        authors: row.authors?.split("、") ?? [], researcherIds: row.researcher_ids?.split(",").filter(Boolean) ?? [] }))
+        authors: row.authors?.split("、") ?? [], researcherIds: row.researcher_ids?.split(",").filter(Boolean) ?? [],
+        providers: row.providers?.split(",").filter(Boolean) ?? [row.source_provider] }))
     }, { headers: { "Cache-Control": "public, max-age=300" } });
   } catch (error) {
     console.error(JSON.stringify({ event: "radar.papers_api.failed", error: message(error) }));
