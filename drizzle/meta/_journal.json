@@ -106,6 +106,13 @@
       "when": 1785563430032,
       "tag": "0016_regional_ecosystems",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1785567000000,
+      "tag": "0017_foundation_model_companies",
+      "breakpoints": true
     }
   ]
 }

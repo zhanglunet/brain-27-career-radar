@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-08-01 · P1.10 大模型公司雷达与地图聚合下钻
+
+- 新增 `/ai-companies` 与 `/api/ai-companies`，首批覆盖 18 家大模型公司：OpenAI、Google DeepMind、Anthropic、Meta、Microsoft、Amazon、xAI、Mistral，以及 DeepSeek、Kimi、智谱 GLM、阿里通义、腾讯混元、字节跳动 Seed / 豆包、百度文心、华为盘古、MiniMax、阶跃星辰。
+- 新增 18 个官方来源，Critical 每 6 小时、高优先级每 12 小时进入既有 Cron 检查；公司卡明确区分“官方招聘入口”“已核验机会”和“等待发现具体机会”。
+- 首批只发布 3 个有官方依据的项目入口：字节跳动前沿技术人才校招、Google DeepMind Student Researcher、OpenAI Emerging Talent / Residency；未知岗位不由系统猜测生成。
+- 全球地图改为“全球区域聚合 → 地区城市下钻”，全球层不再同时堆叠英国和中国城市；城市点增加至少 48 SVG 单位命中区，手机端移除 620px 强制横向滚动。
+- D1 迁移 `0017_foundation_model_companies.sql` 在现有本地库成功应用；新页面与 API 已进入生产构建路由。
+
 ## 2026-08-01 · P2.3 双语论文、知识图谱、北京科研生态与统一日历
 
 - 论文增加中文标题、中文摘要和翻译状态；Cloudflare Cron 完成论文同步后调用 Workers AI，每轮有界处理 6 篇，失败可重试且不阻塞其他管线。
