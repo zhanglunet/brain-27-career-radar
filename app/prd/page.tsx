@@ -9,10 +9,10 @@ export const metadata: Metadata = {
 
 export default function PrdPage() {
   return <main className={styles.page}>
-    <nav className={styles.nav}><Link className={styles.brand} href="/"><span className={styles.brandMark}>Ψ</span> BRAIN / 27</Link><div className={styles.navLinks}><Link href="/">机会雷达</Link><Link href="/researchers">导师雷达</Link><Link href="/papers">最新论文</Link><Link href="/sources">信息源</Link><Link href="/logs">采集日志</Link><Link href="/system">系统说明</Link><Link className={styles.active} href="/prd">需求文档</Link></div></nav>
+    <nav className={styles.nav}><Link className={styles.brand} href="/"><span className={styles.brandMark}>Ψ</span> BRAIN / 27</Link><div className={styles.navLinks}><Link href="/">机会雷达</Link><Link href="/ai-companies">大模型公司</Link><Link href="/researchers">导师雷达</Link><Link href="/papers">最新论文</Link><Link href="/sources">信息源</Link><Link href="/logs">采集日志</Link><Link href="/system">系统说明</Link><Link className={styles.active} href="/prd">需求文档</Link></div></nav>
     <header className={styles.hero}>
-      <div><p className={styles.eyebrow}>PRODUCT REQUIREMENTS / V0.7</p><h1>自动更新<span>需求文档</span></h1><p className={styles.lede}>自动检查可信来源、记录变化、保护最后可信内容；同时提供硕士可申请的高校科研助理路径，并保证电脑和手机都能完整使用。</p></div>
-      <aside className={styles.heroAside}><strong>2026.08.01</strong><p>P1.9 科研助理路径、上海深圳重点覆盖和响应式页面已实现；高风险语义字段仍不自动发布。</p></aside>
+      <div><p className={styles.eyebrow}>PRODUCT REQUIREMENTS / V0.9</p><h1>自动更新<span>需求文档</span></h1><p className={styles.lede}>自动检查可信来源、记录变化、保护最后可信内容；同时提供大模型公司、科研助理与多地区机会，并保证电脑和手机都能完整使用。</p></div>
+      <aside className={styles.heroAside}><strong>2026.08.01</strong><p>P1.10 大模型公司雷达与地图聚合下钻已开发；招聘入口不会被误报为具体岗位。</p></aside>
     </header>
 
     <div className={styles.content}>
@@ -57,6 +57,7 @@ export default function PrdPage() {
           <tr><td>P1.7</td><td>建立可检索的信息源目录和逐来源历史日志，扩展博士与校招重点地区。</td><td>来源/日志 API、两个公开查询页面。</td><td>英国、爱尔兰、中国大陆、中国香港均可筛选；每次 Cron 留下逐来源结果。</td></tr>
           <tr><td>P1.8</td><td>自动审查页面变化，按来源优先级和检查间隔调度。</td><td>自动观察/稳定结案、47 个来源、14 个重点来源。</td><td>重点每 6 小时、普通每日；语义变化不自动发布。</td></tr>
           <tr><td>P1.9</td><td>增加硕士可申请的高校科研助理路径，并强化香港、上海、深圳覆盖。</td><td>57 个来源、31 个重点来源、9 个科研助理入口/岗位及响应式卡片。</td><td>学历和博士过渡价值清晰；电脑与手机均可筛选和阅读。</td></tr>
+          <tr><td>P1.10</td><td>增加全球与中国头部大模型公司；地图先聚合区域，再下钻城市。</td><td>18 家公司、18 个官方人才源、公司/API 页面和可点选聚合地图。</td><td>入口与岗位分层；全球层无密集城市点；手机可直接点选。</td></tr>
         </tbody></table></div>
         <p className={styles.note}>结构化抽取先覆盖 5 个来源并观察一周；57 个来源已进入目录，其中 51 个执行基础巡检。达到准确率与重复率门槛后，再按页面稳定性分批开发更多字段适配器。</p>
       </section>
@@ -88,6 +89,8 @@ export default function PrdPage() {
           <tr><td>FR-12</td><td>博士与联培博士明确标注全奖、部分资助、混合、自费或待确认。</td><td>页面显示 funding_type、覆盖范围和官方核验说明；国际生学费差额单独提示。</td><td><span className={styles.good}>已完成</span></td></tr>
           <tr><td>FR-13</td><td>科研助理独立展示硕士资格、逐岗学历条件和博士过渡价值。</td><td>9 个入口/岗位均显示字段；文案不暗示工作可自动转博。</td><td><span className={styles.good}>已完成</span></td></tr>
           <tr><td>FR-14</td><td>首页、来源、日志、系统和 PRD 页面适配电脑与手机。</td><td>桌面多列、手机单列；筛选可横向滚动，关键字段不隐藏。</td><td><span className={styles.good}>已完成</span></td></tr>
+          <tr><td>FR-15</td><td>跟踪国内外头部大模型公司的官方人才入口和具体机会。</td><td>公司页覆盖 18 家；Critical 6 小时、高优先级 12 小时检查。</td><td><span className={styles.good}>已开发</span></td></tr>
+          <tr><td>FR-16</td><td>全球地图使用区域聚合与城市下钻，避免密集圆点难以点击。</td><td>全球层只显示区域；点击后展开城市；手机无强制横向滚动。</td><td><span className={styles.good}>已开发</span></td></tr>
         </tbody></table></div>
       </section>
 
@@ -122,6 +125,6 @@ export default function PrdPage() {
         </ul>
       </section>
     </div>
-    <footer className={styles.footer}><span>BRAIN / 27 · PRD v0.8</span><p>产品边界：自动发现变化，不未经审核自动发布高风险判断。</p></footer>
+    <footer className={styles.footer}><span>BRAIN / 27 · PRD v0.9</span><p>产品边界：自动发现变化，不未经审核自动发布高风险判断。</p></footer>
   </main>;
 }

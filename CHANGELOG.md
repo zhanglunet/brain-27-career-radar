@@ -4,6 +4,9 @@
 
 ### Added
 
+- `/ai-companies` 全球大模型公司雷达与 `/api/ai-companies`，覆盖 18 家重点公司、官方招聘源健康和已核验机会。
+- OpenAI、Google DeepMind、Anthropic、Meta、Microsoft、Amazon、xAI、Mistral、DeepSeek、Kimi、GLM、通义、混元、字节跳动 Seed / 豆包、文心、盘古、MiniMax、阶跃星辰官方来源。
+
 - `/calendar` 统一时间表：开放日、截止日、提前准备任务，以及确认/预计/滚动/待确认日期状态。
 - `/knowledge-graph` 论文、导师、研究方向、机构与机会事实图谱。
 - `/beijing` 北京高校、重点实验室、中科院研究所和相关机会目录。
@@ -38,6 +41,9 @@
 - P1 回归样本与真实 scheduled 全链路验证；系统状态接口新增灰度聚合指标。
 
 ### Changed
+
+- 全球机会地图改为区域聚合后下钻城市，扩大点选命中区并移除手机端强制横向滚动。
+- 大模型公司页面严格区分官方招聘入口和具体已核验机会。
 
 - 通用论文 HTTP 客户端对 `429 Too Many Requests` 遵循 `Retry-After` 并执行有界重试。
 - 页面更新时间、机会数、立即行动数和机构数改为数据驱动。

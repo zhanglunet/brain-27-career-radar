@@ -2,7 +2,7 @@
 
 面向 2027 年毕业的实验心理学硕士，持续汇总全球脑科学、认知神经科学、脑机接口与脑启发人工智能方向的博士、奖学金、高校科研助理和企业校招机会。
 
-[访问线上网站](https://openagent.hk) · [全球地图](https://openagent.hk/map) · [统一日历](https://openagent.hk/calendar) · [知识图谱](https://openagent.hk/knowledge-graph) · [北京](https://openagent.hk/beijing) · [上海](https://openagent.hk/shanghai) · [深圳](https://openagent.hk/shenzhen) · [英国](https://openagent.hk/uk) · [爱尔兰](https://openagent.hk/ireland) · [中国香港](https://openagent.hk/hong-kong) · [导师雷达](https://openagent.hk/researchers) · [双语论文](https://openagent.hk/papers)
+[访问线上网站](https://openagent.hk) · [全球地图](https://openagent.hk/map) · [大模型公司](https://openagent.hk/ai-companies) · [统一日历](https://openagent.hk/calendar) · [知识图谱](https://openagent.hk/knowledge-graph) · [北京](https://openagent.hk/beijing) · [上海](https://openagent.hk/shanghai) · [深圳](https://openagent.hk/shenzhen) · [英国](https://openagent.hk/uk) · [爱尔兰](https://openagent.hk/ireland) · [中国香港](https://openagent.hk/hong-kong) · [导师雷达](https://openagent.hk/researchers) · [双语论文](https://openagent.hk/papers)
 
 ![BRAIN / 27 脑科学与人工智能机会雷达首页](docs/images/brain-27-radar.jpg)
 
@@ -10,7 +10,7 @@
 
 BRAIN / 27 不是简单的招聘链接集合，而是一套可审计、可追踪的机会情报系统。系统以高校、科研机构和企业官方页面为主要信息源，通过 Cloudflare Cron 定时检查内容变化，将来源快照、逐来源日志、候选记录、字段证据和审核结论保存在 D1 数据库中。
 
-当前版本为 `v0.6.0`，重点覆盖：
+当前版本为 `v0.7.0`，重点覆盖：
 
 - 英国：中国学生重点关注的 Oxford、Cambridge、UCL 等高校与研究机构；
 - 中国大陆：清华、北大，以及北京、上海、深圳的高校、科研机构和科技企业；
@@ -24,10 +24,10 @@ BRAIN / 27 不是简单的招聘链接集合，而是一套可审计、可追踪
 
 | 指标 | 当前数量 |
 | --- | ---: |
-| 官方信息源 | 91 |
-| 公开机会 | 42 |
+| 官方信息源 | 109 |
+| 公开机会 | 45 |
 | 硕士可申请的科研助理机会 | 9 |
-| 机构 | 35 |
+| 机构/公司 | 53 |
 | 北京机构 | 15 |
 | 首批重点导师 | 21 |
 
@@ -42,7 +42,8 @@ BRAIN / 27 不是简单的招聘链接集合，而是一套可审计、可追踪
 - 知识图谱：连接论文、导师、研究方向、机构和机会，只呈现数据库中有证据的关系；
 - 统一日历：集中展示开放日、截止日和截止前 30/14/7/3/当天准备任务；
 - 北京科研生态：首批整合北京高校、全国重点实验室、中科院研究所及博士、科研助理、实习和研究岗位；
-- 全球与区域视图：在世界地图查看英国、中国内地、中国香港的城市分布，并进入北京、上海、深圳、英国、爱尔兰、中国香港独立页面；
+- 大模型公司雷达：覆盖 18 家全球与中国头部团队，严格区分官方招聘入口、已核验机会和等待发现状态；
+- 全球与区域视图：世界地图先显示区域聚合点，再下钻到疏排城市点；并可进入北京、上海、深圳、英国、爱尔兰、中国香港独立页面；
 - 论文数据库：Crossref、Europe PMC、arXiv、PubMed、PMC、DOAJ 已自动接入；网页继续列出 OpenAlex、CORE 等需要配置或研究中的来源；
 - 奖学金标注：展示资助类型、覆盖范围、核验时间和国际学生适用边界；
 - 科研助理路径：独立标注硕士申请条件、学历要求和博士过渡价值，但不承诺受聘后自动转博；

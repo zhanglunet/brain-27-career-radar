@@ -50,6 +50,10 @@
 .statusCard span, .cardLabel { display: block; color: var(--muted); font: 10px var(--font-geist-mono); letter-spacing: .1em; text-transform: uppercase; }
 .statusCard strong { display: block; margin-top: 14px; color: var(--lime); font: 29px var(--font-geist-mono); }
 .statusCard p, .card p, .requirement p { margin: 10px 0 0; color: #9fb2ac; font-size: 13px; line-height: 1.6; }
+.statusCard small, .metric small { display: block; margin-top: 8px; color: #9fb2ac; font-size: 11px; }
+.metric { padding: 20px; border: 1px solid var(--line); background: rgba(12, 32, 27, .9); }
+.metric span { display: block; color: var(--muted); font: 10px var(--font-geist-mono); letter-spacing: .1em; text-transform: uppercase; }
+.metric strong { display: block; margin-top: 14px; color: var(--lime); font: 29px var(--font-geist-mono); }
 .state { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 18px; padding: 7px 10px; border: 1px solid rgba(201, 255, 107, .32); color: var(--lime); font: 700 11px var(--font-geist-mono); }
 .state::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 12px currentColor; }
 .stateWarning { color: #ffd76b; border-color: rgba(255, 215, 107, .32); }
@@ -221,15 +225,21 @@ button.mapStat, button.mapStatActive { cursor: pointer; }
 .filterActive { border-color: var(--aqua); color: var(--ink); }
 .mapLayout { display: grid; grid-template-columns: minmax(0,1fr) 300px; border: 1px solid var(--line); background: rgba(5,19,15,.9); }
 .worldMapWrap { min-width: 0; padding: 12px; }
-.worldMap { display: block; width: 100%; height: auto; min-height: 420px; }
+.mapModeBar { display: flex; align-items: center; justify-content: space-between; min-height: 42px; padding: 0 8px 10px; color: var(--muted); font: 10px var(--font-geist-mono); }
+.mapModeBar strong { color: var(--ink); }
+.mapModeBar button { min-height: 36px; padding: 6px 11px; border: 1px solid var(--aqua); background: transparent; color: var(--aqua); cursor: pointer; }
+.worldMap { display: block; width: 100%; height: auto; min-height: 420px; transition: all .24s ease; }
 .mapOcean { fill: #071c20; }
 .mapGrid line { stroke: rgba(98,231,212,.08); stroke-width: 1; }
 .mapLand path { fill: #153d35; stroke: rgba(98,231,212,.24); stroke-width: 1.5; }
-.mapMarker, .mapMarkerActive { cursor: pointer; outline: none; }
-.mapMarker > circle:not(.mapPulse) { fill: var(--aqua); stroke: #071512; stroke-width: 3; }
-.mapMarkerActive > circle:not(.mapPulse) { fill: var(--lime); stroke: #fff; stroke-width: 3; }
-.mapMarker text, .mapMarkerActive text { fill: #071512; text-anchor: middle; font: 700 12px var(--font-geist-mono); pointer-events: none; }
-.mapMarker .mapLabel, .mapMarkerActive .mapLabel { fill: #e8f2ee; font-size: 11px; paint-order: stroke; stroke: #071c20; stroke-width: 4px; }
+.mapMarker, .mapMarkerActive, .mapRegionMarker { cursor: pointer; outline: none; }
+.mapHit { fill: transparent !important; stroke: none !important; pointer-events: all; }
+.mapMarker > circle:not(.mapPulse):not(.mapHit) { fill: var(--aqua); stroke: #071512; stroke-width: 3; }
+.mapMarkerActive > circle:not(.mapPulse):not(.mapHit) { fill: var(--lime); stroke: #fff; stroke-width: 3; }
+.mapMarker text, .mapMarkerActive text, .mapRegionMarker text { fill: #071512; text-anchor: middle; font: 700 12px var(--font-geist-mono); pointer-events: none; }
+.mapMarker .mapLabel, .mapMarkerActive .mapLabel, .mapRegionMarker .mapLabel { fill: #e8f2ee; font-size: 11px; paint-order: stroke; stroke: #071c20; stroke-width: 4px; }
+.mapRegionMarker > circle:not(.mapPulse) { fill: var(--lime); stroke: #071512; stroke-width: 4; }
+.mapRegionMarker:focus > circle:not(.mapPulse), .mapRegionMarker:hover > circle:not(.mapPulse) { stroke: #fff; }
 .mapPulse { fill: rgba(98,231,212,.12); stroke: rgba(98,231,212,.35); }
 .mapMarkerActive .mapPulse { fill: rgba(201,255,107,.18); stroke: rgba(201,255,107,.55); }
 .mapNote { margin: 8px 8px 4px; color: var(--muted); font-size: 10px; line-height: 1.55; }
@@ -248,6 +258,18 @@ button.mapStat, button.mapStatActive { cursor: pointer; }
 .mapAccessible button { display: grid; gap: 4px; padding: 13px; border: 0; border-right: 1px solid var(--line); background: rgba(10,29,24,.9); color: var(--ink); text-align: left; cursor: pointer; }
 .mapAccessible span { color: var(--muted); font-size: 9px; }
 .mapAccessible b { color: var(--lime); font: 16px var(--font-geist-mono); }
+
+.aiCompanyToolbar { display: grid; grid-template-columns: auto minmax(260px, 1fr); gap: 14px; align-items: center; }
+.aiCompanyToolbar > div { display: flex; gap: 7px; }
+.aiCompanyToolbar input { width: 100%; min-height: 42px; padding: 9px 13px; border: 1px solid var(--line); background: rgba(9,29,24,.92); color: var(--ink); }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.companyActions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 16px; }
+.companyActions span { color: var(--muted); font: 9px var(--font-geist-mono); text-align: right; }
+.companyOpportunity { margin-top: 12px; padding: 12px; border: 1px solid rgba(201,255,107,.24); background: rgba(201,255,107,.035); }
+.companyOpportunity > div { display: flex; justify-content: space-between; color: var(--aqua); font: 9px var(--font-geist-mono); }
+.companyOpportunity em { color: var(--lime); font-style: normal; }
+.companyOpportunity h4 { margin: 9px 0 6px; font-size: 13px; line-height: 1.45; }
+.companyOpportunity p { margin: 0; font-size: 10px; }
 
 .logSection { margin-top: 36px; }
 .logSection h3 { margin: 0 0 14px; font-size: 20px; }
@@ -300,7 +322,8 @@ button.mapStat, button.mapStatActive { cursor: pointer; }
   .deadlineList a { grid-template-columns: 86px 1fr; gap: 10px; }
   .deadlineList em { grid-column: 2; }
   .mapStats { grid-template-columns: 1fr 1fr; }
-  .worldMapWrap { padding: 5px; overflow-x: auto; }
-  .worldMap { min-width: 620px; min-height: 310px; }
+  .worldMapWrap { padding: 5px; }
+  .worldMap { min-width: 0; min-height: 300px; }
   .mapAccessible > div { grid-template-columns: repeat(2,1fr); }
+  .aiCompanyToolbar { grid-template-columns: 1fr; }
 }

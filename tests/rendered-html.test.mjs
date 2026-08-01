@@ -84,7 +84,15 @@ test("server-renders the academic intelligence pages", async () => {
 
   const map = await render("/map");
   assert.equal(map.status, 200);
-  assert.match(await map.text(), /全球分布一眼看清/);
+  const mapHtml = await map.text();
+  assert.match(mapHtml, /全球分布一眼看清/);
+  assert.match(mapHtml, /区域 → 城市/);
+
+  const companies = await render("/ai-companies");
+  assert.equal(companies.status, 200);
+  const companiesHtml = await companies.text();
+  assert.match(companiesHtml, /大模型公司机会/);
+  assert.match(companiesHtml, /字节跳动 Seed \/ 豆包/);
 
   for (const [path, label] of [["/shanghai", "上海高校与科研机构"], ["/shenzhen", "深圳高校与科研机构"], ["/uk", "英国高校与科研机构"], ["/ireland", "爱尔兰高校与科研机构"], ["/hong-kong", "中国香港高校与科研机构"]]) {
     const region = await render(path);
