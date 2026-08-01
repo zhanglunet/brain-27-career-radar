@@ -17,7 +17,7 @@ type AcademicSyncSummary = {
 
 export async function syncAcademicPapers(
   db: D1Database,
-  options: { trigger: AcademicTrigger; fetcher?: typeof fetch; now?: () => Date },
+  options: { trigger: AcademicTrigger; fetcher?: typeof fetch; now?: () => Date; providers?: EnabledPaperProvider[] },
 ): Promise<AcademicSyncSummary> {
   const fetcher = options.fetcher ?? fetch;
   const now = options.now ?? (() => new Date());
@@ -38,12 +38,15 @@ export async function syncAcademicPapers(
       ).bind(MAX_RESEARCHERS_PER_RUN).all<PaperResearcher>(),
     ]);
 
+    const providerRows = options.providers?.length
+      ? providersResult.results.filter((provider) => options.providers?.includes(provider.id))
+      : providersResult.results;
     let candidatesFound = 0;
     let papersInserted = 0;
     let failedCount = 0;
     const allErrors: string[] = [];
 
-    for (const provider of providersResult.results) {
+    for (const provider of providerRows) {
       const providerStartedAt = now().toISOString();
       let providerCandidates = 0;
       let providerInserted = 0;
@@ -91,7 +94,7 @@ export async function syncAcademicPapers(
       allErrors.push(...providerErrors.map((message) => `${provider.id}/${message}`));
     }
 
-    const checks = providersResult.results.length * researchersResult.results.length;
+    const checks = providerRows.length * researchersResult.results.length;
     const status = statusFromFailures(failedCount, checks);
     const finishedAt = now().toISOString();
     await db.prepare(
@@ -99,7 +102,7 @@ export async function syncAcademicPapers(
        papers_inserted = ?, failed_count = ?, error_summary = ? WHERE id = ?`,
     ).bind(status, finishedAt, checks, candidatesFound, papersInserted, failedCount, allErrors.slice(0, 10).join("\n") || null, runId).run();
     const summary: AcademicSyncSummary = { runId, status, researchersChecked: checks, candidatesFound, papersInserted, failedCount };
-    console.log(JSON.stringify({ event: "radar.academic_sync.finished", ...summary, providers: providersResult.results.length, finishedAt }));
+    console.log(JSON.stringify({ event: "radar.academic_sync.finished", ...summary, providers: providerRows.length, finishedAt }));
     return summary;
   } catch (error) {
     const message = errorMessage(error);

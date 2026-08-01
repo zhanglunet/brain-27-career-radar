@@ -92,12 +92,16 @@ test("PMC adapter returns an open full-text candidate with PMCID", async () => {
 });
 
 test("DOAJ adapter reads v4 article metadata and OA link", async () => {
+  let attempts = 0;
   const fetcher = async (input) => {
+    attempts += 1;
     const url = new URL(input.toString());
     assert.equal(url.pathname.startsWith("/api/v4/search/articles/"), true);
+    if (attempts === 1) return new Response("rate limited", { status: 429, headers: { "Retry-After": "0.001" } });
     return Response.json({ results: [{ id: "doaj-1", bibjson: { title: "Neural learning signals across the brain", abstract: "Open article", year: "2026", month: "July", author: [{ name: "Tim Behrens" }], identifier: [{ type: "doi", id: "10.1000/doaj-paper" }], journal: { title: "Open Neuroscience" }, link: [{ type: "fulltext", url: "https://example.test/doaj-fulltext" }] } }] });
   };
   const result = await discoverProviderPapers("doaj", researcher, fetcher, now);
+  assert.equal(attempts, 2);
   assert.equal(result.length, 1);
   assert.equal(result[0].provider, "doaj");
   assert.equal(result[0].openAccessUrl, "https://example.test/doaj-fulltext");
