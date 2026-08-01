@@ -1,0 +1,1 @@
+import type{Metadata}from"next";import RegionPage from"../regions/RegionPage";export const metadata:Metadata={title:"上海高校与科研机构｜BRAIN / 27",description:"上海脑科学、认知科学、心理学与人工智能机构及机会。"};export default function Page(){return <RegionPage slug="shanghai" name="上海" nameEn="Shanghai" subtitle="高校 × 脑智 × AI 实验室"/>}

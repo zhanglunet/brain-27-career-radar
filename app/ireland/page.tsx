@@ -1,0 +1,1 @@
+import type{Metadata}from"next";import RegionPage from"../regions/RegionPage";export const metadata:Metadata={title:"爱尔兰高校与科研机构｜BRAIN / 27",description:"爱尔兰神经科学、心理学、高校与企业研究机会。"};export default function Page(){return <RegionPage slug="ireland" name="爱尔兰" nameEn="Ireland" subtitle="Trinity × UCD × Research"/>}

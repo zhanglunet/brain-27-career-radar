@@ -2,7 +2,7 @@
 
 面向 2027 年毕业的实验心理学硕士，持续汇总全球脑科学、认知神经科学、脑机接口与脑启发人工智能方向的博士、奖学金、高校科研助理和企业校招机会。
 
-[访问线上网站](https://openagent.hk) · [统一日历](https://openagent.hk/calendar) · [知识图谱](https://openagent.hk/knowledge-graph) · [北京机会](https://openagent.hk/beijing) · [导师雷达](https://openagent.hk/researchers) · [双语论文](https://openagent.hk/papers) · [论文数据库](https://openagent.hk/paper-sources) · [信息源](https://openagent.hk/sources) · [采集日志](https://openagent.hk/logs) · [系统说明](https://openagent.hk/system) · [需求文档](https://openagent.hk/prd)
+[访问线上网站](https://openagent.hk) · [全球地图](https://openagent.hk/map) · [统一日历](https://openagent.hk/calendar) · [知识图谱](https://openagent.hk/knowledge-graph) · [北京](https://openagent.hk/beijing) · [上海](https://openagent.hk/shanghai) · [深圳](https://openagent.hk/shenzhen) · [英国](https://openagent.hk/uk) · [爱尔兰](https://openagent.hk/ireland) · [中国香港](https://openagent.hk/hong-kong) · [导师雷达](https://openagent.hk/researchers) · [双语论文](https://openagent.hk/papers)
 
 ![BRAIN / 27 脑科学与人工智能机会雷达首页](docs/images/brain-27-radar.jpg)
 
@@ -42,6 +42,7 @@ BRAIN / 27 不是简单的招聘链接集合，而是一套可审计、可追踪
 - 知识图谱：连接论文、导师、研究方向、机构和机会，只呈现数据库中有证据的关系；
 - 统一日历：集中展示开放日、截止日和截止前 30/14/7/3/当天准备任务；
 - 北京科研生态：首批整合北京高校、全国重点实验室、中科院研究所及博士、科研助理、实习和研究岗位；
+- 全球与区域视图：在世界地图查看英国、中国内地、中国香港的城市分布，并进入北京、上海、深圳、英国、爱尔兰、中国香港独立页面；
 - 论文数据库：Crossref、Europe PMC、arXiv、PubMed、PMC、DOAJ 已自动接入；网页继续列出 OpenAlex、CORE 等需要配置或研究中的来源；
 - 奖学金标注：展示资助类型、覆盖范围、核验时间和国际学生适用边界；
 - 科研助理路径：独立标注硕士申请条件、学历要求和博士过渡价值，但不承诺受聘后自动转博；

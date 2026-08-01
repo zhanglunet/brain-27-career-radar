@@ -9,6 +9,7 @@
 - `/beijing` 北京高校、重点实验室、中科院研究所和相关机会目录。
 - 论文中英文标题与摘要、Workers AI 有界异步翻译和 D1 翻译状态。
 - P2.3 PRD 文档及网页版 `/prd/knowledge-graph`。
+- `/map` 全球机会分布地图，以及上海、深圳、英国、爱尔兰和中国香港五个区域生态页。
 
 - 根域名 `openagent.hk`、`www.openagent.hk` 与 `radar.openagent.hk` 的版本化 Custom Domain 配置。
 - 学术同步可按提供方子集执行，便于对被限流的数据库做有审计记录的恢复同步。

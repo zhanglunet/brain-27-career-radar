@@ -81,4 +81,14 @@ test("server-renders the academic intelligence pages", async () => {
   const graphPrd = await render("/prd/knowledge-graph");
   assert.equal(graphPrd.status, 200);
   assert.match(await graphPrd.text(), /截止日期治理/);
+
+  const map = await render("/map");
+  assert.equal(map.status, 200);
+  assert.match(await map.text(), /全球分布一眼看清/);
+
+  for (const [path, label] of [["/shanghai", "上海高校与科研机构"], ["/shenzhen", "深圳高校与科研机构"], ["/uk", "英国高校与科研机构"], ["/ireland", "爱尔兰高校与科研机构"], ["/hong-kong", "中国香港高校与科研机构"]]) {
+    const region = await render(path);
+    assert.equal(region.status, 200);
+    assert.match(await region.text(), new RegExp(label));
+  }
 });
