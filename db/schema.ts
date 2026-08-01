@@ -108,6 +108,27 @@ export const syncRuns = sqliteTable("sync_runs", {
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const intelligenceReports = sqliteTable("intelligence_reports", {
+  id: text("id").primaryKey(),
+  periodType: text("period_type", { enum: ["daily", "weekly", "monthly"] }).notNull(),
+  periodStart: text("period_start").notNull(),
+  periodEnd: text("period_end").notNull(),
+  newOpportunities: integer("new_opportunities").notNull().default(0),
+  newSources: integer("new_sources").notNull().default(0),
+  newPapers: integer("new_papers").notNull().default(0),
+  sourceChanges: integer("source_changes").notNull().default(0),
+  sourceFailures: integer("source_failures").notNull().default(0),
+  sourceRuns: integer("source_runs").notNull().default(0),
+  academicRuns: integer("academic_runs").notNull().default(0),
+  summary: text("summary").notNull(),
+  highlightsJson: text("highlights_json").notNull().default('{"opportunities":[],"sources":[],"papers":[]}'),
+  generatedAt: text("generated_at").notNull(),
+  ...timestamps,
+}, (table) => [
+  uniqueIndex("intelligence_reports_period_unique").on(table.periodType, table.periodStart),
+  index("intelligence_reports_history_idx").on(table.periodType, table.periodStart),
+]);
+
 export const sourceSnapshots = sqliteTable("source_snapshots", {
   id: text("id").primaryKey(),
   sourceId: text("source_id").notNull().references(() => sources.id, { onDelete: "cascade" }),

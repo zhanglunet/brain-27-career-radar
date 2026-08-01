@@ -94,6 +94,12 @@ test("server-renders the academic intelligence pages", async () => {
   assert.match(companiesHtml, /大模型公司机会/);
   assert.match(companiesHtml, /字节跳动 Seed \/ 豆包/);
 
+  const reports = await render("/reports");
+  assert.equal(reports.status, 200);
+  const reportsHtml = await reports.text();
+  assert.match(reportsHtml, /每天发生了什么/);
+  assert.match(reportsHtml, /日报、周报和月报/);
+
   for (const [path, label] of [["/shanghai", "上海高校与科研机构"], ["/shenzhen", "深圳高校与科研机构"], ["/uk", "英国高校与科研机构"], ["/ireland", "爱尔兰高校与科研机构"], ["/hong-kong", "中国香港高校与科研机构"]]) {
     const region = await render(path);
     assert.equal(region.status, 200);

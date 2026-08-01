@@ -26,5 +26,5 @@ export default function LogsPage() {
 }
 
 function DocsNav() {
-  return <nav className={styles.nav}><Link className={styles.brand} href="/"><span className={styles.brandMark}>Ψ</span> BRAIN / 27</Link><div className={styles.navLinks}><Link href="/">机会雷达</Link><Link href="/sources">信息源</Link><Link className={styles.active} href="/logs">采集日志</Link><Link href="/system">系统说明</Link><Link href="/prd">需求文档</Link></div></nav>;
+  return <nav className={styles.nav}><Link className={styles.brand} href="/"><span className={styles.brandMark}>Ψ</span> BRAIN / 27</Link><div className={styles.navLinks}><Link href="/">机会雷达</Link><Link href="/reports">情报报告</Link><Link href="/sources">信息源</Link><Link className={styles.active} href="/logs">采集日志</Link><Link href="/system">系统说明</Link><Link href="/prd">需求文档</Link></div></nav>;
 }

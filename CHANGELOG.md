@@ -4,6 +4,9 @@
 
 ### Added
 
+- `/reports` 情报报告页面与 `/api/reports`：每日新增机会、来源、论文总结，以及历史日报、周报、月报和检索。
+- `intelligence_reports` D1 报告快照、历史回填与 Cron 自动刷新器。
+
 - `/ai-companies` 全球大模型公司雷达与 `/api/ai-companies`，覆盖 18 家重点公司、官方招聘源健康和已核验机会。
 - OpenAI、Google DeepMind、Anthropic、Meta、Microsoft、Amazon、xAI、Mistral、DeepSeek、Kimi、GLM、通义、混元、字节跳动 Seed / 豆包、文心、盘古、MiniMax、阶跃星辰官方来源。
 

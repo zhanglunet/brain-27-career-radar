@@ -271,6 +271,35 @@ button.mapStat, button.mapStatActive { cursor: pointer; }
 .companyOpportunity h4 { margin: 9px 0 6px; font-size: 13px; line-height: 1.45; }
 .companyOpportunity p { margin: 0; font-size: 10px; }
 
+.reportHeroGrid { display: grid; grid-template-columns: minmax(0,2fr) repeat(3,minmax(120px,1fr)); gap: 12px; margin-bottom: 26px; }
+.reportHeroGrid > article, .reportMetric { padding: 22px; border: 1px solid var(--line); background: rgba(10,29,24,.92); }
+.reportHeroGrid article h2 { margin: 0 0 12px; font-size: 27px; }
+.reportHeroGrid article > p:not(.eyebrow) { margin: 0; color: #b5c7c1; line-height: 1.65; }
+.reportHeroGrid article small { display: block; margin-top: 15px; color: var(--muted); font: 9px var(--font-geist-mono); }
+.reportMetric { display: grid; align-content: center; gap: 12px; }
+.reportMetric span { color: var(--aqua); font: 10px var(--font-geist-mono); }
+.reportMetric strong { color: var(--lime); font: 38px var(--font-geist-mono); }
+.reportToolbar { display: grid; grid-template-columns: auto minmax(260px,1fr); gap: 14px; align-items: center; margin-bottom: 18px; }
+.reportToolbar > div { display: flex; gap: 7px; }
+.reportToolbar input { width: 100%; min-height: 42px; padding: 9px 13px; border: 1px solid var(--line); background: rgba(9,29,24,.92); color: var(--ink); }
+.reportList { display: grid; gap: 14px; }
+.reportCard { padding: 22px; border: 1px solid var(--line); background: rgba(10,29,24,.9); }
+.reportCard header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.reportCard header span { color: var(--aqua); font: 9px var(--font-geist-mono); }
+.reportCard header h3 { margin: 7px 0 0; font-size: 20px; }
+.reportCard header small { color: var(--muted); font: 9px var(--font-geist-mono); text-align: right; }
+.reportNumbers { display: grid; grid-template-columns: repeat(4,1fr); margin: 18px 0; border: 1px solid var(--line); }
+.reportNumbers div { display: grid; gap: 5px; padding: 13px; border-right: 1px solid var(--line); }
+.reportNumbers div:last-child { border-right: 0; }
+.reportNumbers b { color: var(--lime); font: 22px var(--font-geist-mono); }
+.reportNumbers span { color: var(--muted); font-size: 9px; }
+.reportCard > p { color: #b5c7c1; line-height: 1.65; font-size: 12px; }
+.reportHighlights { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+.reportHighlights > div { padding: 14px; border: 1px solid var(--line); }
+.reportHighlights b { color: var(--aqua); font: 10px var(--font-geist-mono); }
+.reportHighlights ul { margin: 10px 0 0; padding-left: 16px; color: var(--muted); font-size: 10px; line-height: 1.65; }
+.reportWarning { padding: 10px 12px; border-left: 3px solid #ffd76b; background: rgba(255,215,107,.05); color: #ffd76b !important; }
+
 .logSection { margin-top: 36px; }
 .logSection h3 { margin: 0 0 14px; font-size: 20px; }
 .pagination { display: flex; align-items: center; justify-content: flex-end; gap: 14px; margin-top: 14px; color: var(--muted); font: 12px var(--font-geist-mono); }
@@ -298,6 +327,8 @@ button.mapStat, button.mapStatActive { cursor: pointer; }
   .mapLayout { grid-template-columns: 1fr; }
   .mapInspector { border-left: 0; border-top: 1px solid var(--line); }
   .mapAccessible > div { grid-template-columns: repeat(3,1fr); }
+  .reportHeroGrid { grid-template-columns: repeat(3,1fr); }
+  .reportHeroGrid > article { grid-column: 1 / -1; }
 }
 
 @media (max-width: 620px) {
@@ -326,4 +357,11 @@ button.mapStat, button.mapStatActive { cursor: pointer; }
   .worldMap { min-width: 0; min-height: 300px; }
   .mapAccessible > div { grid-template-columns: repeat(2,1fr); }
   .aiCompanyToolbar { grid-template-columns: 1fr; }
+  .reportHeroGrid { grid-template-columns: 1fr 1fr 1fr; }
+  .reportHeroGrid > article { grid-column: 1 / -1; }
+  .reportToolbar { grid-template-columns: 1fr; }
+  .reportHighlights { grid-template-columns: 1fr; }
+  .reportNumbers { grid-template-columns: 1fr 1fr; }
+  .reportNumbers div:nth-child(2) { border-right: 0; }
+  .reportNumbers div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
 }
