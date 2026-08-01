@@ -19,6 +19,18 @@ npm run verify
 
 `verify` 包括 TypeScript、ESLint、构建、SSR 和来源巡检测试。
 
+时间表运维入口：`/calendar`。`官方确认`可作为提交倒计时依据；`预计`只用于提前准备；`滚动`建议尽早申请；`待确认`必须继续核对官方页。英国截止时间按 `Europe/London` 保存，不要手工换算后覆盖原时区。
+
+查询翻译积压与截止日期状态：
+
+```bash
+npx wrangler d1 execute brain-27-career-radar --remote \
+  --config dist/server/wrangler.json \
+  --command "SELECT translation_status, COUNT(*) FROM papers GROUP BY translation_status; SELECT deadline_status, COUNT(*) FROM opportunities WHERE published=1 GROUP BY deadline_status"
+```
+
+翻译由 Cron 在学术采集完成后自动执行，每轮最多 6 篇。检查 Workers Logs 中的 `radar.paper_translation.finished` 和 `radar.paper_translation.failed`；失败项会在后续轮次重试，不要删除英文原文。
+
 ## 本地触发 Cron
 
 先启动构建后的 Worker：
@@ -110,6 +122,7 @@ npx wrangler d1 execute brain-27-career-radar --local \
 ## 日志与数据边界
 
 - Worker 日志只记录运行 ID、来源 ID、状态、计数、最终 URL和有限错误信息。
+- 论文翻译日志只记录论文 ID、计数、模型名和有限错误，不记录完整摘要。
 - 不把完整网页正文写入日志；数据库快照只保存有限长度纯文本摘要。
 - `.wrangler/`、`.env*` 和构建产物均不提交。
 

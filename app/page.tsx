@@ -316,7 +316,7 @@ export default function Home() {
     <main>
       <nav className="nav">
         <a className="brand" href="#top" aria-label="返回顶部"><span>Ψ</span> BRAIN / 27</a>
-        <div className="navlinks"><a href="#radar">机会雷达</a><a href="/researchers">导师雷达</a><a href="/papers">最新论文</a><a href="/paper-sources">论文数据库</a><a href="#institutes">科研机构</a><a href="/sources">信息源</a><a href="/logs">采集日志</a><a href="/system">系统说明</a><a href="/prd">需求文档</a></div>
+        <div className="navlinks"><a href="#radar">机会雷达</a><a href="/calendar">时间表</a><a href="/knowledge-graph">知识图谱</a><a href="/beijing">北京机构</a><a href="/researchers">导师雷达</a><a href="/papers">双语论文</a><a href="/paper-sources">论文数据库</a><a href="/sources">信息源</a><a href="/logs">采集日志</a><a href="/system">系统说明</a><a href="/prd">需求文档</a></div>
         <div className="fresh"><i /> {freshnessLabel(radar.origin, radar.syncStatus)}于 {formatDate(radar.updatedAt)}</div>
       </nav>
 

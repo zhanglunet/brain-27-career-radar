@@ -2,7 +2,7 @@
 
 面向 2027 年毕业的实验心理学硕士，持续汇总全球脑科学、认知神经科学、脑机接口与脑启发人工智能方向的博士、奖学金、高校科研助理和企业校招机会。
 
-[访问线上网站](https://radar.openagent.hk) · [导师雷达](https://radar.openagent.hk/researchers) · [最新论文](https://radar.openagent.hk/papers) · [论文数据库](https://radar.openagent.hk/paper-sources) · [查看信息源](https://radar.openagent.hk/sources) · [查看采集日志](https://radar.openagent.hk/logs) · [系统说明](https://radar.openagent.hk/system) · [需求文档](https://radar.openagent.hk/prd)
+[访问线上网站](https://openagent.hk) · [统一日历](https://openagent.hk/calendar) · [知识图谱](https://openagent.hk/knowledge-graph) · [北京机会](https://openagent.hk/beijing) · [导师雷达](https://openagent.hk/researchers) · [双语论文](https://openagent.hk/papers) · [论文数据库](https://openagent.hk/paper-sources) · [信息源](https://openagent.hk/sources) · [采集日志](https://openagent.hk/logs) · [系统说明](https://openagent.hk/system) · [需求文档](https://openagent.hk/prd)
 
 ![BRAIN / 27 脑科学与人工智能机会雷达首页](docs/images/brain-27-radar.jpg)
 
@@ -10,7 +10,7 @@
 
 BRAIN / 27 不是简单的招聘链接集合，而是一套可审计、可追踪的机会情报系统。系统以高校、科研机构和企业官方页面为主要信息源，通过 Cloudflare Cron 定时检查内容变化，将来源快照、逐来源日志、候选记录、字段证据和审核结论保存在 D1 数据库中。
 
-当前版本为 `v0.5.0`，重点覆盖：
+当前版本为 `v0.6.0`，重点覆盖：
 
 - 英国：中国学生重点关注的 Oxford、Cambridge、UCL 等高校与研究机构；
 - 中国大陆：清华、北大，以及北京、上海、深圳的高校、科研机构和科技企业；
@@ -18,18 +18,18 @@ BRAIN / 27 不是简单的招聘链接集合，而是一套可审计、可追踪
 - 爱尔兰：高校、研究机构及跨国企业校招入口；
 - 机会类型：博士、联合培养博士、科研助理、校招、实习和研究岗位；
 - 资助信息：全奖、部分奖学金、混合资助、自费和待确认，并明确国际学生学费差额风险。
+- 时间管理：统一显示官方截止日、预计日期、滚动申请和待确认机会，并自动生成提前准备任务。
 
 ## 当前数据规模
 
 | 指标 | 当前数量 |
 | --- | ---: |
-| 官方信息源 | 73 |
-| 自动检查来源 | 67 |
-| 高优先级来源 | 47 |
-| 公开机会 | 31 |
+| 官方信息源 | 89 |
+| 公开机会 | 42 |
 | 硕士可申请的科研助理机会 | 9 |
-| 重点机构 | 10 |
-| 首批重点导师 | 16 |
+| 机构 | 21 |
+| 北京机构 | 15 |
+| 首批重点导师 | 21 |
 
 普通来源每 24 小时检查一次；重点来源每 6 小时检查一次。受访问限制的来源仍会显示在来源目录中，并标记为人工核对。
 
@@ -38,6 +38,10 @@ BRAIN / 27 不是简单的招聘链接集合，而是一套可审计、可追踪
 - 机会雷达：按状态、机会类型和关键词筛选博士、科研助理及就业机会；
 - 导师雷达：按地区、机构、主题和研究方法跟踪 16 位重点导师及官方主页；
 - 最新论文：通过 6 个学术数据库发现近 18 个月成果候选，以 DOI、PMID、PMCID、arXiv ID 去重并透明区分候选和已核验状态；
+- 双语论文：保留英文原题与摘要，通过 Workers AI 有界异步生成中文译文并保存翻译状态；
+- 知识图谱：连接论文、导师、研究方向、机构和机会，只呈现数据库中有证据的关系；
+- 统一日历：集中展示开放日、截止日和截止前 30/14/7/3/当天准备任务；
+- 北京科研生态：首批整合北京高校、全国重点实验室、中科院研究所及博士、科研助理、实习和研究岗位；
 - 论文数据库：Crossref、Europe PMC、arXiv、PubMed、PMC、DOAJ 已自动接入；网页继续列出 OpenAlex、CORE 等需要配置或研究中的来源；
 - 奖学金标注：展示资助类型、覆盖范围、核验时间和国际学生适用边界；
 - 科研助理路径：独立标注硕士申请条件、学历要求和博士过渡价值，但不承诺受聘后自动转博；
@@ -71,6 +75,7 @@ flowchart LR
 - 云端运行：Cloudflare Workers；
 - 数据库：Cloudflare D1、Drizzle ORM；
 - 自动任务：Cloudflare Cron Triggers；
+- 双语翻译：Cloudflare Workers AI；
 - 资源服务：Cloudflare Assets、Images；
 - 质量保障：TypeScript、ESLint、Node.js Test Runner；
 - 生产域名：[radar.openagent.hk](https://radar.openagent.hk)。
@@ -139,6 +144,7 @@ scripts/              发布环境检查脚本
 
 - [产品需求文档](docs/PRD.md)
 - [P2 学术情报雷达 PRD](docs/PRD_P2_ACADEMIC.md)
+- [P2.3 双语论文、知识图谱与统一日历 PRD](docs/PRD_P2_3_KNOWLEDGE_GRAPH.md)
 - [系统架构与设计决策](docs/ARCHITECTURE.md)
 - [运行与部署操作手册](docs/OPERATIONS.md)
 - [开发日志](docs/DEVELOPMENT_LOG.md)
@@ -146,6 +152,7 @@ scripts/              发布环境检查脚本
 - [线上系统说明](https://radar.openagent.hk/system)
 - [线上需求文档](https://radar.openagent.hk/prd)
 - [线上 P2 学术情报 PRD](https://radar.openagent.hk/prd/academic)
+- [线上 P2.3 PRD](https://openagent.hk/prd/knowledge-graph)
 
 ## 信息使用边界
 

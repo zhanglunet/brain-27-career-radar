@@ -1,7 +1,7 @@
 import { discoverProviderPapers } from "./paper-providers.ts";
 import type { EnabledPaperProvider, PaperCandidate, PaperResearcher } from "./paper-providers.ts";
 
-const MAX_RESEARCHERS_PER_RUN = 16;
+const MAX_RESEARCHERS_PER_RUN = 24;
 const PROVIDER_PAUSE_MS = 400;
 
 type AcademicTrigger = "cron" | "manual" | "test";

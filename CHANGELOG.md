@@ -4,6 +4,12 @@
 
 ### Added
 
+- `/calendar` 统一时间表：开放日、截止日、提前准备任务，以及确认/预计/滚动/待确认日期状态。
+- `/knowledge-graph` 论文、导师、研究方向、机构与机会事实图谱。
+- `/beijing` 北京高校、重点实验室、中科院研究所和相关机会目录。
+- 论文中英文标题与摘要、Workers AI 有界异步翻译和 D1 翻译状态。
+- P2.3 PRD 文档及网页版 `/prd/knowledge-graph`。
+
 - 根域名 `openagent.hk`、`www.openagent.hk` 与 `radar.openagent.hk` 的版本化 Custom Domain 配置。
 - 学术同步可按提供方子集执行，便于对被限流的数据库做有审计记录的恢复同步。
 - arXiv、PubMed、PMC、DOAJ 四个自动论文发现适配器。

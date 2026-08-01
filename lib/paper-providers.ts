@@ -446,4 +446,9 @@ const AFFILIATION_HINTS: Record<string, string[]> = {
   "r-nancy-ip": ["Hong Kong University of Science and Technology", "HKUST"],
   "r-muming-poo": ["Chinese Academy of Sciences", "Institute of Neuroscience", "CEBSIT"],
   "r-edward-chang": ["University of California San Francisco", "UCSF"],
+  "r-fang-fang": ["Peking University", "PKU"],
+  "r-huan-luo": ["Peking University", "PKU"],
+  "r-yi-jiang": ["Chinese Academy of Sciences", "Institute of Psychology"],
+  "r-huiguang-he": ["Chinese Academy of Sciences", "Institute of Automation"],
+  "r-xiaorong-gao": ["Tsinghua University", "Tsinghua"],
 };
