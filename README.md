@@ -10,7 +10,7 @@
 
 BRAIN / 27 不是简单的招聘链接集合，而是一套可审计、可追踪的机会情报系统。系统以高校、科研机构和企业官方页面为主要信息源，通过 Cloudflare Cron 定时检查内容变化，将来源快照、逐来源日志、候选记录、字段证据和审核结论保存在 D1 数据库中。
 
-当前版本为 `v0.11.1`，重点覆盖：
+当前版本为 `v0.12.0`，重点覆盖：
 
 - 英国：中国学生重点关注的 Oxford、Cambridge、UCL 等高校与研究机构；
 - 中国大陆：清华、北大，以及北京、上海、深圳的高校、科研机构和科技企业；
@@ -153,6 +153,7 @@ scripts/              发布环境检查脚本
 - [产品需求文档](docs/PRD.md)
 - [P2 学术情报雷达 PRD](docs/PRD_P2_ACADEMIC.md)
 - [P2.3 双语论文、知识图谱与统一日历 PRD](docs/PRD_P2_3_KNOWLEDGE_GRAPH.md)
+- [P2 学术情报与全球科研政策 PRD](docs/PRD_P2_ACADEMIC.md)
 - [系统架构与设计决策](docs/ARCHITECTURE.md)
 - [运行与部署操作手册](docs/OPERATIONS.md)
 - [开发日志](docs/DEVELOPMENT_LOG.md)

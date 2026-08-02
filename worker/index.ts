@@ -6,6 +6,7 @@ import { syncAcademicPapers } from "../lib/academic-monitor";
 import { translatePendingPapers } from "../lib/paper-translator";
 import { refreshIntelligenceReports } from "../lib/intelligence-reports";
 import { discoverOrganizations } from "../lib/organization-discovery";
+import { syncResearchPolicies } from "../lib/policy-monitor";
 
 // Image security config. SVG sources with .svg extension auto-skip the
 // optimization endpoint on the client side (served directly, no proxy).
@@ -34,11 +35,16 @@ const worker = {
     return handler.fetch(request, env, ctx);
   },
 
-  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+  async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     console.log(JSON.stringify({
       event: "radar.sync.scheduled",
       receivedAt: new Date().toISOString(),
+      cron:controller.cron,
     }));
+    if(controller.cron==="30 2,8,14,20 * * *"){
+      ctx.waitUntil(syncResearchPolicies(env.DB,{trigger:"cron"}).then(()=>refreshIntelligenceReports(env.DB)).then(()=>undefined));
+      return;
+    }
     ctx.waitUntil(Promise.allSettled([
       monitorSources(env.DB, { trigger: "cron" }),
       syncAcademicPapers(env.DB, { trigger: "cron" }).then(() => translatePendingPapers(env.DB, env.AI)),

@@ -28,6 +28,18 @@ curl -fsS 'https://radar.openagent.hk/api/opportunities?region=英国&sort=deadl
 
 搜索只返回公开机构、公开导师、非 rejected 论文、正式来源、历史报告和 `published=1` 的机会；全部机会 API 使用白名单筛选，不接受任意 SQL 排序或地区表达式。
 
+科研政策入口为 `/policies`，同步运行写入 `policy_sync_runs`，自动发现链接写入不公开的 `policy_candidates`，已核验页面变化写入 `policy_versions`。生产核查命令：
+
+政策使用独立错峰 Cron `30 2,8,14,20 * * *`，职业、论文和机构发现继续使用 `0 1,7,13,19 * * *`。两者分开调用 Worker，避免论文提供方与政策目录共享同一次子请求额度。
+
+```bash
+npx wrangler d1 execute brain-27-career-radar --remote --config dist/server/wrangler.json \
+  --command "SELECT status,started_at,feeds_checked,policies_checked,candidates_found,versions_added,failed_count FROM policy_sync_runs ORDER BY started_at DESC LIMIT 5; SELECT status,COUNT(*) FROM policy_candidates GROUP BY status;"
+curl -fsS 'https://radar.openagent.hk/api/policies'
+```
+
+候选数增加是正常现象，不表示新政策已经公开。官方页面失败时保留既有已核验政策；修复来源或等待下次 Cron，不要删除历史版本。
+
 手机导航由根布局统一注入，断点为 980px。发布后在首页和至少一个文档页确认 HTML 含 `打开网站导航`，并在手机上检查菜单可打开、可滚动、当前页面高亮、链接跳转和 ESC/遮罩关闭。
 
 时间表运维入口：`/calendar`。`官方确认`可作为提交倒计时依据；`预计`只用于提前准备；`滚动`建议尽早申请；`待确认`必须继续核对官方页。英国截止时间按 `Europe/London` 保存，不要手工换算后覆盖原时区。

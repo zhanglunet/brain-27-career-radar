@@ -14,9 +14,15 @@ P1 数据分为三层：`candidate_records` 保存按规范化 URL 去重的候�
 
 机构扩展走独立数据流：`organization_discovery_feeds → organization_candidates → 核验 → sources/institutions`。可信目录每 24–72 小时有界抓取，外部链接按规范化 URL 去重，并排除社交平台、目录自身域名和既有来源/机构域名。该管线与职业、论文同步通过 `Promise.allSettled` 隔离失败。
 
+政策扩展走独立数据流：`policy_feeds → policy_candidates → 人工核验 → research_policies → policy_versions`。政策使用 `30 2,8,14,20 * * *` 错峰 Cron，与职业/论文主 Cron 分开 Worker 调用，避免共享子请求配额；单次以 4 路并发抓取到期目录和有界数量的已核验政策，正文限制 512 KiB、超时 12 秒。链接发现只进入候选区；公开摘要与影响判断不由网页哈希自动改写。`research_projects` 和 `research_topics` 将已核验政策信号组织成项目与议题，并供搜索、日历、报告和知识图谱复用。
+
 科研助理与一般研究岗位分开建模。`masters_eligible` 只表达硕士背景是否满足公开学历门槛，`eligibility_details` 保留逐岗条件，`phd_bridge_details` 解释可积累的实验、数据、论文或推荐信价值；系统不把受聘解释为博士录取承诺。
 
 ## 关键决策
+
+### ADR-027：政策发现与政策发布分离
+
+政策页面变化只生成版本证据，新链接只生成候选。只有 `published=1 AND review_status='verified'` 的政策可进入公开 API、搜索、日历和知识图谱。这样可以持续自动发现，同时避免把导航链接、旧指南或截止日期变化未经核验直接发布。
 
 ### ADR-001：D1 作为事实存储
 

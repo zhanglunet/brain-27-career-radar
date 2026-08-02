@@ -116,12 +116,15 @@ export const intelligenceReports = sqliteTable("intelligence_reports", {
   newOpportunities: integer("new_opportunities").notNull().default(0),
   newSources: integer("new_sources").notNull().default(0),
   newPapers: integer("new_papers").notNull().default(0),
+  newPolicies: integer("new_policies").notNull().default(0),
+  newProjects: integer("new_projects").notNull().default(0),
   sourceChanges: integer("source_changes").notNull().default(0),
   sourceFailures: integer("source_failures").notNull().default(0),
   sourceRuns: integer("source_runs").notNull().default(0),
   academicRuns: integer("academic_runs").notNull().default(0),
+  policyRuns: integer("policy_runs").notNull().default(0),
   summary: text("summary").notNull(),
-  highlightsJson: text("highlights_json").notNull().default('{"opportunities":[],"sources":[],"papers":[]}'),
+  highlightsJson: text("highlights_json").notNull().default('{"opportunities":[],"sources":[],"papers":[],"policies":[],"projects":[]}'),
   generatedAt: text("generated_at").notNull(),
   ...timestamps,
 }, (table) => [
@@ -481,3 +484,133 @@ export const organizationDiscoveryRuns = sqliteTable("organization_discovery_run
   errorSummary: text("error_summary"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [index("organization_discovery_runs_started_idx").on(table.startedAt)]);
+
+export const policyFeeds = sqliteTable("policy_feeds", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  authority: text("authority").notNull(),
+  region: text("region", { enum: ["UK", "EU", "CN", "HK", "GLOBAL"] }).notNull(),
+  url: text("url").notNull(),
+  enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
+  checkIntervalHours: integer("check_interval_hours").notNull().default(24),
+  lastCheckedAt: text("last_checked_at"),
+  lastSuccessAt: text("last_success_at"),
+  lastStatusCode: integer("last_status_code"),
+  consecutiveFailures: integer("consecutive_failures").notNull().default(0),
+  lastError: text("last_error"),
+  ...timestamps,
+}, (table) => [
+  uniqueIndex("policy_feeds_url_unique").on(table.url),
+  index("policy_feeds_enabled_idx").on(table.enabled, table.lastCheckedAt),
+]);
+
+export const researchPolicies = sqliteTable("research_policies", {
+  id: text("id").primaryKey(),
+  feedId: text("feed_id").references(() => policyFeeds.id, { onDelete: "set null" }),
+  title: text("title").notNull(),
+  titleEn: text("title_en"),
+  authority: text("authority").notNull(),
+  region: text("region", { enum: ["UK", "EU", "CN", "HK", "GLOBAL"] }).notNull(),
+  policyType: text("policy_type", { enum: ["strategy", "funding", "talent", "regulation", "collaboration", "programme"] }).notNull(),
+  status: text("status", { enum: ["open", "active", "upcoming", "closed", "watch"] }).notNull().default("watch"),
+  publishedAt: text("published_at"),
+  effectiveAt: text("effective_at"),
+  deadlineAt: text("deadline_at"),
+  deadlineTimezone: text("deadline_timezone").notNull().default("UTC"),
+  summary: text("summary").notNull(),
+  impact: text("impact").notNull().default(""),
+  audienceJson: text("audience_json").notNull().default("[]"),
+  topicsJson: text("topics_json").notNull().default("[]"),
+  sourceUrl: text("source_url").notNull(),
+  contentHash: text("content_hash"),
+  reviewStatus: text("review_status", { enum: ["verified", "candidate", "rejected"] }).notNull().default("candidate"),
+  published: integer("published", { mode: "boolean" }).notNull().default(false),
+  sourceVerifiedAt: text("source_verified_at"),
+  ...timestamps,
+}, (table) => [
+  uniqueIndex("research_policies_url_unique").on(table.sourceUrl),
+  index("research_policies_public_idx").on(table.published, table.region, table.status),
+  index("research_policies_deadline_idx").on(table.deadlineAt),
+]);
+
+export const policyVersions = sqliteTable("policy_versions", {
+  id: text("id").primaryKey(),
+  policyId: text("policy_id").notNull().references(() => researchPolicies.id, { onDelete: "cascade" }),
+  contentHash: text("content_hash").notNull(),
+  excerpt: text("excerpt").notNull().default(""),
+  capturedAt: text("captured_at").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  uniqueIndex("policy_versions_hash_unique").on(table.policyId, table.contentHash),
+  index("policy_versions_policy_idx").on(table.policyId, table.capturedAt),
+]);
+
+export const policyCandidates = sqliteTable("policy_candidates", {
+  id: text("id").primaryKey(),
+  feedId: text("feed_id").notNull().references(() => policyFeeds.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  candidateUrl: text("candidate_url").notNull(),
+  region: text("region").notNull(),
+  policyType: text("policy_type").notNull().default("programme"),
+  status: text("status", { enum: ["candidate", "approved", "rejected"] }).notNull().default("candidate"),
+  confidence: integer("confidence").notNull().default(60),
+  evidenceExcerpt: text("evidence_excerpt").notNull().default(""),
+  firstSeenAt: text("first_seen_at").notNull(),
+  lastSeenAt: text("last_seen_at").notNull(),
+  ...timestamps,
+}, (table) => [
+  uniqueIndex("policy_candidates_url_unique").on(table.candidateUrl),
+  index("policy_candidates_status_idx").on(table.status, table.lastSeenAt),
+]);
+
+export const policySyncRuns = sqliteTable("policy_sync_runs", {
+  id: text("id").primaryKey(),
+  trigger: text("trigger", { enum: ["cron", "manual", "test"] }).notNull(),
+  status: text("status", { enum: ["running", "succeeded", "partial", "failed"] }).notNull(),
+  startedAt: text("started_at").notNull(),
+  finishedAt: text("finished_at"),
+  feedsChecked: integer("feeds_checked").notNull().default(0),
+  policiesChecked: integer("policies_checked").notNull().default(0),
+  candidatesFound: integer("candidates_found").notNull().default(0),
+  versionsAdded: integer("versions_added").notNull().default(0),
+  failedCount: integer("failed_count").notNull().default(0),
+  errorSummary: text("error_summary"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [index("policy_sync_runs_started_idx").on(table.startedAt)]);
+
+export const researchProjects = sqliteTable("research_projects", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  nameEn: text("name_en"),
+  leadOrganization: text("lead_organization").notNull(),
+  region: text("region").notNull(),
+  status: text("status", { enum: ["active", "upcoming", "completed", "watch"] }).notNull().default("watch"),
+  startAt: text("start_at"),
+  endAt: text("end_at"),
+  funding: text("funding").notNull().default(""),
+  summary: text("summary").notNull(),
+  opportunityValue: text("opportunity_value").notNull().default(""),
+  topicsJson: text("topics_json").notNull().default("[]"),
+  url: text("url").notNull(),
+  published: integer("published", { mode: "boolean" }).notNull().default(true),
+  sourceVerifiedAt: text("source_verified_at"),
+  ...timestamps,
+}, (table) => [
+  uniqueIndex("research_projects_url_unique").on(table.url),
+  index("research_projects_public_idx").on(table.published, table.region, table.status),
+]);
+
+export const researchTopics = sqliteTable("research_topics", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  nameEn: text("name_en"),
+  category: text("category").notNull(),
+  momentum: text("momentum", { enum: ["rising", "stable", "watch"] }).notNull().default("watch"),
+  summary: text("summary").notNull(),
+  evidence: text("evidence").notNull(),
+  policyCount: integer("policy_count").notNull().default(0),
+  projectCount: integer("project_count").notNull().default(0),
+  paperCount: integer("paper_count").notNull().default(0),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [uniqueIndex("research_topics_name_unique").on(table.name)]);

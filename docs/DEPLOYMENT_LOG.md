@@ -222,3 +222,12 @@
 - Cloudflare 权威 DNS 与 1.1.1.1 已解析 `radar.openagent.hk`；部署机系统解析器曾短暂保留负缓存。
 - 使用固定解析直连 Cloudflare 边缘验收：主页、`/system`、`/prd`、`/api/radar`、`/api/system-status` 全部 HTTP 200。
 - 网页 PRD 已增加 P1.1—P1.6 开发计划和验收指标。
+# 2026-08-02 · v0.12.0 全球科研政策雷达
+
+- 发布前完整验证：TypeScript、ESLint、生产构建、32 项测试及全新 D1 的 23 个迁移顺序回放全部通过。
+- 生产迁移前导出远程 D1 SQL 回滚基线到临时目录，大小 1,743,073 bytes，SHA-256 `4642d14039db56a98e1be000a74c53c0e51af62f06b248feee92e68fe6cbc52a`；备份未提交 Git。
+- 生产 D1 迁移 `0022_research_policy_radar.sql` 成功：8 个政策源、10 项已核验政策、7 个研究项目、9 个热点议题。
+- 首轮受控政策同步：8/8 来源、10/10 政策页面成功，原始发现 140 条、去重后待核验候选 127 条，新增 10 个内容版本，0 失败。
+- 该轮人工触发记录已标记为 `test`；为避免与 126 组论文查询共享子请求额度，政策改为独立错峰 Cron `30 2,8,14,20 * * *`，主 Cron 保持 `0 1,7,13,19 * * *`。
+- 发布 Worker 版本 `31dec2df-1a13-47dc-a3c2-e7e479b3e72c`，D1、Images、AI、Assets 绑定正常；两个 Cron 均部署成功。
+- `openagent.hk`、`www.openagent.hk`、`radar.openagent.hk` 的 `/policies` 均返回 HTTP 200；线上 API 返回 10 个政策、7 个项目、9 个议题、2 个政策截止，知识图谱包含 10 个政策节点和 7 个项目节点。
