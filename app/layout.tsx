@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import GlobalSearch from "./GlobalSearch";
+import MobileNavigation from "./MobileNavigation";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://openagent.hk"),
@@ -19,5 +20,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="zh-CN"><body>{children}<GlobalSearch/></body></html>;
+  return <html lang="zh-CN"><body>{children}<GlobalSearch/><MobileNavigation/></body></html>;
 }

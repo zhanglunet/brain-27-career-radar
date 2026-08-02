@@ -11,8 +11,8 @@ export default function PrdPage() {
   return <main className={styles.page}>
     <nav className={styles.nav}><Link className={styles.brand} href="/"><span className={styles.brandMark}>Ψ</span> BRAIN / 27</Link><div className={styles.navLinks}><Link href="/">机会雷达</Link><Link href="/campus-2027">2027 校招</Link><Link href="/discovery">持续发现</Link><Link href="/reports">情报报告</Link><Link href="/ai-companies">大模型公司</Link><Link href="/researchers">导师雷达</Link><Link href="/papers">最新论文</Link><Link href="/sources">信息源</Link><Link href="/logs">采集日志</Link><Link href="/system">系统说明</Link><Link className={styles.active} href="/prd">需求文档</Link></div></nav>
     <header className={styles.hero}>
-      <div><p className={styles.eyebrow}>PRODUCT REQUIREMENTS / V0.13</p><h1>自动更新<span>需求文档</span></h1><p className={styles.lede}>自动检查可信来源、记录变化、保护最后可信内容；同时持续发现新的校招机会、公司和研究机构，并保证电脑和手机都能完整使用。</p></div>
-      <aside className={styles.heroAside}><strong>2026.08.02</strong><p>P1.14 增加全局搜索与全部机会清单；公开数据和待核验候选继续严格分离。</p></aside>
+      <div><p className={styles.eyebrow}>PRODUCT REQUIREMENTS / V0.14</p><h1>自动更新<span>需求文档</span></h1><p className={styles.lede}>自动检查可信来源、记录变化、保护最后可信内容；同时持续发现新的校招机会、公司和研究机构，并保证电脑和手机都能完整使用。</p></div>
+      <aside className={styles.heroAside}><strong>2026.08.02</strong><p>P1.15 增加全站手机导航：统一菜单、分组入口、当前页高亮与快速搜索。</p></aside>
     </header>
 
     <div className={styles.content}>
@@ -62,6 +62,7 @@ export default function PrdPage() {
           <tr><td>P1.12</td><td>增加面向 2027 届的国内外大厂、大模型厂商和中英研究机构机会。</td><td>专项 API、响应式筛选页、7 个新官方源、22 项专项机会。</td><td>已确认批次与待确认入口分层；中国、英国与五类赛道可筛选。</td></tr>
           <tr><td>P1.13</td><td>持续发现新校招岗位、新公司和新研究机构，保存来源、去重结果、时间与证据。</td><td>通用招聘列表适配器、可信机构目录、候选表、独立运行日志和发现页面。</td><td>候选可检索；未知机构和高风险机会未经核验不自动发布。</td></tr>
           <tr><td>P1.14</td><td>跨机会、机构、导师、论文、信息源和报告搜索，并集中浏览所有公开机会。</td><td>全局搜索浮层、完整搜索页、机会列表 API、筛选排序与分页。</td><td>任意页面可唤起；移动端可用；候选数据不进入公开搜索和机会清单。</td></tr>
+          <tr><td>P1.15</td><td>所有页面在手机上提供一致、完整且易点按的导航。</td><td>根布局手机菜单、四组入口、当前页高亮、关闭交互与搜索入口。</td><td>980px 以下可见；触摸目标不小于 48px；菜单可滚动且不遮失内容。</td></tr>
         </tbody></table></div>
         <p className={styles.note}>结构化抽取先覆盖 5 个来源并观察一周；57 个来源已进入目录，其中 51 个执行基础巡检。达到准确率与重复率门槛后，再按页面稳定性分批开发更多字段适配器。</p>
       </section>
@@ -99,6 +100,7 @@ export default function PrdPage() {
           <tr><td>FR-18</td><td>建立 2027 校招与研究岗位专项，覆盖国内外大厂、大模型团队及中英研究机构。</td><td>22 项机会可按赛道、地区、类型、状态搜索；官方批次边界明确。</td><td><span className={styles.good}>已开发</span></td></tr>
           <tr><td>FR-19</td><td>从招聘列表持续发现同站新岗位，并从可信官方目录发现新公司和研究机构。</td><td>Cron 生成候选、运行记录和来源证据；候选不直接进入公开库。</td><td><span className={styles.good}>已开发</span></td></tr>
           <tr><td>FR-20</td><td>提供公开数据全局搜索和全部公开机会清单，支持关键词、类型、状态、地区、截止日期、资助、学历、排序与分页。</td><td>搜索覆盖六类实体；机会筛选使用白名单参数；公开与候选边界可见。</td><td><span className={styles.good}>已开发</span></td></tr>
+          <tr><td>FR-21</td><td>首页及所有业务、地区、日志和文档页面具备统一手机导航。</td><td>窄屏菜单按钮可访问全部主要路由，当前页高亮，支持链接、遮罩和 ESC 关闭。</td><td><span className={styles.good}>已开发</span></td></tr>
         </tbody></table></div>
       </section>
 
@@ -133,6 +135,6 @@ export default function PrdPage() {
         </ul>
       </section>
     </div>
-    <footer className={styles.footer}><span>BRAIN / 27 · PRD v0.13</span><p>产品边界：自动发现变化，不未经审核自动发布高风险判断。</p></footer>
+    <footer className={styles.footer}><span>BRAIN / 27 · PRD v0.14</span><p>产品边界：自动发现变化，不未经审核自动发布高风险判断。</p></footer>
   </main>;
 }

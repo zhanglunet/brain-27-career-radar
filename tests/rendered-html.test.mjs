@@ -37,6 +37,8 @@ test("server-renders the opportunity radar", async () => {
   assert.match(html, /支持先在高校积累研究成果，再申请博士/);
   assert.match(html, /全局搜索/);
   assert.match(html, /全部机会/);
+  assert.match(html, /打开网站导航/);
+  assert.match(html, /mobile-navigation-panel/);
 });
 
 test("server-renders global search and the complete opportunity list", async () => {
