@@ -4,6 +4,10 @@
 
 ### Added
 
+- 全站全局搜索：支持快捷键唤起，并检索公开机会、机构、导师、论文、信息源和历史情报报告。
+- `/search` 完整搜索页、`/opportunities` 全部公开机会清单，以及对应的有界只读 API。
+- 机会清单支持关键词、类型、状态、地区、截止状态、博士资助、硕士资格、排序和分页；候选数据继续隔离。
+
 - `/discovery` 持续发现页面与 API：集中查看新校招机会、新公司、新研究机构候选、可信目录健康和最近运行。
 - `organization_discovery_feeds`、`organization_candidates`、`organization_discovery_runs` D1 数据模型，以及 UKRI、中科院 5 个首批官方目录。
 - Cron 机构发现管线：有界抓取、既有域名排除、URL 去重、证据和首次/最近发现时间。
