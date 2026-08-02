@@ -328,6 +328,12 @@ button.mapStat, button.mapStatActive { cursor: pointer; }
 .pagination button { padding: 8px 12px; border: 1px solid var(--line); background: rgba(12, 32, 27, .9); color: var(--ink); cursor: pointer; }
 .pagination button:disabled { opacity: .4; cursor: not-allowed; }
 
+.searchPageBar { display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;margin-bottom:16px;padding:16px 18px;border:1px solid rgba(98,231,212,.35);background:rgba(9,29,24,.94); }
+.searchPageBar span { color:var(--lime);font-size:27px; }.searchPageBar input { min-width:0;border:0;outline:0;background:transparent;color:var(--ink);font-size:18px; }
+.searchResultList { display:grid;gap:8px; }.searchResultList>a { display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:18px;padding:19px;border:1px solid var(--line);background:rgba(12,32,27,.9); }.searchResultList>a:hover { border-color:rgba(98,231,212,.45); }.searchResultList>a>span { color:var(--aqua);font:10px var(--font-geist-mono); }.searchResultList h3 { margin:0 0 5px;font-size:18px; }.searchResultList small { color:var(--aqua);font:10px var(--font-geist-mono); }.searchResultList p { margin:8px 0 0;color:var(--muted);font-size:12px;line-height:1.6; }.searchResultList>a>b { color:var(--lime); }
+.checkboxLabel { align-content:end;grid-template-columns:auto 1fr !important; }.checkboxLabel>span { grid-column:1/-1; }.checkboxLabel input { width:18px!important;min-height:18px!important;accent-color:var(--lime); }
+.opportunityList { display:grid;gap:12px; }.opportunityRow { padding:22px;border:1px solid var(--line);background:rgba(12,32,27,.92); }.opportunityRow>header { display:flex;justify-content:space-between;gap:20px;align-items:flex-start; }.opportunityRow>header span { color:var(--aqua);font:10px var(--font-geist-mono); }.opportunityRow>header h3 { margin:8px 0 6px;font-size:22px; }.opportunityRow>header p { margin:0;color:var(--muted);font-size:12px; }.opportunityRow>header>b { padding:6px 8px;border:1px solid currentColor;font:10px var(--font-geist-mono);white-space:nowrap; }.opportunityRow>p { color:#aebfba;font-size:13px;line-height:1.65; }.opportunityFacts { display:grid;grid-template-columns:repeat(4,1fr);margin:18px 0;border:1px solid var(--line); }.opportunityFacts>div { min-width:0;padding:13px;border-right:1px solid var(--line); }.opportunityFacts>div:last-child { border-right:0; }.opportunityFacts small { display:block;color:var(--muted);font:9px var(--font-geist-mono);text-transform:uppercase; }.opportunityFacts strong { display:block;margin-top:7px;color:#d5e1dd;font-size:11px;line-height:1.5;overflow-wrap:anywhere; }.opportunityRow>footer { display:flex;justify-content:space-between;gap:14px;padding:14px 0 0;border-top:1px solid var(--line); }.opportunityRow>footer a { color:var(--lime);font:10px var(--font-geist-mono); }.opportunityRow>footer span { color:var(--muted);font:9px var(--font-geist-mono);text-align:right; }
+
 .footer { padding: 30px 4vw 42px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; }
 
 @media (max-width: 900px) {
@@ -352,6 +358,7 @@ button.mapStat, button.mapStatActive { cursor: pointer; }
   .reportHeroGrid { grid-template-columns: repeat(3,1fr); }
   .reportHeroGrid > article { grid-column: 1 / -1; }
   .campusGrid { grid-template-columns: 1fr; }
+  .opportunityFacts { grid-template-columns:repeat(2,1fr); }.opportunityFacts>div:nth-child(2){border-right:0}.opportunityFacts>div:nth-child(-n+2){border-bottom:1px solid var(--line)}
 }
 
 @media (max-width: 620px) {
@@ -390,4 +397,5 @@ button.mapStat, button.mapStatActive { cursor: pointer; }
   .campusCardTop, .campusCard footer { align-items: flex-start; flex-direction: column; }
   .campusCard footer span { text-align: left; }
   .campusMeta { grid-template-columns: 1fr; }
+  .searchResultList>a { grid-template-columns:46px minmax(0,1fr);gap:10px;padding:15px; }.searchResultList>a>b { display:none; }.opportunityRow>header,.opportunityRow>footer { flex-direction:column; }.opportunityRow>footer span { text-align:left; }.opportunityFacts { grid-template-columns:1fr; }.opportunityFacts>div { border-right:0;border-bottom:1px solid var(--line)!important; }.opportunityFacts>div:last-child { border-bottom:0!important; }
 }

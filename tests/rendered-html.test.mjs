@@ -35,6 +35,22 @@ test("server-renders the opportunity radar", async () => {
   assert.match(html, /实验心理学/);
   assert.match(html, /科研助理/);
   assert.match(html, /支持先在高校积累研究成果，再申请博士/);
+  assert.match(html, /全局搜索/);
+  assert.match(html, /全部机会/);
+});
+
+test("server-renders global search and the complete opportunity list", async () => {
+  const search = await render("/search?q=脑机接口");
+  assert.equal(search.status, 200);
+  const searchHtml = await search.text();
+  assert.match(searchHtml, /一处搜索/);
+  assert.match(searchHtml, /整个机会雷达/);
+
+  const opportunities = await render("/opportunities");
+  assert.equal(opportunities.status, 200);
+  const opportunitiesHtml = await opportunities.text();
+  assert.match(opportunitiesHtml, /所有机会/);
+  assert.match(opportunitiesHtml, /公开 ≠ 候选/);
 });
 
 test("server-renders the source directory and collection log pages", async () => {

@@ -19,6 +19,15 @@ npm run verify
 
 `verify` 包括 TypeScript、ESLint、构建、SSR 和来源巡检测试。
 
+全局搜索入口为 `/search`，完整机会清单为 `/opportunities`。发布后至少检查：
+
+```bash
+curl -fsS 'https://radar.openagent.hk/api/search?q=脑机接口'
+curl -fsS 'https://radar.openagent.hk/api/opportunities?region=英国&sort=deadline'
+```
+
+搜索只返回公开机构、公开导师、非 rejected 论文、正式来源、历史报告和 `published=1` 的机会；全部机会 API 使用白名单筛选，不接受任意 SQL 排序或地区表达式。
+
 时间表运维入口：`/calendar`。`官方确认`可作为提交倒计时依据；`预计`只用于提前准备；`滚动`建议尽早申请；`待确认`必须继续核对官方页。英国截止时间按 `Europe/London` 保存，不要手工换算后覆盖原时区。
 
 查询翻译积压与截止日期状态：

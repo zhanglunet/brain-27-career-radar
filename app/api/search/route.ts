@@ -1,0 +1,24 @@
+type SearchRow={id:string;title:string;subtitle:string;description:string;url:string;meta:string|null};
+type SearchItem=SearchRow&{type:"opportunity"|"institution"|"researcher"|"paper"|"source"|"report"};
+
+export async function GET(request:Request){
+  try{
+    const q=(new URL(request.url).searchParams.get("q")??"").trim().slice(0,80);
+    if(q.length<2)return Response.json({query:q,total:0,groups:[],results:[]},{headers:{"Cache-Control":"no-store"}});
+    const{env}=await import("cloudflare:workers");if(!env.DB)throw new Error("D1 binding DB is unavailable");
+    const p=`%${q}%`;
+    const[opportunities,institutions,researchers,papers,sources,reports]=await Promise.all([
+      env.DB.prepare(`SELECT id,name title,org||' · '||kind subtitle,location||' · '||deadline description,url,status meta FROM opportunities WHERE published=1 AND (name LIKE ? OR org LIKE ? OR location LIKE ? OR tags_json LIKE ? OR why LIKE ?) ORDER BY CASE status WHEN '立即行动' THEN 0 WHEN '等待开放' THEN 1 ELSE 2 END,created_at DESC LIMIT 12`).bind(p,p,p,p,p).all<SearchRow>(),
+      env.DB.prepare(`SELECT id,name title,COALESCE(name_en,'')||CASE WHEN city!='' THEN ' · '||city ELSE '' END subtitle,summary description,COALESCE(opportunity_url,url) url,institution_type meta FROM institutions WHERE published=1 AND (name LIKE ? OR name_en LIKE ? OR city LIKE ? OR topics_json LIKE ? OR summary LIKE ?) ORDER BY CASE priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 ELSE 2 END,sort_order LIMIT 8`).bind(p,p,p,p,p).all<SearchRow>(),
+      env.DB.prepare(`SELECT id,COALESCE(name_zh,name) title,institution||CASE WHEN city!='' THEN ' · '||city ELSE '' END subtitle,summary description,profile_url url,recruitment_status meta FROM researchers WHERE published=1 AND (name LIKE ? OR name_zh LIKE ? OR institution LIKE ? OR topics_json LIKE ? OR methods_json LIKE ?) ORDER BY CASE priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 ELSE 2 END,name LIMIT 8`).bind(p,p,p,p,p).all<SearchRow>(),
+      env.DB.prepare(`SELECT id,COALESCE(title_zh,title) title,venue||CASE WHEN publication_date IS NOT NULL THEN ' · '||publication_date ELSE '' END subtitle,COALESCE(NULLIF(abstract_zh,''),NULLIF(abstract,''),takeaway) description,source_url url,review_status meta FROM papers WHERE review_status!='rejected' AND (title LIKE ? OR title_zh LIKE ? OR abstract LIKE ? OR abstract_zh LIKE ? OR venue LIKE ? OR topics_json LIKE ?) ORDER BY COALESCE(publication_date,created_at) DESC,relevance_score DESC LIMIT 8`).bind(p,p,p,p,p,p).all<SearchRow>(),
+      env.DB.prepare(`SELECT id,name title,description subtitle,COALESCE(NULLIF(topics_json,'[]'),regions_json) description,url,CASE WHEN enabled=1 THEN '自动检查' ELSE '人工检查' END meta FROM sources WHERE name LIKE ? OR description LIKE ? OR topics_json LIKE ? OR regions_json LIKE ? ORDER BY CASE priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 ELSE 2 END,name LIMIT 8`).bind(p,p,p,p).all<SearchRow>(),
+      env.DB.prepare(`SELECT id,CASE period_type WHEN 'daily' THEN '日报 ' WHEN 'weekly' THEN '周报 ' ELSE '月报 ' END||period_start title,period_start||'—'||period_end subtitle,summary description,'/reports' url,period_type meta FROM intelligence_reports WHERE period_start LIKE ? OR period_end LIKE ? OR summary LIKE ? ORDER BY period_start DESC LIMIT 6`).bind(p,p,p).all<SearchRow>(),
+    ]);
+    const groups=[group("opportunity","机会",opportunities.results),group("institution","机构",institutions.results),group("researcher","导师",researchers.results),group("paper","论文",papers.results),group("source","信息源",sources.results),group("report","情报报告",reports.results)].filter(x=>x.items.length);
+    const results=groups.flatMap(x=>x.items);
+    return Response.json({query:q,total:results.length,groups,results},{headers:{"Cache-Control":"no-store"}});
+  }catch(error){console.error(JSON.stringify({event:"radar.global_search.failed",error:message(error)}));return Response.json({error:"全局搜索暂不可用"},{status:503})}
+}
+function group(type:SearchItem["type"],label:string,rows:SearchRow[]){return{type,label,items:rows.map(row=>({...row,type,description:row.description?.slice(0,220)??""}))}}
+function message(error:unknown){return error instanceof Error?error.message.slice(0,500):String(error).slice(0,500)}
