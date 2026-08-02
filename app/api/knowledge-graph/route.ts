@@ -1,21 +1,25 @@
-type GraphNode = { id: string; type: "paper" | "researcher" | "topic" | "institution" | "opportunity"; label: string; labelEn?: string; subtitle?: string; url?: string };
+type GraphNode = { id: string; type: "paper" | "researcher" | "topic" | "institution" | "opportunity" | "policy" | "project"; label: string; labelEn?: string; subtitle?: string; url?: string };
 type GraphEdge = { source: string; target: string; relation: string };
 type PaperRow = { id:string; title:string; title_zh:string|null; source_url:string; topics_json:string };
 type ResearcherRow = { id:string; name:string; name_zh:string|null; institution:string; department:string; profile_url:string; topics_json:string };
 type InstitutionRow = { id:string; name:string; name_en:string|null; institution_type:string; city:string; url:string; topics_json:string };
 type OpportunityRow = { id:string; name:string; org:string; kind:string; url:string; tags_json:string };
 type AuthorRow = { paper_id:string; researcher_id:string };
+type PolicyRow={id:string;title:string;title_en:string|null;authority:string;source_url:string;topics_json:string};
+type ProjectRow={id:string;name:string;name_en:string|null;lead_organization:string;url:string;topics_json:string};
 
 export async function GET() {
   try {
     const { env } = await import("cloudflare:workers");
     if (!env.DB) throw new Error("D1 binding DB is unavailable");
-    const [papersResult, researchersResult, institutionsResult, opportunitiesResult, authorsResult] = await Promise.all([
+    const [papersResult, researchersResult, institutionsResult, opportunitiesResult, authorsResult, policiesResult, projectsResult] = await Promise.all([
       env.DB.prepare(`SELECT id,title,title_zh,source_url,topics_json FROM papers WHERE review_status != 'rejected' ORDER BY COALESCE(publication_date,created_at) DESC LIMIT 60`).all<PaperRow>(),
       env.DB.prepare(`SELECT id,name,name_zh,institution,department,profile_url,topics_json FROM researchers WHERE published=1 ORDER BY CASE priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 ELSE 2 END LIMIT 40`).all<ResearcherRow>(),
       env.DB.prepare(`SELECT id,name,name_en,institution_type,city,url,topics_json FROM institutions WHERE published=1 ORDER BY CASE priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 ELSE 2 END,sort_order LIMIT 60`).all<InstitutionRow>(),
       env.DB.prepare(`SELECT id,name,org,kind,url,tags_json FROM opportunities WHERE published=1 ORDER BY created_at DESC LIMIT 80`).all<OpportunityRow>(),
       env.DB.prepare(`SELECT paper_id,researcher_id FROM paper_authors WHERE researcher_id IS NOT NULL`).all<AuthorRow>(),
+      env.DB.prepare(`SELECT id,title,title_en,authority,source_url,topics_json FROM research_policies WHERE published=1 AND review_status='verified' ORDER BY updated_at DESC LIMIT 40`).all<PolicyRow>(),
+      env.DB.prepare(`SELECT id,name,name_en,lead_organization,url,topics_json FROM research_projects WHERE published=1 ORDER BY updated_at DESC LIMIT 30`).all<ProjectRow>(),
     ]);
 
     const nodes = new Map<string, GraphNode>();
@@ -54,6 +58,9 @@ export async function GET() {
       if (institution) edges.push({ source:id, target:`institution:${institution.id}`, relation:"发布机会 / offers" });
       for (const topic of array(opportunity.tags_json)) if (allowedTopics.has(topic)) edges.push({ source:id, target:`topic:${topic}`, relation:"相关方向 / relates" });
     }
+
+    for(const policy of policiesResult.results){const id=`policy:${policy.id}`;nodes.set(id,{id,type:"policy",label:policy.title,labelEn:policy.title_en??undefined,subtitle:policy.authority,url:policy.source_url});for(const topic of array(policy.topics_json)){if(!nodes.has(`topic:${topic}`))nodes.set(`topic:${topic}`,{id:`topic:${topic}`,type:"topic",label:topic});edges.push({source:id,target:`topic:${topic}`,relation:"政策方向 / policy topic"})}}
+    for(const project of projectsResult.results){const id=`project:${project.id}`;nodes.set(id,{id,type:"project",label:project.name,labelEn:project.name_en??undefined,subtitle:project.lead_organization,url:project.url});for(const topic of array(project.topics_json)){if(!nodes.has(`topic:${topic}`))nodes.set(`topic:${topic}`,{id:`topic:${topic}`,type:"topic",label:topic});edges.push({source:id,target:`topic:${topic}`,relation:"项目方向 / project topic"})}}
 
     const connected = new Set(edges.flatMap((edge)=>[edge.source,edge.target]));
     const compactNodes = [...nodes.values()].filter((node)=>connected.has(node.id) || node.type === "institution");

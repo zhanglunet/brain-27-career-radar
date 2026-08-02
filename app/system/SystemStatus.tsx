@@ -21,6 +21,11 @@ type SystemStatusPayload = {
     fieldEvidence?: number;
     pendingChangeSets?: number;
     pilotSources?: number;
+    researchPolicies?:number;
+    researchProjects?:number;
+    policyFeeds?:number;
+    policyCandidates?:number;
+    policySyncRuns?:number;
   };
   automation: {
     configured: boolean;
@@ -82,6 +87,7 @@ export default function SystemStatus() {
       <article className={styles.statusCard}><span>P1 灰度抽取</span><strong>{status.database.candidates ?? 0}</strong><p>{status.database.pilotSources ?? 0} 个试点来源，证据 {status.database.fieldEvidence ?? 0} 条，待决策 {status.database.pendingChangeSets ?? 0} 项</p></article>
       <article className={styles.statusCard}><span>下次自动运行</span><strong>{formatTime(status.automation.nextScheduledAt)}</strong><p>{status.automation.scheduleLabel ?? status.automation.schedule}</p></article>
       <article className={styles.statusCard}><span>重点来源</span><strong>{status.database.prioritySources ?? 0}</strong><p>牛津、剑桥、UCL、清华、北大等每 6 小时检查</p></article>
+      <article className={styles.statusCard}><span>科研政策雷达</span><strong>{status.database.researchPolicies ?? 0}</strong><p>{status.database.policyFeeds ?? 0} 个官方源，{status.database.researchProjects ?? 0} 个项目；候选 {status.database.policyCandidates ?? 0} 项</p></article>
     </div>
     {latest ? <p className={styles.note}>最近一次运行：{formatDateTime(latest.finished_at ?? latest.started_at)}，触发方式 {latest.trigger}；检查 {latest.checked_count} 个来源，发现变化 {latest.changed_count} 个，失败 {latest.failed_count} 个。</p> : <p className={styles.note}>生产库尚无巡检记录。Cron 已部署，但需要等到首个计划时刻执行后，才能从 D1 历史记录证明生产定时任务已实际触发。</p>}
   </div>;

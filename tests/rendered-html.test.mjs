@@ -74,6 +74,12 @@ test("server-renders the academic intelligence pages", async () => {
   assert.equal(papers.status, 200);
   assert.match(await papers.text(), /最新论文/);
 
+  const policies = await render("/policies");
+  assert.equal(policies.status, 200);
+  const policiesHtml = await policies.text();
+  assert.match(policiesHtml, /全球科研政策/);
+  assert.match(policiesHtml, /RESEARCH POLICY/);
+
   const prd = await render("/prd/academic");
   assert.equal(prd.status, 200);
   assert.match(await prd.text(), /学术情报雷达/);

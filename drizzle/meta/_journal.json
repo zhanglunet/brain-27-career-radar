@@ -141,6 +141,13 @@
       "when": 1785717000000,
       "tag": "0021_filter_organization_candidates",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1785801600000,
+      "tag": "0022_research_policy_radar",
+      "breakpoints": true
     }
   ]
 }
