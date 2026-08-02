@@ -17,6 +17,7 @@ type LatestRunRow = {
 };
 
 const SCHEDULE = "0 1,7,13,19 * * *";
+const POLICY_SCHEDULE="30 2,8,14,20 * * *";
 
 export async function GET() {
   try {
@@ -100,7 +101,8 @@ export async function GET() {
       automation: {
         configured: true,
         schedule: SCHEDULE,
-        scheduleLabel: "每 6 小时触发；普通来源每日、重点来源每 6 小时",
+        policySchedule:POLICY_SCHEDULE,
+        scheduleLabel: "职业/论文每 6 小时；科研政策错峰每 6 小时",
         nextScheduledAt,
         checkedSources: number(sourceStats?.ever_succeeded),
         failingSources: number(sourceStats?.currently_failing),

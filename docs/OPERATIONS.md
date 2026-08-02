@@ -30,6 +30,8 @@ curl -fsS 'https://radar.openagent.hk/api/opportunities?region=英国&sort=deadl
 
 科研政策入口为 `/policies`，同步运行写入 `policy_sync_runs`，自动发现链接写入不公开的 `policy_candidates`，已核验页面变化写入 `policy_versions`。生产核查命令：
 
+政策使用独立错峰 Cron `30 2,8,14,20 * * *`，职业、论文和机构发现继续使用 `0 1,7,13,19 * * *`。两者分开调用 Worker，避免论文提供方与政策目录共享同一次子请求额度。
+
 ```bash
 npx wrangler d1 execute brain-27-career-radar --remote --config dist/server/wrangler.json \
   --command "SELECT status,started_at,feeds_checked,policies_checked,candidates_found,versions_added,failed_count FROM policy_sync_runs ORDER BY started_at DESC LIMIT 5; SELECT status,COUNT(*) FROM policy_candidates GROUP BY status;"

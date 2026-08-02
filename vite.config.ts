@@ -32,7 +32,7 @@ const localBindingConfig = {
         { pattern: "radar.openagent.hk", custom_domain: true },
       ]
     : [],
-  triggers: { crons: ["0 1,7,13,19 * * *"] },
+  triggers: { crons: ["0 1,7,13,19 * * *", "30 2,8,14,20 * * *"] },
   observability: {
     enabled: true,
     logs: { head_sampling_rate: 1 },

@@ -35,16 +35,20 @@ const worker = {
     return handler.fetch(request, env, ctx);
   },
 
-  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+  async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     console.log(JSON.stringify({
       event: "radar.sync.scheduled",
       receivedAt: new Date().toISOString(),
+      cron:controller.cron,
     }));
+    if(controller.cron==="30 2,8,14,20 * * *"){
+      ctx.waitUntil(syncResearchPolicies(env.DB,{trigger:"cron"}).then(()=>refreshIntelligenceReports(env.DB)).then(()=>undefined));
+      return;
+    }
     ctx.waitUntil(Promise.allSettled([
       monitorSources(env.DB, { trigger: "cron" }),
       syncAcademicPapers(env.DB, { trigger: "cron" }).then(() => translatePendingPapers(env.DB, env.AI)),
       discoverOrganizations(env.DB, { trigger: "cron" }),
-      syncResearchPolicies(env.DB, { trigger: "cron" }),
     ]).then((results) => {
       const rejected=results.filter((item)=>item.status==="rejected");
       if(rejected.length)console.error(JSON.stringify({event:"radar.sync.pipeline_rejected",count:rejected.length}));
