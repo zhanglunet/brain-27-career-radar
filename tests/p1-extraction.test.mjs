@@ -65,6 +65,23 @@ test("listing adapter discovers relevant same-site links and deduplicates URLs",
   assert.equal(candidates[0].kind, "实习");
 });
 
+test("listing adapter supports newly configured sources without a hardcoded profile", () => {
+  const adapter = getAdapter("career-listing");
+  assert.ok(adapter);
+  const [candidate] = adapter.extract({
+    sourceId: "new-company-campus",
+    sourceName: "新公司 2027 校园招聘",
+    sourceUrl: "https://careers.example.test/campus",
+    finalUrl: "https://careers.example.test/campus",
+    sourceType: "listing",
+    adapterKey: "career-listing",
+    html: `<a href="/jobs/graduate-ml">2027 Graduate Machine Learning Engineer</a>`,
+  });
+  assert.equal(candidate.org, "新公司 2027");
+  assert.equal(candidate.kind, "校招");
+  assert.equal(candidate.canonicalUrl, "https://careers.example.test/jobs/graduate-ml");
+});
+
 test("listing adapter classifies research assistant roles separately", () => {
   const adapter = getAdapter("career-listing");
   assert.ok(adapter);

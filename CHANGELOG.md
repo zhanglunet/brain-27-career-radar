@@ -4,6 +4,10 @@
 
 ### Added
 
+- `/discovery` 持续发现页面与 API：集中查看新校招机会、新公司、新研究机构候选、可信目录健康和最近运行。
+- `organization_discovery_feeds`、`organization_candidates`、`organization_discovery_runs` D1 数据模型，以及 UKRI、中科院 5 个首批官方目录。
+- Cron 机构发现管线：有界抓取、既有域名排除、URL 去重、证据和首次/最近发现时间。
+
 - `/campus-2027` 2027 校招与研究岗位专项页及 API，覆盖国内外大厂、大模型厂商、中国与英国研究机构。
 - 百度、华为、阿里、阿里云、MiniMax 等明确 2027 届机会，以及 Arm 英国下一轮 Graduate / Intern 开放窗口。
 - Apple、NVIDIA、微软亚洲研究院与 Alan Turing Institute 等 7 个官方来源和 5 个机构索引。
@@ -48,6 +52,8 @@
 - P1 回归样本与真实 scheduled 全链路验证；系统状态接口新增灰度聚合指标。
 
 ### Changed
+
+- 通用招聘列表适配器扩展到所有显式启用的公司、大学和研究机构列表来源；新机会仍需核验后发布。
 
 - 全球机会地图改为区域聚合后下钻城市，扩大点选命中区并移除手机端强制横向滚动。
 - 大模型公司页面严格区分官方招聘入口和具体已核验机会。

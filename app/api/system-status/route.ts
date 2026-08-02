@@ -23,7 +23,7 @@ export async function GET() {
     const { env } = await import("cloudflare:workers");
     if (!env.DB) throw new Error("D1 binding DB is unavailable");
 
-    const [sourceStats, opportunityStats, institutionStats, reviewStats, observationStats, autoResolvedStats, priorityStats, snapshotStats, checkLogStats, candidateStats, evidenceStats, changeSetStats, pilotStats, researcherStats, paperStats, academicCandidateStats, academicRunStats, paperProviderStats, activePaperProviderStats, latestRun] = await Promise.all([
+    const [sourceStats, opportunityStats, institutionStats, reviewStats, observationStats, autoResolvedStats, priorityStats, snapshotStats, checkLogStats, candidateStats, evidenceStats, changeSetStats, pilotStats, researcherStats, paperStats, academicCandidateStats, academicRunStats, paperProviderStats, activePaperProviderStats, organizationFeedStats, organizationCandidateStats, latestRun] = await Promise.all([
       env.DB.prepare(
         `SELECT COUNT(*) AS total,
                 SUM(CASE WHEN enabled = 1 THEN 1 ELSE 0 END) AS enabled,
@@ -49,6 +49,8 @@ export async function GET() {
       env.DB.prepare("SELECT COUNT(*) AS total FROM academic_sync_runs").first<CountRow>(),
       env.DB.prepare("SELECT COUNT(*) AS total FROM paper_providers").first<CountRow>(),
       env.DB.prepare("SELECT COUNT(*) AS total FROM paper_providers WHERE enabled = 1 AND discovery_enabled = 1").first<CountRow>(),
+      env.DB.prepare("SELECT COUNT(*) AS total FROM organization_discovery_feeds WHERE enabled = 1").first<CountRow>(),
+      env.DB.prepare("SELECT COUNT(*) AS total FROM organization_candidates WHERE status = 'candidate'").first<CountRow>(),
       env.DB.prepare(
         `SELECT id, trigger, status, started_at, finished_at, checked_count, changed_count, failed_count
          FROM sync_runs ORDER BY started_at DESC LIMIT 1`,
@@ -82,6 +84,8 @@ export async function GET() {
         academicSyncRuns: number(academicRunStats?.total),
         paperProviders: number(paperProviderStats?.total),
         activePaperProviders: number(activePaperProviderStats?.total),
+        organizationDiscoveryFeeds: number(organizationFeedStats?.total),
+        organizationCandidates: number(organizationCandidateStats?.total),
       },
       automation: {
         configured: true,
@@ -100,6 +104,7 @@ export async function GET() {
         automaticContentPublishing: false,
         automaticReview: true,
         automaticExternalSourceApproval: false,
+        organizationDiscovery: true,
         researcherMonitoring: true,
         paperDiscovery: true,
         automaticPaperVerification: false,

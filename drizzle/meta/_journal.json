@@ -127,6 +127,13 @@
       "when": 1785657600000,
       "tag": "0019_2027_campus_expansion",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1785715200000,
+      "tag": "0020_continuous_discovery",
+      "breakpoints": true
     }
   ]
 }

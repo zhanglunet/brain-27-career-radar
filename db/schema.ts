@@ -429,3 +429,55 @@ export const paperProviderRecords = sqliteTable("paper_provider_records", {
   uniqueIndex("paper_provider_records_paper_unique").on(table.providerId, table.paperId),
   index("paper_provider_records_paper_idx").on(table.paperId),
 ]);
+
+export const organizationDiscoveryFeeds = sqliteTable("organization_discovery_feeds", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  url: text("url").notNull(),
+  region: text("region").notNull(),
+  candidateType: text("candidate_type", { enum: ["company", "research", "mixed"] }).notNull().default("mixed"),
+  enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
+  checkIntervalHours: integer("check_interval_hours").notNull().default(24),
+  lastCheckedAt: text("last_checked_at"),
+  lastSuccessAt: text("last_success_at"),
+  lastStatusCode: integer("last_status_code"),
+  consecutiveFailures: integer("consecutive_failures").notNull().default(0),
+  lastError: text("last_error"),
+  ...timestamps,
+}, (table) => [
+  uniqueIndex("organization_discovery_feeds_url_unique").on(table.url),
+  index("organization_discovery_feeds_enabled_idx").on(table.enabled, table.lastCheckedAt),
+]);
+
+export const organizationCandidates = sqliteTable("organization_candidates", {
+  id: text("id").primaryKey(),
+  feedId: text("feed_id").notNull().references(() => organizationDiscoveryFeeds.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  candidateUrl: text("candidate_url").notNull(),
+  canonicalHost: text("canonical_host").notNull(),
+  candidateType: text("candidate_type", { enum: ["company", "research", "mixed"] }).notNull().default("mixed"),
+  region: text("region").notNull(),
+  status: text("status", { enum: ["candidate", "approved", "rejected"] }).notNull().default("candidate"),
+  confidence: integer("confidence").notNull().default(60),
+  evidenceExcerpt: text("evidence_excerpt").notNull().default(""),
+  firstSeenAt: text("first_seen_at").notNull(),
+  lastSeenAt: text("last_seen_at").notNull(),
+  ...timestamps,
+}, (table) => [
+  uniqueIndex("organization_candidates_url_unique").on(table.candidateUrl),
+  index("organization_candidates_status_idx").on(table.status, table.lastSeenAt),
+  index("organization_candidates_feed_idx").on(table.feedId, table.lastSeenAt),
+]);
+
+export const organizationDiscoveryRuns = sqliteTable("organization_discovery_runs", {
+  id: text("id").primaryKey(),
+  trigger: text("trigger", { enum: ["cron", "manual", "test"] }).notNull(),
+  status: text("status", { enum: ["running", "succeeded", "partial", "failed"] }).notNull(),
+  startedAt: text("started_at").notNull(),
+  finishedAt: text("finished_at"),
+  feedsChecked: integer("feeds_checked").notNull().default(0),
+  candidatesFound: integer("candidates_found").notNull().default(0),
+  failedCount: integer("failed_count").notNull().default(0),
+  errorSummary: text("error_summary"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [index("organization_discovery_runs_started_idx").on(table.startedAt)]);
