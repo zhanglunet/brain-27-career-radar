@@ -17,7 +17,7 @@ const SOURCE_PROFILES: Record<string, SourceProfile> = {
   "brainco-recruit": { adapterKey: "career-listing", organization: "BrainCo 强脑科技", mode: "listing" },
 };
 
-const RELEVANT_LINK = /(博士|实习|校招|招聘|岗位|科研助理|研究助理|research assistant|研究员|工程师|scientist|intern(?:ship)?|career|jobs?|position)/i;
+const RELEVANT_LINK = /(博士|实习|校招|招聘|岗位|科研助理|研究助理|research assistant|研究员|工程师|engineer|scientist|intern(?:ship)?|graduate|career|jobs?|position)/i;
 const GENERIC_LINK_TITLES = /^(招聘|加入我们|社会招聘|校园招聘|社会招聘和校园招聘|职位列表|全部职位|查看岗位列表|查看更多)$/i;
 const GENERIC_PAGE_TITLES = /^(新闻动态|招聘|校园招聘|社会招聘|职位详情|oppo招聘|brainco)$/i;
 const CITY_NAMES = ["北京", "上海", "深圳", "杭州", "广州", "南京", "天津", "武汉", "成都", "苏州", "哈尔滨"];
@@ -77,13 +77,13 @@ function listingAdapter(key: string): SourceAdapter {
     mode: "listing",
     extract(document) {
       const profile = SOURCE_PROFILES[document.sourceId];
-      if (!profile) return [];
+      const organization = profile?.organization ?? organizationFromSourceName(document.sourceName);
       const candidates: CandidateDraft[] = [];
       const seen = new Set<string>();
       for (const anchor of extractAnchors(document.html)) {
         const text = anchor.text.replace(/\s+/g, " ").trim();
         if (!isUsableListingLink(anchor.href, text)) continue;
-        const title = normalizeListingTitle(text, profile.organization);
+        const title = normalizeListingTitle(text, organization);
         if (!title) continue;
         const canonicalUrl = canonicalizeUrl(anchor.href, document.finalUrl);
         if (!canonicalUrl || !sameRegistrableHost(canonicalUrl, document.finalUrl) || seen.has(canonicalUrl)) continue;
@@ -92,7 +92,7 @@ function listingAdapter(key: string): SourceAdapter {
           document,
           canonicalUrl,
           title,
-          organization: profile.organization,
+          organization,
           text,
           titleExtractor: "anchor",
         }));
@@ -102,6 +102,12 @@ function listingAdapter(key: string): SourceAdapter {
       return candidates;
     },
   };
+}
+
+function organizationFromSourceName(sourceName: string): string {
+  return sourceName
+    .replace(/(?:官方)?(?:校园招聘|校招|招聘|人才机会|职位|岗位|Careers?|Jobs?|Opportunities?).*$/i, "")
+    .trim() || sourceName.trim();
 }
 
 function buildCandidate(input: {

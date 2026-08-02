@@ -106,6 +106,12 @@ test("server-renders the academic intelligence pages", async () => {
   assert.match(campusHtml, /2027 校招/);
   assert.match(campusHtml, /官方入口优先/);
 
+  const discovery = await render("/discovery");
+  assert.equal(discovery.status, 200);
+  const discoveryHtml = await discovery.text();
+  assert.match(discoveryHtml, /发现新的/);
+  assert.match(discoveryHtml, /核验后才公开发布/);
+
   for (const [path, label] of [["/shanghai", "上海高校与科研机构"], ["/shenzhen", "深圳高校与科研机构"], ["/uk", "英国高校与科研机构"], ["/ireland", "爱尔兰高校与科研机构"], ["/hong-kong", "中国香港高校与科研机构"]]) {
     const region = await render(path);
     assert.equal(region.status, 200);

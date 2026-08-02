@@ -152,3 +152,15 @@ npx wrangler d1 execute brain-27-career-radar --local \
 - Cron：`0 1,7,13,19 * * *`。
 - 重点来源：每 6 小时到期，包括牛津、剑桥、UCL、清华、北大、香港，以及上海、深圳高校和企业。
 - 普通来源：每 24 小时到期；Cron 触发但未到期时不会重复访问。
+- 招聘列表候选：随来源间隔执行，Critical 每 6 小时、High 通常每 12 小时、普通每 24 小时。
+- 新机构目录：UKRI 与中科院重点目录每 24 小时，较稳定目录每 72 小时。
+
+## 持续发现检查
+
+候选不等于公开内容。检查最近机构发现运行、目录健康和待核验候选：
+
+```bash
+npx wrangler d1 execute brain-27-career-radar --remote --config dist/server/wrangler.json --command "SELECT status,started_at,finished_at,feeds_checked,candidates_found,failed_count FROM organization_discovery_runs ORDER BY started_at DESC LIMIT 5; SELECT id,name,last_success_at,consecutive_failures,last_error FROM organization_discovery_feeds ORDER BY id; SELECT status,region,candidate_type,COUNT(*) AS total FROM organization_candidates GROUP BY status,region,candidate_type; SELECT state,kind,COUNT(*) AS total FROM candidate_records GROUP BY state,kind;"
+```
+
+公开查看 `/discovery` 与 `/api/discovery`。批准机构前需核对官网归属、目标领域相关性和官方招聘入口；批准机会前需核对岗位标题、地点、毕业批次、学历、签证和截止日期。不要直接把候选表批量复制到公开表。
