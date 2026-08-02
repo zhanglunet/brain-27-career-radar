@@ -48,10 +48,12 @@ export function extractOrganizationCandidates(
     if (name.length < 3 || name.length > 140 || GENERIC_TEXT.test(name)) continue;
     if (!isOrganizationLike(name, candidateType)) continue;
     const candidateUrl = canonicalizeUrl(anchor.href, feedUrl);
-    if (!candidateUrl || sameRegistrableHost(candidateUrl, feedUrl)) continue;
+    if (!candidateUrl) continue;
+    const sameHost = sameRegistrableHost(candidateUrl, feedUrl);
+    if (sameHost && candidateUrl === canonicalizeUrl(feedUrl)) continue;
     const parsed = new URL(candidateUrl);
     const host = parsed.hostname.replace(/^www\./, "").toLowerCase();
-    if (BLOCKED_HOSTS.test(host) || knownHosts.has(host) || seen.has(candidateUrl)) continue;
+    if (BLOCKED_HOSTS.test(host) || (!sameHost && knownHosts.has(host)) || seen.has(candidateUrl)) continue;
     if (/\.(pdf|docx?|xlsx?|zip)$/i.test(parsed.pathname)) continue;
     seen.add(candidateUrl);
     candidates.push({

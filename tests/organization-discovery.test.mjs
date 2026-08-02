@@ -7,6 +7,7 @@ test("trusted catalogs discover external institutions and reject noise", () => {
     <a href="https://new-neuro.example.org/">Centre for Neuro AI</a>
     <a href="https://known.example.org/about">Known Research Institute</a>
     <a href="/internal/list">Internal list</a>
+    <a href="/centres/neuro-ai">University Research Centre for Neuro AI</a>
     <a href="https://linkedin.com/company/test">LinkedIn</a>
     <a href="https://new-neuro.example.org/report.pdf">Annual report</a>
     <a href="https://another.example.ac.uk/">Cognitive Systems Laboratory</a>
@@ -16,6 +17,7 @@ test("trusted catalogs discover external institutions and reject noise", () => {
 
   assert.deepEqual(candidates.map((item) => item.name), [
     "Centre for Neuro AI",
+    "University Research Centre for Neuro AI",
     "Cognitive Systems Laboratory",
   ]);
   assert.equal(candidates[0].candidateType, "research");
