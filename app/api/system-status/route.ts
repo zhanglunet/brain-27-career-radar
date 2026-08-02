@@ -63,6 +63,11 @@ export async function GET() {
       ).first<LatestRunRow>(),
     ]);
 
+    const [conferenceStats,conferenceDateStats,conferenceRunStats]=await Promise.all([
+      env.DB.prepare("SELECT COUNT(*) AS total FROM academic_conferences WHERE published=1").first<CountRow>(),
+      env.DB.prepare("SELECT COUNT(*) AS total FROM conference_dates WHERE occurs_at IS NOT NULL").first<CountRow>(),
+      env.DB.prepare("SELECT COUNT(*) AS total FROM conference_sync_runs").first<CountRow>(),
+    ]);
     const generatedAt = new Date();
     const nextScheduledAt = nextScheduledUtcHour(generatedAt, [1, 7, 13, 19]).toISOString();
 
@@ -97,12 +102,15 @@ export async function GET() {
         policyFeeds:number(policyFeedStats?.total),
         policyCandidates:number(policyCandidateStats?.total),
         policySyncRuns:number(policyRunStats?.total),
+        academicConferences:number(conferenceStats?.total),
+        conferenceDates:number(conferenceDateStats?.total),
+        conferenceSyncRuns:number(conferenceRunStats?.total),
       },
       automation: {
         configured: true,
         schedule: SCHEDULE,
         policySchedule:POLICY_SCHEDULE,
-        scheduleLabel: "职业/论文每 6 小时；科研政策错峰每 6 小时",
+        scheduleLabel: "职业/论文每 6 小时；科研政策与顶会错峰每 6 小时",
         nextScheduledAt,
         checkedSources: number(sourceStats?.ever_succeeded),
         failingSources: number(sourceStats?.currently_failing),
@@ -122,6 +130,8 @@ export async function GET() {
         automaticPaperVerification: false,
         researchPolicyMonitoring:true,
         automaticPolicyCandidatePublishing:false,
+        academicConferenceMonitoring:true,
+        automaticConferenceDatePublishing:false,
       },
     }, {
       headers: { "Cache-Control": "no-store" },

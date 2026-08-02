@@ -2,7 +2,7 @@
 
 面向 2027 年毕业的实验心理学硕士，持续汇总全球脑科学、认知神经科学、脑机接口与脑启发人工智能方向的博士、奖学金、高校科研助理和企业校招机会。
 
-[访问线上网站](https://openagent.hk) · [持续发现](https://openagent.hk/discovery) · [2027 校招](https://openagent.hk/campus-2027) · [情报日报](https://openagent.hk/reports) · [全球地图](https://openagent.hk/map) · [大模型公司](https://openagent.hk/ai-companies) · [统一日历](https://openagent.hk/calendar) · [知识图谱](https://openagent.hk/knowledge-graph) · [北京](https://openagent.hk/beijing) · [上海](https://openagent.hk/shanghai) · [深圳](https://openagent.hk/shenzhen) · [英国](https://openagent.hk/uk) · [爱尔兰](https://openagent.hk/ireland) · [中国香港](https://openagent.hk/hong-kong) · [导师雷达](https://openagent.hk/researchers) · [双语论文](https://openagent.hk/papers)
+[访问线上网站](https://openagent.hk) · [学术顶会](https://openagent.hk/conferences) · [持续发现](https://openagent.hk/discovery) · [2027 校招](https://openagent.hk/campus-2027) · [情报日报](https://openagent.hk/reports) · [全球地图](https://openagent.hk/map) · [大模型公司](https://openagent.hk/ai-companies) · [统一日历](https://openagent.hk/calendar) · [知识图谱](https://openagent.hk/knowledge-graph) · [北京](https://openagent.hk/beijing) · [上海](https://openagent.hk/shanghai) · [深圳](https://openagent.hk/shenzhen) · [英国](https://openagent.hk/uk) · [爱尔兰](https://openagent.hk/ireland) · [中国香港](https://openagent.hk/hong-kong) · [导师雷达](https://openagent.hk/researchers) · [双语论文](https://openagent.hk/papers)
 
 ![BRAIN / 27 脑科学与人工智能机会雷达首页](docs/images/brain-27-radar.jpg)
 
@@ -10,7 +10,7 @@
 
 BRAIN / 27 不是简单的招聘链接集合，而是一套可审计、可追踪的机会情报系统。系统以高校、科研机构和企业官方页面为主要信息源，通过 Cloudflare Cron 定时检查内容变化，将来源快照、逐来源日志、候选记录、字段证据和审核结论保存在 D1 数据库中。
 
-当前版本为 `v0.12.0`，重点覆盖：
+当前版本为 `v0.13.0`，重点覆盖：
 
 - 英国：中国学生重点关注的 Oxford、Cambridge、UCL 等高校与研究机构；
 - 中国大陆：清华、北大，以及北京、上海、深圳的高校、科研机构和科技企业；
@@ -19,6 +19,7 @@ BRAIN / 27 不是简单的招聘链接集合，而是一套可审计、可追踪
 - 机会类型：博士、联合培养博士、科研助理、校招、实习和研究岗位；
 - 资助信息：全奖、部分奖学金、混合资助、自费和待确认，并明确国际学生学费差额风险。
 - 时间管理：统一显示官方截止日、预计日期、滚动申请和待确认机会，并自动生成提前准备任务。
+- 学术顶会：跟踪心理学、脑科学、认知科学和 AI 的 13 个重点会议，区分正式论文会议与摘要型年会，并把精确投稿节点和会议日期接入统一日历。
 
 ## 当前数据规模
 
@@ -35,7 +36,7 @@ BRAIN / 27 不是简单的招聘链接集合，而是一套可审计、可追踪
 
 ## 核心功能
 
-- 全局搜索：任意页面用 `⌘/Ctrl+K` 或 `/` 搜索公开机会、机构、导师、论文、信息源和历史报告；
+- 全局搜索：任意页面用 `⌘/Ctrl+K` 或 `/` 搜索公开机会、机构、导师、论文、顶会、信息源和历史报告；
 - 全部机会：在统一清单中按关键词、类型、状态、地区、截止状态、博士资助和硕士资格筛选、排序与分页；
 - 机会雷达：按状态、机会类型和关键词筛选博士、科研助理及就业机会；
 - 持续发现：从已登记招聘页发现同站新岗位，并从 UKRI、中科院等官方目录发现新的公司和研究机构；候选核验后才公开；

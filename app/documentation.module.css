@@ -188,10 +188,11 @@
 .calendarGrid button:hover, .calendarSelected { background: rgba(28, 62, 51, .95) !important; }
 .calendarToday b { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--lime); color: #071512; }
 .calendarGrid button > span { display: flex; gap: 4px; margin-top: 8px; }
-.calendarGrid i, .calendar_deadline, .calendar_opening, .calendar_task { display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
+.calendarGrid i, .calendar_deadline, .calendar_opening, .calendar_task, .calendar_conference { display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
 .calendar_deadline { background: #ff806f; }
 .calendar_opening { background: var(--aqua); }
 .calendar_task { background: #ffd76b; }
+.calendar_conference { background: #aa8cff; }
 .calendarGrid small { display: -webkit-box; margin-top: 7px; color: var(--muted); font-size: 9px; line-height: 1.35; overflow: hidden; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .selectedAgenda { padding: 18px; border: 1px solid var(--line); border-top: 0; }
 .selectedAgenda h3 { margin: 0 0 12px; }

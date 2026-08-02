@@ -12,7 +12,7 @@ export default function SystemPage() {
   return <main className={styles.page}>
     <DocsNav active="system" />
     <header className={styles.hero}>
-      <div><p className={styles.eyebrow}>SYSTEM / OPERATIONS</p><h1>系统如何<span>自动运行</span></h1><p className={styles.lede}>系统按来源优先级和间隔检查官方页面，保留证据与运行记录；博士、奖学金、科研助理和校招共用审计链，页面在电脑和手机上均可完整使用。</p></div>
+      <div><p className={styles.eyebrow}>SYSTEM / OPERATIONS</p><h1>系统如何<span>自动运行</span></h1><p className={styles.lede}>系统按来源优先级和间隔检查官方页面，保留证据与运行记录；职业机会、论文、科研政策与学术顶会各自留存同步记录，页面在电脑和手机上均可完整使用。</p></div>
       <aside className={styles.heroAside}><strong>57 SOURCES</strong><p>51 个来源自动检查；31 个重点来源每 6 小时检查，覆盖牛津、剑桥、UCL、清华、北大、香港、上海与深圳。6 个受限入口保留人工核对。</p></aside>
     </header>
 

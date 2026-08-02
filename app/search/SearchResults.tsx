@@ -40,8 +40,8 @@ export default function SearchResults({ initialQuery }: { initialQuery: string }
   const validQuery = q.trim().length >= 2;
 
   return <section className={styles.section}>
-    <div className={styles.searchPageBar}><span>⌕</span><input autoFocus value={q} onChange={(event) => setQ(event.target.value)} placeholder="搜索机会、导师、论文、政策、项目、机构…"/></div>
-    <div className={styles.graphFilters}>{[["", "全部"], ["opportunity", "机会"], ["institution", "机构"], ["researcher", "导师"], ["paper", "论文"], ["policy", "政策"], ["project", "项目"], ["topic", "议题"], ["source", "信息源"], ["report", "报告"]].map(([value, text]) => <button key={value} className={type === value ? styles.graphFilterActive : ""} onClick={() => setType(value)}>{text}</button>)}</div>
+    <div className={styles.searchPageBar}><span>⌕</span><input autoFocus value={q} onChange={(event) => setQ(event.target.value)} placeholder="搜索机会、导师、论文、顶会、政策、项目、机构…"/></div>
+    <div className={styles.graphFilters}>{[["", "全部"], ["opportunity", "机会"], ["institution", "机构"], ["researcher", "导师"], ["paper", "论文"], ["conference", "顶会"], ["policy", "政策"], ["project", "项目"], ["topic", "议题"], ["source", "信息源"], ["report", "报告"]].map(([value, text]) => <button key={value} className={type === value ? styles.graphFilterActive : ""} onClick={() => setType(value)}>{text}</button>)}</div>
     {loading && validQuery && <p className={styles.loading}>正在搜索全部数据…</p>}
     {error && validQuery && <p className={`${styles.state} ${styles.stateError}`}>{error}</p>}
     {!validQuery && <p className={styles.note}>输入至少两个字。全局搜索只展示已公开、已核验的机会、机构、导师、论文、科研政策、项目、议题、信息源和报告。</p>}
@@ -50,5 +50,5 @@ export default function SearchResults({ initialQuery }: { initialQuery: string }
 }
 
 function label(type: string) {
-  return ({ opportunity: "机会", institution: "机构", researcher: "导师", paper: "论文", policy:"政策",project:"项目",topic:"议题", source: "来源", report: "报告" } as Record<string, string>)[type] ?? type;
+  return ({ opportunity: "机会", institution: "机构", researcher: "导师", paper: "论文", conference:"顶会",policy:"政策",project:"项目",topic:"议题", source: "来源", report: "报告" } as Record<string, string>)[type] ?? type;
 }

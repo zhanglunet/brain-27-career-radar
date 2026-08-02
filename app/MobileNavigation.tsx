@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
 const groups = [
   { title: "机会", links: [["/", "首页雷达"], ["/opportunities", "全部机会"], ["/campus-2027", "2027 校招"], ["/calendar", "时间表与截止日期"], ["/search", "全局搜索"]] },
-  { title: "学术", links: [["/researchers", "导师雷达"], ["/papers", "最新论文"], ["/policies", "科研政策与项目"], ["/knowledge-graph", "知识图谱"], ["/paper-sources", "论文数据库"]] },
+  { title: "学术", links: [["/conferences", "心理学 / 脑科学 / AI 顶会"], ["/researchers", "导师雷达"], ["/papers", "最新论文"], ["/policies", "科研政策与项目"], ["/knowledge-graph", "知识图谱"], ["/paper-sources", "论文数据库"]] },
   { title: "地区", links: [["/map", "全球地图"], ["/beijing", "北京"], ["/shanghai", "上海"], ["/shenzhen", "深圳"], ["/uk", "英国"], ["/ireland", "爱尔兰"], ["/hong-kong", "中国香港"]] },
   { title: "跟踪与说明", links: [["/reports", "日报 / 周报 / 月报"], ["/discovery", "持续发现"], ["/ai-companies", "大模型公司"], ["/sources", "信息源"], ["/logs", "运行日志"], ["/system", "系统说明"], ["/prd", "需求文档"]] },
 ] as const;
