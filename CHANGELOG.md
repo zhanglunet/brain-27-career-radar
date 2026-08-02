@@ -4,6 +4,10 @@
 
 ### Added
 
+- `/campus-2027` 2027 校招与研究岗位专项页及 API，覆盖国内外大厂、大模型厂商、中国与英国研究机构。
+- 百度、华为、阿里、阿里云、MiniMax 等明确 2027 届机会，以及 Arm 英国下一轮 Graduate / Intern 开放窗口。
+- Apple、NVIDIA、微软亚洲研究院与 Alan Turing Institute 等 7 个官方来源和 5 个机构索引。
+
 - `/reports` 情报报告页面与 `/api/reports`：每日新增机会、来源、论文总结，以及历史日报、周报、月报和检索。
 - `intelligence_reports` D1 报告快照、历史回填与 Cron 自动刷新器。
 
