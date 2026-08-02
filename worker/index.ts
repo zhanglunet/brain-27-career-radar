@@ -7,6 +7,7 @@ import { translatePendingPapers } from "../lib/paper-translator";
 import { refreshIntelligenceReports } from "../lib/intelligence-reports";
 import { discoverOrganizations } from "../lib/organization-discovery";
 import { syncResearchPolicies } from "../lib/policy-monitor";
+import { syncAcademicConferences } from "../lib/conference-monitor";
 
 // Image security config. SVG sources with .svg extension auto-skip the
 // optimization endpoint on the client side (served directly, no proxy).
@@ -42,7 +43,14 @@ const worker = {
       cron:controller.cron,
     }));
     if(controller.cron==="30 2,8,14,20 * * *"){
-      ctx.waitUntil(syncResearchPolicies(env.DB,{trigger:"cron"}).then(()=>refreshIntelligenceReports(env.DB)).then(()=>undefined));
+      ctx.waitUntil(Promise.allSettled([
+        syncResearchPolicies(env.DB,{trigger:"cron"}),
+        syncAcademicConferences(env.DB,{trigger:"cron"}),
+      ]).then((results)=>{
+        const rejected=results.filter((item)=>item.status==="rejected");
+        if(rejected.length)console.error(JSON.stringify({event:"radar.policy_conference.pipeline_rejected",count:rejected.length}));
+        return refreshIntelligenceReports(env.DB);
+      }).then(()=>undefined));
       return;
     }
     ctx.waitUntil(Promise.allSettled([

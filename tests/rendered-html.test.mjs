@@ -102,6 +102,12 @@ test("server-renders the academic intelligence pages", async () => {
   assert.match(calendarHtml, /统一时间表/);
   assert.match(calendarHtml, /确认 ≠ 估算/);
 
+  const conferences = await render("/conferences");
+  assert.equal(conferences.status, 200);
+  const conferencesHtml = await conferences.text();
+  assert.match(conferencesHtml, /心理学、脑科学/);
+  assert.match(conferencesHtml, /13 VENUES/);
+
   const graphPrd = await render("/prd/knowledge-graph");
   assert.equal(graphPrd.status, 200);
   assert.match(await graphPrd.text(), /截止日期治理/);

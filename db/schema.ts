@@ -614,3 +614,78 @@ export const researchTopics = sqliteTable("research_topics", {
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [uniqueIndex("research_topics_name_unique").on(table.name)]);
+
+export const academicConferences = sqliteTable("academic_conferences", {
+  id: text("id").primaryKey(),
+  series: text("series").notNull(),
+  name: text("name").notNull(),
+  nameZh: text("name_zh").notNull(),
+  field: text("field", { enum: ["psychology", "neuroscience", "ai", "interdisciplinary"] }).notNull(),
+  conferenceType: text("conference_type", { enum: ["peer_reviewed", "abstract_meeting", "hybrid"] }).notNull(),
+  year: integer("year").notNull(),
+  city: text("city").notNull().default(""),
+  country: text("country").notNull().default(""),
+  venue: text("venue").notNull().default(""),
+  status: text("status", { enum: ["open", "upcoming", "in_progress", "completed", "watch"] }).notNull().default("watch"),
+  startsAt: text("starts_at"),
+  endsAt: text("ends_at"),
+  dateStatus: text("date_status", { enum: ["confirmed", "month_confirmed", "tba"] }).notNull().default("tba"),
+  summary: text("summary").notNull(),
+  relevance: text("relevance").notNull().default(""),
+  topicsJson: text("topics_json").notNull().default("[]"),
+  officialUrl: text("official_url").notNull(),
+  cfpUrl: text("cfp_url"),
+  proceedingsUrl: text("proceedings_url"),
+  contentHash: text("content_hash"),
+  checkIntervalHours: integer("check_interval_hours").notNull().default(24),
+  sourceVerifiedAt: text("source_verified_at"),
+  published: integer("published", { mode: "boolean" }).notNull().default(true),
+  ...timestamps,
+}, (table) => [
+  uniqueIndex("academic_conferences_url_unique").on(table.officialUrl),
+  index("academic_conferences_public_idx").on(table.published, table.field, table.year, table.status),
+  index("academic_conferences_date_idx").on(table.startsAt),
+]);
+
+export const conferenceDates = sqliteTable("conference_dates", {
+  id: text("id").primaryKey(),
+  conferenceId: text("conference_id").notNull().references(() => academicConferences.id, { onDelete: "cascade" }),
+  eventType: text("event_type", { enum: ["abstract_deadline", "paper_deadline", "supplementary_deadline", "notification", "camera_ready", "late_breaking", "registration", "workshop_proposal", "commitment", "response", "other"] }).notNull(),
+  label: text("label").notNull(),
+  occursAt: text("occurs_at"),
+  endsAt: text("ends_at"),
+  timezone: text("timezone").notNull().default("UTC"),
+  dateStatus: text("date_status", { enum: ["confirmed", "month_confirmed", "tba"] }).notNull().default("tba"),
+  actionRequired: integer("action_required", { mode: "boolean" }).notNull().default(false),
+  officialUrl: text("official_url").notNull(),
+  notes: text("notes").notNull().default(""),
+  ...timestamps,
+}, (table) => [
+  index("conference_dates_conference_idx").on(table.conferenceId, table.occursAt),
+  index("conference_dates_calendar_idx").on(table.occursAt, table.eventType),
+]);
+
+export const conferenceVersions = sqliteTable("conference_versions", {
+  id: text("id").primaryKey(),
+  conferenceId: text("conference_id").notNull().references(() => academicConferences.id, { onDelete: "cascade" }),
+  contentHash: text("content_hash").notNull(),
+  excerpt: text("excerpt").notNull().default(""),
+  capturedAt: text("captured_at").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  uniqueIndex("conference_versions_hash_unique").on(table.conferenceId, table.contentHash),
+  index("conference_versions_conference_idx").on(table.conferenceId, table.capturedAt),
+]);
+
+export const conferenceSyncRuns = sqliteTable("conference_sync_runs", {
+  id: text("id").primaryKey(),
+  trigger: text("trigger", { enum: ["cron", "manual", "test"] }).notNull(),
+  status: text("status", { enum: ["running", "succeeded", "partial", "failed"] }).notNull(),
+  startedAt: text("started_at").notNull(),
+  finishedAt: text("finished_at"),
+  conferencesChecked: integer("conferences_checked").notNull().default(0),
+  versionsAdded: integer("versions_added").notNull().default(0),
+  failedCount: integer("failed_count").notNull().default(0),
+  errorSummary: text("error_summary"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [index("conference_sync_runs_started_idx").on(table.startedAt)]);
