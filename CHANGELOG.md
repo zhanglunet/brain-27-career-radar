@@ -7,6 +7,7 @@
 - `/discovery` 持续发现页面与 API：集中查看新校招机会、新公司、新研究机构候选、可信目录健康和最近运行。
 - `organization_discovery_feeds`、`organization_candidates`、`organization_discovery_runs` D1 数据模型，以及 UKRI、中科院 5 个首批官方目录。
 - Cron 机构发现管线：有界抓取、既有域名排除、URL 去重、证据和首次/最近发现时间。
+- 机构名称词形筛选与社交/内容平台排除，防止官方目录的页脚和出版导航成为机构候选。
 
 - `/campus-2027` 2027 校招与研究岗位专项页及 API，覆盖国内外大厂、大模型厂商、中国与英国研究机构。
 - 百度、华为、阿里、阿里云、MiniMax 等明确 2027 届机会，以及 Arm 英国下一轮 Graduate / Intern 开放窗口。

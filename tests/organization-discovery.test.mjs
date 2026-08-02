@@ -10,6 +10,8 @@ test("trusted catalogs discover external institutions and reject noise", () => {
     <a href="https://linkedin.com/company/test">LinkedIn</a>
     <a href="https://new-neuro.example.org/report.pdf">Annual report</a>
     <a href="https://another.example.ac.uk/">Cognitive Systems Laboratory</a>
+    <a href="https://medium.com/@catalog">Catalog Medium</a>
+    <a href="https://noise.example.net/">Annual publication portal</a>
   `, "https://catalog.example.gov/list", "research", new Set(["known.example.org"]));
 
   assert.deepEqual(candidates.map((item) => item.name), [

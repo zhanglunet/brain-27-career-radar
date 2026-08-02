@@ -4,7 +4,7 @@ import { canonicalizeUrl, sameRegistrableHost } from "./p1/url.ts";
 const MAX_BODY_BYTES = 512 * 1024;
 const REQUEST_TIMEOUT_MS = 12_000;
 const MAX_CANDIDATES_PER_FEED = 80;
-const BLOCKED_HOSTS = /(^|\.)(facebook|instagram|linkedin|twitter|x|youtube|weibo|wechat|wikipedia|google|baidu|bing)\./i;
+const BLOCKED_HOSTS = /(^|\.)(bsky|facebook|instagram|linkedin|medium|twitter|x|youtube|weibo|wechat|wikipedia|google|baidu|bing)\./i;
 const GENERIC_TEXT = /^(home|首页|more|更多|read more|learn more|website|官网|link|链接|contact|联系我们|privacy|隐私|terms|条款)$/i;
 
 type Trigger = "cron" | "manual" | "test";
@@ -46,6 +46,7 @@ export function extractOrganizationCandidates(
   for (const anchor of extractAnchors(html)) {
     const name = anchor.text.replace(/\s+/g, " ").trim();
     if (name.length < 3 || name.length > 140 || GENERIC_TEXT.test(name)) continue;
+    if (!isOrganizationLike(name, candidateType)) continue;
     const candidateUrl = canonicalizeUrl(anchor.href, feedUrl);
     if (!candidateUrl || sameRegistrableHost(candidateUrl, feedUrl)) continue;
     const parsed = new URL(candidateUrl);
@@ -172,9 +173,18 @@ async function readBoundedText(response: Response, limit: number): Promise<strin
 }
 
 function organizationConfidence(name: string, type: CandidateType): number {
-  const research = /(university|institute|laboratory|laboratories|centre|center|大学|学院|研究院|研究所|实验室|科学院)/i.test(name);
+  const research = RESEARCH_ORGANIZATION.test(name);
   const company = /(ltd|limited|inc\.?|company|group|technolog|公司|集团|科技)/i.test(name);
   return Math.min(95, 62 + (type === "research" && research ? 22 : 0) + (type === "company" && company ? 22 : 0));
+}
+
+const RESEARCH_ORGANIZATION = /(university|universities|institute|institutes|laboratory|laboratories|centre|center|catapult|academy|observator|research (?:organisation|organization|council)|大学|学院|研究院|研究所|实验室|科学院|研究中心|工程中心)/i;
+const COMPANY_ORGANIZATION = /(ltd\.?|limited|inc\.?|company|group|technolog|公司|集团|科技)/i;
+
+function isOrganizationLike(name: string, type: CandidateType): boolean {
+  if (type === "research") return RESEARCH_ORGANIZATION.test(name);
+  if (type === "company") return COMPANY_ORGANIZATION.test(name);
+  return RESEARCH_ORGANIZATION.test(name) || COMPANY_ORGANIZATION.test(name);
 }
 
 function stableId(value: string): string {
