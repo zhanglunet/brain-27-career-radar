@@ -271,6 +271,28 @@ button.mapStat, button.mapStatActive { cursor: pointer; }
 .companyOpportunity h4 { margin: 9px 0 6px; font-size: 13px; line-height: 1.45; }
 .companyOpportunity p { margin: 0; font-size: 10px; }
 
+.campusGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; margin-top: 20px; }
+.campusCard { min-width: 0; padding: 22px; border: 1px solid var(--line); background: rgba(10,29,24,.92); }
+.campusCardTop { display: flex; justify-content: space-between; gap: 12px; color: var(--aqua); font: 9px var(--font-geist-mono); text-transform: uppercase; }
+.campusCardTop b { padding: 5px 7px; border: 1px solid currentColor; font-weight: 600; white-space: nowrap; }
+.campusVerified { color: var(--lime); }
+.campusWatch { color: var(--aqua); }
+.campusWaiting { color: #ffd76b; }
+.campusCard h3 { margin: 18px 0 7px; font-size: 21px; line-height: 1.4; }
+.campusCard h3 a:hover { color: var(--lime); }
+.campusOrg { margin: 0; color: #c8d5d1; font-size: 12px; }
+.campusCard > p:not(.campusOrg):not(.campusEligibility) { color: #b1c2bc; font-size: 12px; line-height: 1.7; }
+.campusMeta { display: grid; grid-template-columns: 1.2fr .8fr; gap: 12px; margin: 3px 0 18px; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.campusMeta dt { color: var(--muted); font: 9px var(--font-geist-mono); text-transform: uppercase; }
+.campusMeta dd { margin: 6px 0 0; color: #d0ddd8; font-size: 11px; line-height: 1.5; }
+.campusEligibility { margin: 14px 0 0; padding-left: 12px; border-left: 2px solid var(--aqua); color: var(--muted); font-size: 11px; line-height: 1.65; }
+.campusAction { margin-top: 16px; padding: 14px; border: 1px solid rgba(201,255,107,.22); background: rgba(201,255,107,.035); }
+.campusAction b { color: var(--lime); font: 9px var(--font-geist-mono); text-transform: uppercase; }
+.campusAction p { margin: 7px 0 0; color: #bdccc7; font-size: 11px; line-height: 1.6; }
+.campusCard footer { display: flex; justify-content: space-between; gap: 12px; align-items: end; margin-top: 18px; }
+.campusCard footer a { color: var(--lime); font: 10px var(--font-geist-mono); }
+.campusCard footer span { color: var(--muted); font: 9px var(--font-geist-mono); text-align: right; }
+
 .reportHeroGrid { display: grid; grid-template-columns: minmax(0,2fr) repeat(3,minmax(120px,1fr)); gap: 12px; margin-bottom: 26px; }
 .reportHeroGrid > article, .reportMetric { padding: 22px; border: 1px solid var(--line); background: rgba(10,29,24,.92); }
 .reportHeroGrid article h2 { margin: 0 0 12px; font-size: 27px; }
@@ -329,6 +351,7 @@ button.mapStat, button.mapStatActive { cursor: pointer; }
   .mapAccessible > div { grid-template-columns: repeat(3,1fr); }
   .reportHeroGrid { grid-template-columns: repeat(3,1fr); }
   .reportHeroGrid > article { grid-column: 1 / -1; }
+  .campusGrid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 620px) {
@@ -364,4 +387,7 @@ button.mapStat, button.mapStatActive { cursor: pointer; }
   .reportNumbers { grid-template-columns: 1fr 1fr; }
   .reportNumbers div:nth-child(2) { border-right: 0; }
   .reportNumbers div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+  .campusCardTop, .campusCard footer { align-items: flex-start; flex-direction: column; }
+  .campusCard footer span { text-align: left; }
+  .campusMeta { grid-template-columns: 1fr; }
 }

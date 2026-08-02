@@ -83,7 +83,17 @@ npx wrangler d1 execute brain-27-career-radar --local \
   --command "SELECT outcome, COUNT(*) FROM source_check_logs GROUP BY outcome; SELECT coverage, COUNT(*) FROM sources GROUP BY coverage"
 ```
 
-网页运维入口：`/sources` 查看全部 109 个来源、优先级与采集状态，`/logs` 按来源、结果、类型、地区和 UTC 日期检索历史及审核状态。旧版 `sync_runs` 仍保留；逐来源日志只从 `source_check_logs` 上线后的首次运行开始，不回填虚构历史。
+网页运维入口：`/sources` 查看全部 116 个来源、优先级与采集状态，`/logs` 按来源、结果、类型、地区和 UTC 日期检索历史及审核状态。旧版 `sync_runs` 仍保留；逐来源日志只从 `source_check_logs` 上线后的首次运行开始，不回填虚构历史。
+
+2027 校招专项入口为 `/campus-2027`，API 为 `/api/campus-2027`。页面只收录 `tags_json` 带 `2027校招专题` 的公开机会；排查口径时查询：
+
+```sql
+SELECT status,kind,COUNT(*) FROM opportunities
+WHERE published=1 AND tags_json LIKE '%2027校招专题%'
+GROUP BY status,kind;
+```
+
+新增 Careers 入口首次 Cron 前显示等待检查是正常状态。维护者需要分别核对官方毕业窗口、具体岗位开放状态和工作许可，不能因入口可访问就把状态改成“立即行动”。
 
 查询日报、周报和月报：
 
