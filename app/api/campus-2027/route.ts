@@ -50,6 +50,8 @@ export async function GET() {
         total: opportunities.length,
         confirmed2027: opportunities.filter((item) => item.verification === "已确认 2027 届").length,
         china: opportunities.filter((item) => item.regions.includes("中国")).length,
+        beijing: opportunities.filter((item) => /北京/.test(item.location)).length,
+        shanghai: opportunities.filter((item) => /上海/.test(item.location)).length,
         uk: opportunities.filter((item) => item.regions.includes("英国")).length,
         hongKong: opportunities.filter((item) => item.regions.includes("中国香港")).length,
         immediate: opportunities.filter((item) => item.status === "立即行动").length,
