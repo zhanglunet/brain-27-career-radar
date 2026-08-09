@@ -33,7 +33,13 @@ const worker = {
       }, allowedWidths);
     }
 
-    return handler.fetch(request, env, ctx);
+    const response = await handler.fetch(request, env, ctx);
+    if ((request.method === "GET" || request.method === "HEAD") && request.headers.get("accept")?.includes("text/html")) {
+      const headers = new Headers(response.headers);
+      headers.set("Cache-Control", "no-store, must-revalidate");
+      return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+    }
+    return response;
   },
 
   async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
