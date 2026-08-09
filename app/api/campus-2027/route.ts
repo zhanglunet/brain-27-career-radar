@@ -51,6 +51,7 @@ export async function GET() {
         confirmed2027: opportunities.filter((item) => item.verification === "已确认 2027 届").length,
         china: opportunities.filter((item) => item.regions.includes("中国")).length,
         uk: opportunities.filter((item) => item.regions.includes("英国")).length,
+        hongKong: opportunities.filter((item) => item.regions.includes("中国香港")).length,
         immediate: opportunities.filter((item) => item.status === "立即行动").length,
       },
       tracks: [...trackSet].sort(),

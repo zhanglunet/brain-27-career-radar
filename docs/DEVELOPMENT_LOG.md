@@ -1,5 +1,12 @@
 # 开发日志
 
+## 2026-08-09 · 校招重点雷达扩展
+
+- 将校招专项明确为三条重点线：英国顶级高校实验室/课题组/学院/导师岗位、英国企业 Graduate/Intern/Early Career、香港企业与高校校招。
+- 牛津、剑桥、UCL 的官方研究岗位入口升级为校招重点来源；新增 Oxford、Cambridge、UCL 研究岗位重点跟踪记录，严格区分 Research Assistant/Technician 与通常要求博士的 Research Associate。
+- 新增香港大学、香港科技大学、香港中文大学、HSBC Hong Kong、HKSTP 官方入口及对应专项跟踪机会；统一标记为入口跟踪或批次待确认，不把通用 Careers 页面直接描述成已开放岗位。
+- `/campus-2027` 增加三条重点雷达说明和香港机会计数；首页校招重点区同时展示校招与早期研究岗位。
+
 ## 2026-08-02 · P2.5.1 心理学、脑科学与 AI 顶会雷达
 
 - 新增 13 个重点会议与 20 个关键日期种子，覆盖 NeurIPS、AAAI、ACL/EACL、ICLR、APA/APS、Psychonomic、CogSci、CNS、SfN、COSYNE 与 OHBM。

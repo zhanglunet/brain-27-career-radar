@@ -27,7 +27,7 @@ type Opportunity = {
 
 type Payload = {
   generatedAt: string;
-  counts: { total: number; confirmed2027: number; china: number; uk: number; immediate: number };
+  counts: { total: number; confirmed2027: number; china: number; uk: number; hongKong: number; immediate: number };
   tracks: string[];
   opportunities: Opportunity[];
 };
@@ -64,11 +64,17 @@ export default function Campus2027Explorer() {
   if (!data) return <p className={styles.loading}>正在读取 2027 校招与研究岗位…</p>;
 
   return <>
+    <section className={styles.focusLines}>
+      <article><span>01 · 英国顶级高校</span><strong>实验室 / 课题组 / 学院 / 导师</strong><p>牛津、剑桥、UCL 等官方职位库与具体研究团队，重点筛选 Research Assistant、Technician、Psychology、Neuroscience。</p></article>
+      <article><span>02 · 英国企业</span><strong>Graduate / Intern / Early Career</strong><p>Microsoft、Amazon、Arm、Apple、NVIDIA、Google DeepMind 等英国岗位，逐项核对毕业时间与工作许可。</p></article>
+      <article><span>03 · 香港校招</span><strong>企业 + 高校双线</strong><p>HSBC、HKSTP 与港大、港科大、港中文；入口跟踪与具体岗位严格区分，避免把通用 Careers 当成已开放职位。</p></article>
+    </section>
     <section className={styles.statusGrid}>
       <article className={styles.statusCard}><span>专项机会</span><strong>{data.counts.total}</strong><p>官方入口与已核验批次</p></article>
       <article className={styles.statusCard}><span>确认 2027 届</span><strong>{data.counts.confirmed2027}</strong><p>毕业范围已有官方依据</p></article>
       <article className={styles.statusCard}><span>中国机会</span><strong>{data.counts.china}</strong><p>大厂、研究机构、大模型厂商</p></article>
       <article className={styles.statusCard}><span>英国机会</span><strong>{data.counts.uk}</strong><p>大厂与国家级研究机构</p></article>
+      <article className={styles.statusCard}><span>香港机会</span><strong>{data.counts.hongKong}</strong><p>企业与高校早期职业</p></article>
     </section>
 
     <section className={styles.section}>

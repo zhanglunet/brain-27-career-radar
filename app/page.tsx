@@ -312,7 +312,7 @@ export default function Home() {
 
   const immediateCount = radar.opportunities.filter((item) => item.status === "立即行动").length;
   const campusFocus = useMemo(() => radar.opportunities
-    .filter((item) => item.kind === "校招")
+    .filter((item) => item.kind === "校招" || item.tags.includes("校招重点"))
     .sort((a, b) => Number(b.status === "立即行动") - Number(a.status === "立即行动"))
     .slice(0, 3), [radar.opportunities]);
 
@@ -347,7 +347,7 @@ export default function Home() {
       </section>
 
       <section className="campus-focus" aria-labelledby="campus-focus-title">
-        <div className="campus-focus-head"><div><p className="eyebrow">RECENT FOCUS · CAMPUS 2027</p><h2 id="campus-focus-title">最近的关注重点：校招机会</h2><p>把应届校招单独拎出来，先处理有明确批次或正在开放的机会。</p></div><a href="/campus-2027">查看 2027 校招专题 ↗</a></div>
+        <div className="campus-focus-head"><div><p className="eyebrow">RECENT FOCUS · CAMPUS 2027</p><h2 id="campus-focus-title">最近的关注重点：校招与早期研究岗位</h2><p>英国顶级高校研究团队、英国企业和香港企业/高校三条线并行跟踪，先处理明确开放的机会。</p></div><a href="/campus-2027">查看三条重点雷达 ↗</a></div>
         {campusFocus.length > 0 ? <div className="campus-focus-list">{campusFocus.map((item, index) => <article className="campus-focus-card" key={`${item.org}-${item.name}`}><div className="campus-focus-card-top"><span className={`status status-${item.status}`}>{item.status}</span><span className="index">0{index + 1}</span></div><p className="org">{item.org}</p><h3>{item.name}</h3><div className="campus-focus-meta"><span>{item.location}</span><span>{item.deadline}</span></div><p>{item.why}</p><a className="source" href={item.url} target="_blank" rel="noreferrer">打开官方 / 原始来源 ↗</a></article>)}</div> : <div className="campus-focus-empty">当前数据库暂无结构化校招机会，请先查看 <a href="/campus-2027">2027 校招专题</a>。</div>}
       </section>
 

@@ -273,6 +273,11 @@ button.mapStat, button.mapStatActive { cursor: pointer; }
 .companyOpportunity p { margin: 0; font-size: 10px; }
 
 .campusGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; margin-top: 20px; }
+.focusLines { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:26px; }
+.focusLines article { padding:20px; border:1px solid rgba(201,255,107,.25); background:rgba(201,255,107,.045); }
+.focusLines span { color:var(--aqua); font:10px var(--font-geist-mono); letter-spacing:.08em; }
+.focusLines strong { display:block; margin:12px 0 8px; color:var(--ink); font-size:17px; line-height:1.35; }
+.focusLines p { margin:0; color:var(--muted); font-size:12px; line-height:1.65; }
 .campusCard { min-width: 0; padding: 22px; border: 1px solid var(--line); background: rgba(10,29,24,.92); }
 .campusCardTop { display: flex; justify-content: space-between; gap: 12px; color: var(--aqua); font: 9px var(--font-geist-mono); text-transform: uppercase; }
 .campusCardTop b { padding: 5px 7px; border: 1px solid currentColor; font-weight: 600; white-space: nowrap; }
@@ -364,6 +369,7 @@ button.mapStat, button.mapStatActive { cursor: pointer; }
   .reportHeroGrid { grid-template-columns: repeat(3,1fr); }
   .reportHeroGrid > article { grid-column: 1 / -1; }
   .campusGrid { grid-template-columns: 1fr; }
+  .focusLines { grid-template-columns: 1fr; }
   .opportunityFacts { grid-template-columns:repeat(2,1fr); }.opportunityFacts>div:nth-child(2){border-right:0}.opportunityFacts>div:nth-child(-n+2){border-bottom:1px solid var(--line)}
 }
 
