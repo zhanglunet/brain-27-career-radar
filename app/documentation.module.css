@@ -273,7 +273,7 @@ button.mapStat, button.mapStatActive { cursor: pointer; }
 .companyOpportunity p { margin: 0; font-size: 10px; }
 
 .campusGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; margin-top: 20px; }
-.focusLines { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:26px; }
+.focusLines { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; margin-bottom:26px; }
 .focusLines article { padding:20px; border:1px solid rgba(201,255,107,.25); background:rgba(201,255,107,.045); }
 .focusLines span { color:var(--aqua); font:10px var(--font-geist-mono); letter-spacing:.08em; }
 .focusLines strong { display:block; margin:12px 0 8px; color:var(--ink); font-size:17px; line-height:1.35; }
@@ -369,7 +369,7 @@ button.mapStat, button.mapStatActive { cursor: pointer; }
   .reportHeroGrid { grid-template-columns: repeat(3,1fr); }
   .reportHeroGrid > article { grid-column: 1 / -1; }
   .campusGrid { grid-template-columns: 1fr; }
-  .focusLines { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .focusLines { grid-template-columns: repeat(3,minmax(0,1fr)); }
   .opportunityFacts { grid-template-columns:repeat(2,1fr); }.opportunityFacts>div:nth-child(2){border-right:0}.opportunityFacts>div:nth-child(-n+2){border-bottom:1px solid var(--line)}
 }
 
@@ -406,7 +406,7 @@ button.mapStat, button.mapStatActive { cursor: pointer; }
   .reportNumbers div:nth-child(2) { border-right: 0; }
   .reportNumbers div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
   .campusCardTop, .campusCard footer { align-items: flex-start; flex-direction: column; }
-  .focusLines { grid-template-columns: 1fr; }
+  .focusLines { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .campusCard footer span { text-align: left; }
   .campusMeta { grid-template-columns: 1fr; }
   .searchResultList>a { grid-template-columns:46px minmax(0,1fr);gap:10px;padding:15px; }.searchResultList>a>b { display:none; }.opportunityRow>header,.opportunityRow>footer { flex-direction:column; }.opportunityRow>footer span { text-align:left; }.opportunityFacts { grid-template-columns:1fr; }.opportunityFacts>div { border-right:0;border-bottom:1px solid var(--line)!important; }.opportunityFacts>div:last-child { border-bottom:0!important; }

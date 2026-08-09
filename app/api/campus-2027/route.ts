@@ -52,6 +52,8 @@ export async function GET() {
         china: opportunities.filter((item) => item.regions.includes("中国")).length,
         beijing: opportunities.filter((item) => /北京/.test(item.location)).length,
         shanghai: opportunities.filter((item) => /上海/.test(item.location)).length,
+        modelCompanies: opportunities.filter((item) => item.tracks.includes("大模型厂商")).length,
+        cas: opportunities.filter((item) => item.tags.includes("中科院")).length,
         uk: opportunities.filter((item) => item.regions.includes("英国")).length,
         hongKong: opportunities.filter((item) => item.regions.includes("中国香港")).length,
         immediate: opportunities.filter((item) => item.status === "立即行动").length,

@@ -27,7 +27,7 @@ type Opportunity = {
 
 type Payload = {
   generatedAt: string;
-  counts: { total: number; confirmed2027: number; china: number; beijing: number; shanghai: number; uk: number; hongKong: number; immediate: number };
+  counts: { total: number; confirmed2027: number; china: number; beijing: number; shanghai: number; modelCompanies: number; cas: number; uk: number; hongKong: number; immediate: number };
   tracks: string[];
   opportunities: Opportunity[];
 };
@@ -69,12 +69,14 @@ export default function Campus2027Explorer() {
       <article><span>02 · 英国企业</span><strong>Graduate / Intern / Early Career</strong><p>Microsoft、Amazon、Arm、Apple、NVIDIA、Google DeepMind 等英国岗位，逐项核对毕业时间与工作许可。</p></article>
       <article><span>03 · 香港校招</span><strong>企业 + 高校双线</strong><p>HSBC、HKSTP 与港大、港科大、港中文；入口跟踪与具体岗位严格区分，避免把通用 Careers 当成已开放职位。</p></article>
       <article><span>04 · 国内校招</span><strong>北京 / 上海优先</strong><p>百度、华为、阿里、字节 Seed、MiniMax、Kimi、智谱、腾讯，以及北京和上海研究机构、实验室岗位。</p></article>
+      <article><span>05 · 大模型与中科院</span><strong>重点公司 / 重点研究所</strong><p>DeepSeek、Kimi、智谱、智源，以及中科院心理所、生物物理所、自动化所；入口、批次和具体岗位分开核验。</p></article>
     </section>
     <section className={styles.statusGrid}>
       <article className={styles.statusCard}><span>专项机会</span><strong>{data.counts.total}</strong><p>官方入口与已核验批次</p></article>
       <article className={styles.statusCard}><span>确认 2027 届</span><strong>{data.counts.confirmed2027}</strong><p>毕业范围已有官方依据</p></article>
       <article className={styles.statusCard}><span>中国机会</span><strong>{data.counts.china}</strong><p>大厂、研究机构、大模型厂商</p></article>
       <article className={styles.statusCard}><span>北京 / 上海</span><strong>{data.counts.beijing} / {data.counts.shanghai}</strong><p>国内当前重点城市</p></article>
+      <article className={styles.statusCard}><span>大模型 / 中科院</span><strong>{data.counts.modelCompanies} / {data.counts.cas}</strong><p>重点公司与研究所机会</p></article>
       <article className={styles.statusCard}><span>英国机会</span><strong>{data.counts.uk}</strong><p>大厂与国家级研究机构</p></article>
       <article className={styles.statusCard}><span>香港机会</span><strong>{data.counts.hongKong}</strong><p>企业与高校早期职业</p></article>
     </section>
