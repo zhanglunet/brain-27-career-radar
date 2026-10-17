@@ -143,7 +143,9 @@ async function checkSource(
   if (source.last_modified) headers.set("If-Modified-Since", source.last_modified);
 
   try {
-    const response = await fetchSourceWithRetry(fetcher, source.url, headers);
+    // The abort deadline stays armed until the body is fully consumed below;
+    // a stalled body fails the source instead of hanging the whole run.
+    const { response, release } = await fetchSourceWithRetry(fetcher, source.url, headers);
 
     if (response.status === 304) {
       await markSuccess(db, source.id, checkedAt, 304, source.final_url ?? source.url, source.etag, source.last_modified, source.content_hash);
@@ -160,13 +162,17 @@ async function checkSource(
         finalUrl: source.final_url ?? source.url,
       });
       logSourceResult(runId, source.id, true, false, 304);
+      release();
       return { sourceId: source.id, ok: true, changed: false, statusCode: 304 };
     }
     if (!response.ok) {
+      release();
       throw new SourceHttpError(response.status);
     }
 
     const body = await readBoundedBody(response, MAX_BODY_BYTES);
+    // Body fully consumed: the deadline has served its purpose.
+    release();
     const normalizedContent = normalizeSourceText(body.text);
     const contentHash = await sha256(normalizedContent);
     const isBaseline = source.content_hash === null;
@@ -308,25 +314,29 @@ async function fetchSourceWithRetry(
   fetcher: typeof fetch,
   url: string,
   headers: Headers,
-): Promise<Response> {
+): Promise<{ response: Response; release: () => void }> {
   let lastError: unknown = null;
   for (let attempt = 1; attempt <= MAX_FETCH_ATTEMPTS; attempt += 1) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort("source request timed out"), REQUEST_TIMEOUT_MS);
+    const release = () => clearTimeout(timeout);
     try {
       const response = await fetcher(url, {
         headers,
         redirect: "follow",
         signal: controller.signal,
       });
-      clearTimeout(timeout);
       if (!isRetryableStatus(response.status) || attempt >= MAX_FETCH_ATTEMPTS) {
-        return response;
+        // Hand the armed deadline to the caller: it stays live until the body
+        // is consumed (or released), so a stalled body cannot hang the run.
+        return { response, release };
       }
       // Drain the error body before retrying so the connection can be reused.
+      // The timeout stays armed during the drain.
       await response.text().catch(() => undefined);
+      release();
     } catch (error) {
-      clearTimeout(timeout);
+      release();
       lastError = error;
       if (attempt >= MAX_FETCH_ATTEMPTS) throw error;
     }
