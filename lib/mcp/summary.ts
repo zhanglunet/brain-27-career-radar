@@ -27,6 +27,8 @@
  */
 import { handleUpcomingDeadlines } from "./tools.ts";
 import type { DeadlineItem, McpContext, McpOpportunity } from "./tools.ts";
+import { resolveSummaryConfig } from "./summary-config.ts";
+import type { SummaryConfig } from "./summary-config.ts";
 
 /** 摘要顶部强制标注（T1 防误判 #1）。 */
 export const SUMMARY_NOTICE = "完整数据在详情页，可下钻";
@@ -95,6 +97,11 @@ export type OpportunityFullList = {
 export type ListOpportunitiesOptions = SummaryOptions & {
   /** true → 全量列表（T1 §四：`?full=1` 兼容老调用方）；默认 false → 摘要。 */
   full?: boolean;
+  /**
+   * 摘要配置（PRD-019/T4，trend #84）：enabled 总开关、topN、upcomingDays。
+   * 缺省走 DEFAULT_SUMMARY_CONFIG。full=true 时不受开关影响，始终回全量。
+   */
+  config?: Partial<SummaryConfig>;
 };
 
 const DEFAULT_TOP_N = 10;
@@ -225,15 +232,21 @@ export function measureJsonBytes(value: unknown): number {
 }
 
 /**
- * 机会列表接口（PRD-019/T2 的"列表 API"）：默认返回三段式摘要，
- * full=true 时返回全量。纯函数；路由接线见模块头说明。
+ * 机会列表接口（PRD-019/T2 的"列表 API" + T4 开关，trend #84）：
+ * 默认返回三段式摘要；full=true（`?full=1`）或 config.enabled=false 时返回全量。
+ * 纯函数；路由接线见模块头说明。
  */
 export function listOpportunities(
   entries: McpOpportunity[],
   opts: ListOpportunitiesOptions = {},
 ): OpportunitySummary | OpportunityFullList {
-  if (opts.full) return buildFullList(entries);
-  return buildSummary(entries, opts);
+  const cfg = resolveSummaryConfig(opts.config);
+  if (opts.full || !cfg.enabled) return buildFullList(entries);
+  return buildSummary(entries, {
+    topN: cfg.topN,
+    upcomingDays: cfg.upcomingDays,
+    nowIso: opts.nowIso,
+  });
 }
 
 /*
