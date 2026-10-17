@@ -3,8 +3,24 @@ import type { P1PipelineSummary } from "./p1/pipeline.ts";
 
 const MAX_BODY_BYTES = 512 * 1024;
 const MAX_EXCERPT_CHARS = 1_500;
-const REQUEST_TIMEOUT_MS = 12_000;
+const REQUEST_TIMEOUT_MS = 15_000;
+const MAX_FETCH_ATTEMPTS = 2;
+const RETRY_BASE_DELAY_MS = 1_000;
 const CONCURRENCY = 4;
+
+// Browser-like request headers: several career/recruiting pages block obvious
+// bot user agents or require typical browser metadata before serving content.
+const SOURCE_REQUEST_HEADERS: Record<string, string> = {
+  Accept: "text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.5",
+  "Accept-Language": "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7",
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+  "Sec-Fetch-Dest": "document",
+  "Sec-Fetch-Mode": "navigate",
+  "Sec-Fetch-Site": "none",
+  "Sec-Fetch-User": "?1",
+  "Upgrade-Insecure-Requests": "1",
+};
 
 type SourceRow = {
   id: string;
@@ -122,22 +138,12 @@ async function checkSource(
   now: () => Date,
 ): Promise<SourceResult> {
   const checkedAt = now().toISOString();
-  const headers = new Headers({
-    Accept: "text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.5",
-    "User-Agent": "Brain27CareerRadar/0.2 (+source-monitor; contact via project repository)",
-  });
+  const headers = new Headers(SOURCE_REQUEST_HEADERS);
   if (source.etag) headers.set("If-None-Match", source.etag);
   if (source.last_modified) headers.set("If-Modified-Since", source.last_modified);
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort("source request timed out"), REQUEST_TIMEOUT_MS);
-
   try {
-    const response = await fetcher(source.url, {
-      headers,
-      redirect: "follow",
-      signal: controller.signal,
-    });
+    const response = await fetchSourceWithRetry(fetcher, source.url, headers);
 
     if (response.status === 304) {
       await markSuccess(db, source.id, checkedAt, 304, source.final_url ?? source.url, source.etag, source.last_modified, source.content_hash);
@@ -287,9 +293,46 @@ async function checkSource(
       error: message,
     }));
     return { sourceId: source.id, ok: false, changed: false, statusCode, error: message };
-  } finally {
-    clearTimeout(timeout);
   }
+}
+
+function isRetryableStatus(status: number): boolean {
+  return status === 408 || status === 429 || status >= 500;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchSourceWithRetry(
+  fetcher: typeof fetch,
+  url: string,
+  headers: Headers,
+): Promise<Response> {
+  let lastError: unknown = null;
+  for (let attempt = 1; attempt <= MAX_FETCH_ATTEMPTS; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort("source request timed out"), REQUEST_TIMEOUT_MS);
+    try {
+      const response = await fetcher(url, {
+        headers,
+        redirect: "follow",
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      if (!isRetryableStatus(response.status) || attempt >= MAX_FETCH_ATTEMPTS) {
+        return response;
+      }
+      // Drain the error body before retrying so the connection can be reused.
+      await response.text().catch(() => undefined);
+    } catch (error) {
+      clearTimeout(timeout);
+      lastError = error;
+      if (attempt >= MAX_FETCH_ATTEMPTS) throw error;
+    }
+    await sleep(RETRY_BASE_DELAY_MS * 2 ** (attempt - 1));
+  }
+  throw lastError ?? new Error("source request failed without a response");
 }
 
 async function writeSourceCheckLog(
