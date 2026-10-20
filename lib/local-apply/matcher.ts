@@ -22,6 +22,7 @@ import type {
   WikiFunding,
 } from "../wiki/schema.ts";
 import { WIKI_DIRECTIONS } from "../mcp/tools.ts";
+import { scanPostingText, type PostingGuardFlag } from "./posting-guard.ts";
 
 /** 维度权重（用户已定；T2 不得擅自修改）。 */
 export const MATCH_WEIGHTS = {
@@ -94,6 +95,11 @@ export type MatchResult = {
   /** 一句话总结。 */
   summary: string;
   ruleVersion: string;
+  /**
+   * 外部文本完整性门禁命中（PRD-097/T3 G1，posting-guard.ts）。
+   * 只标记不拦截：不改变 score/dimensions/gaps；无命中时不设置此字段。
+   */
+  guardFlags?: PostingGuardFlag[];
 };
 
 export type MatchOptions = {
@@ -377,7 +383,7 @@ export function matchOpportunity(
     `综合匹配度 ${total.toFixed(2)}（方向 ${d.score.score.toFixed(2)}×0.5 / ` +
     `导师 ${m.score.score.toFixed(2)}×0.3 / 条件 ${r.score.score.toFixed(2)}×0.2）；` +
     (gaps.length === 0 ? "无明显缺口" : `缺口 ${gaps.length} 项`);
-  return {
+  const result: MatchResult = {
     opportunityId: opp.id,
     score: total,
     dimensions: dims,
@@ -385,6 +391,13 @@ export function matchOpportunity(
     summary,
     ruleVersion: MATCH_RULE_VERSION,
   };
+  // G1 门禁：机会正文是外部文本，评分前先过确定性检测；命中只标记，
+  // 不清洗、不拦截、不影响分数（正文仍按原文参与上面的规则打分）。
+  if (opp.body) {
+    const guard = scanPostingText(opp.body);
+    if (guard.flags.length > 0) result.guardFlags = guard.flags;
+  }
+  return result;
 }
 
 // ── v0.1 已知局限 ──────────────────────────────────────────────
