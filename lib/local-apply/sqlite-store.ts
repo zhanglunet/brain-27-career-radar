@@ -33,8 +33,8 @@ export type Draft = {
   version: number;
   /** ISO 8601 */
   createdAt: string;
-  /** AI 草稿标注，与 drafter.ts 的 AI_DRAFT_MARKER 同值 */
-  marker: string;
+  /** AI 草稿标注，与 drafter.ts 的 AI_DRAFT_MARKER 同值（字面量类型，与 drafter.ts 的 Draft 对齐） */
+  marker: typeof AI_DRAFT_MARKER;
   content: string;
 };
 
@@ -141,7 +141,8 @@ export function createSqliteDraftStore(
       opportunityId: row.opportunity_id,
       version: row.version,
       createdAt: row.created_at,
-      marker: row.marker,
+      // marker 列只由 save() 写入，恒为 AI_DRAFT_MARKER（见 save 实现）
+      marker: row.marker as typeof AI_DRAFT_MARKER,
       content: row.content,
     };
   }
