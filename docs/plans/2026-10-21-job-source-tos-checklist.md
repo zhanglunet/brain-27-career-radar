@@ -30,7 +30,7 @@ freehire 证明「多来源收成一份目录，再按同一形状去重」这�
 - 不修改 `lib/source-monitor.ts`、种子数据和已有 `sources` 行。
 - 不把参照仓库的适配器源码抄进本仓库。MIT 允许在保留版权声明的前提下复用代码；本 T1 选择不复用任何代码。
 - 不把参照项目的职位数据、公司名单或平台清单当作可再发布的数据集。MIT 给的是软件许可，不是抓取许可，也不是数据许可。
-- 不记录真实主机名、IP、账号、令牌、cookie 或密钥。接入地址只出现为环境变量名。
+- 不记录真实内部主机名、IP、账号、令牌、cookie 或密钥。运行时接入地址只出现为环境变量名，公开官方条款与接口文档可作为证据引用。
 
 ## 二、软件许可和数据权利分开
 
@@ -67,7 +67,7 @@ freehire 证明「多来源收成一份目录，再按同一形状去重」这�
 | `kind` | enum | `ats_platform` / `aggregator` / `employer_career` / `reference_catalogue` |
 | `access_mode` | enum | `official_http_api` / `official_feed` / `public_document` / `unknown` |
 | `tos_status` | enum | `allowed` / `restricted` / `forbidden` / `unchecked` |
-| `tos_ref` | string | 条款文档的占位名，不是 URL。未读到条款时为空字符串 |
+| `tos_ref` | string | 真实研究记录须提供公开官方条款引用与查阅日期；合成示例才使用占位名。未读到条款时为空字符串 |
 | `robots` | enum | `allow` / `disallow` / `not_applicable` / `unknown` |
 | `auth` | enum | `none` / `env_key` / `session_required` |
 | `credential_env` | string | 仅 `auth=env_key` 时填写变量名；其他情况为空字符串。禁止填值 |
