@@ -7,7 +7,7 @@
  * - v0.1 的 `pull` 从本地 JSON 文件读机会情报（真实 MCP/摘要 API 接线是后续事项，
  *   见 ISSUE_FOLLOWUP_MCP_WIRING）。
  * - 面试为非交互版（只出题）；交互式模拟是后续事项。
- * - 草稿存储为内存实现（T3）；SQLite 落盘是后续事项（trend #436）。
+ * - 草稿存储为 SQLite 落盘（~/.brain27/brain27.db，PRD-097/T3 接线 sqlite-store.ts，接口与内存版一致）。
  */
 
 import {
@@ -20,7 +20,6 @@ import {
   draftCv,
   draftPs,
   draftEmail,
-  createDraftStore,
   type DraftKind,
   type DraftStore,
   type Draft,
@@ -30,6 +29,7 @@ import {
   type GapItem as DrafterGapItem,
   type GapDimension as DrafterGapDimension,
 } from "./drafter.ts";
+import { createSqliteDraftStore } from "./sqlite-store.ts";
 import {
   generateQuestions,
   INTERVIEW_CATEGORY_LABELS,
@@ -508,44 +508,49 @@ export async function main(argv: string[]): Promise<number> {
     if (typeof profile.degree !== "string" || !Array.isArray(profile.researchInterests)) {
       throw new Error(`档案文件格式不正确：${profilePath}（需要 degree/researchInterests）`);
     }
-    // v0.1 草稿存储为内存实现（trend #436 落盘 SQLite 后替换此处）。
-    const store = createDraftStore();
+    // 草稿存储用 SQLite 落盘（~/.brain27/brain27.db）；接口与内存版一致，
+    // 构造/close 方式见 sqlite-store.ts 迁移说明（PRD-097/T3 G19 接线）。
+    const store = createSqliteDraftStore();
 
-    if (parsed.command === "status") {
-      console.log(cmdStatus(cache, profile, store).text);
-      return 0;
-    }
-    const opportunityId = parsed.positional[0];
-    if (!opportunityId) throw new Error(`缺少 <opportunity-id>，用法见 brain27 ${parsed.command} --help`);
-    if (parsed.command === "match") {
-      console.log(cmdMatch(cache, profile, opportunityId).text);
-      return 0;
-    }
-    if (parsed.command === "draft") {
-      // draft 的位置参数是 [kind]，但按命令面 kind 在前：brain27 draft cv <id>
-      // parseArgs 把非 -- 参数都收进 positional，所以 positional[0] 可能是 kind。
-      // 兼容两种顺序：先看 positional[0] 是否为 kind。
-      const kinds: DraftKind[] = ["cv", "ps", "email"];
-      let kind: DraftKind | undefined;
-      let id: string | undefined;
-      if (kinds.includes(parsed.positional[0] as DraftKind)) {
-        kind = parsed.positional[0] as DraftKind;
-        id = parsed.positional[1];
-      } else {
-        id = parsed.positional[0];
-        kind = parsed.positional[1] as DraftKind;
+    try {
+      if (parsed.command === "status") {
+        console.log(cmdStatus(cache, profile, store).text);
+        return 0;
       }
-      if (!kind || !kinds.includes(kind)) throw new Error("draft 用法：brain27 draft <cv|ps|email> <opportunity-id>");
-      if (!id) throw new Error("draft 缺少 <opportunity-id>");
-      console.log(cmdDraft(cache, profile, store, kind, id).text);
+      const opportunityId = parsed.positional[0];
+      if (!opportunityId) throw new Error(`缺少 <opportunity-id>，用法见 brain27 ${parsed.command} --help`);
+      if (parsed.command === "match") {
+        console.log(cmdMatch(cache, profile, opportunityId).text);
+        return 0;
+      }
+      if (parsed.command === "draft") {
+        // draft 的位置参数是 [kind]，但按命令面 kind 在前：brain27 draft cv <id>
+        // parseArgs 把非 -- 参数都收进 positional，所以 positional[0] 可能是 kind。
+        // 兼容两种顺序：先看 positional[0] 是否为 kind。
+        const kinds: DraftKind[] = ["cv", "ps", "email"];
+        let kind: DraftKind | undefined;
+        let id: string | undefined;
+        if (kinds.includes(parsed.positional[0] as DraftKind)) {
+          kind = parsed.positional[0] as DraftKind;
+          id = parsed.positional[1];
+        } else {
+          id = parsed.positional[0];
+          kind = parsed.positional[1] as DraftKind;
+        }
+        if (!kind || !kinds.includes(kind)) throw new Error("draft 用法：brain27 draft <cv|ps|email> <opportunity-id>");
+        if (!id) throw new Error("draft 缺少 <opportunity-id>");
+        console.log(cmdDraft(cache, profile, store, kind, id).text);
+        return 0;
+      }
+      if (parsed.command === "interview") {
+        console.log(cmdInterview(cache, profile, opportunityId).text);
+        return 0;
+      }
+      console.log(HELP_TEXT);
       return 0;
+    } finally {
+      store.close();
     }
-    if (parsed.command === "interview") {
-      console.log(cmdInterview(cache, profile, opportunityId).text);
-      return 0;
-    }
-    console.log(HELP_TEXT);
-    return 0;
   } catch (err) {
     console.error(`brain27: ${(err as Error).message}`);
     return 1;
