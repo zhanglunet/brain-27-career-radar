@@ -62,7 +62,7 @@ const BLOCK_TAGS = new Set([
   "option",
 ]);
 const IMPLIED_END = new Set(["p", "li", "dd", "dt", "tr", "td", "th", "option"]);
-const HTML_HINT = /<\s*(html|body|div|p)\b/i;
+const HTML_HINT = /<!--[\s\S]*|<\/?[a-zA-Z][\w:-]*(?:\s|\/?>)/;
 
 const URL_RE = /https?:\/\/[^\s<>"')\]]+/g;
 
@@ -205,7 +205,9 @@ function splitHtml(markup: string): {
 
   const collect = (chunk: string): string => {
     const inner = chunk.replace(/<!--|-->|<[^>]+>/g, " ");
-    hiddenParts.push(decodeEntities(inner));
+    const text = fold(decodeEntities(inner));
+    hiddenParts.push(text);
+    if (text) hiddenBlocks.push(text.slice(0, EXCERPT));
     return " ";
   };
 

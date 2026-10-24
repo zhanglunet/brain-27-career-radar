@@ -29,7 +29,6 @@ import {
   type GapItem as DrafterGapItem,
   type GapDimension as DrafterGapDimension,
 } from "./drafter.ts";
-import { createSqliteDraftStore } from "./sqlite-store.ts";
 import {
   generateQuestions,
   INTERVIEW_CATEGORY_LABELS,
@@ -273,7 +272,16 @@ export function cmdMatch(
     lines.push("无明显缺口");
   }
   lines.push(result.summary);
+  lines.push(guardText(result));
   return { result, text: lines.join("\n") };
+}
+
+/** 门禁是审查信号，不构成来源访问许可或申请授权。 */
+function guardText(result: MatchResult): string {
+  const flags = result.guardFlags ?? [];
+  if (flags.length === 0) return "内容检查：未检出已知风险（不代表安全或接入许可）；申请/提交须人工核验，CLI 不提供投递。";
+  // 只展示类别，不把第三方载荷原样写到终端（可能包含控制字符）。
+  return `内容检查：待人工确认，命中 ${flags.length} 项：${[...new Set(flags.map(f => f.kind))].join("、")}。禁止生成草稿、申请或提交；请人工核对来源正文与网站限制，不得绕过访问限制。`;
 }
 
 // ── draft：T3 ──
@@ -300,6 +308,7 @@ export function cmdDraft(
   const opp = findOpportunity(cache, opportunityId);
   // 先跑 T2 拿缺口，再喂给 T3（链式调用）。
   const matchResult = matchOpportunity(opp, profile, { now });
+  if (matchResult.guardFlags?.length) throw new Error(guardText(matchResult));
   const analysis = toGapAnalysis(matchResult);
   const content = DRAFT_FNS[kind](
     toDrafterOpportunity(opp),
@@ -310,6 +319,7 @@ export function cmdDraft(
   const kindLabel = kind === "cv" ? "简历建议" : kind === "ps" ? "个人陈述" : "套磁信";
   const lines = [
     `已保存草稿 ${draft.id}（${kindLabel}，版本 v${draft.version}，匹配度 ${matchResult.score.toFixed(2)}）`,
+    guardText(matchResult),
     "---",
     content,
   ];
@@ -342,6 +352,7 @@ export function cmdInterview(
   lines.push(
     `面试准备：${opp.title} / ${opp.org ?? "未知机构"}（${questions.length} 题，非交互版；交互式模拟是后续事项）`,
   );
+  lines.push(guardText(matchResult));
   let n = 0;
   for (const q of questions) {
     n += 1;
@@ -399,6 +410,8 @@ export const HELP_TEXT = `brain27 —— 本地申请助手（PRD-080）
       T4 面试问题集（v0.1 非交互版；交互式模拟是后续事项）
   brain27 status [--profile <path>] [--cache <path>]
       本地数据盘点
+
+命中内容检查风险时，草稿生成禁止，须人工核对来源；无自动申请或提交命令。
 
 默认路径：--profile ~/.brain27/profile.json，--cache ~/.brain27/cache.json`;
 
@@ -508,49 +521,43 @@ export async function main(argv: string[]): Promise<number> {
     if (typeof profile.degree !== "string" || !Array.isArray(profile.researchInterests)) {
       throw new Error(`档案文件格式不正确：${profilePath}（需要 degree/researchInterests）`);
     }
-    // 草稿存储用 SQLite 落盘（~/.brain27/brain27.db）；接口与内存版一致，
-    // 构造/close 方式见 sqlite-store.ts 迁移说明（PRD-097/T3 G19 接线）。
-    const store = createSqliteDraftStore();
-
-    try {
-      if (parsed.command === "status") {
+    if (parsed.command === "status") {
+      const { createSqliteDraftStore } = await import("./sqlite-store.ts");
+      const store = createSqliteDraftStore();
+      try {
         console.log(cmdStatus(cache, profile, store).text);
         return 0;
-      }
-      const opportunityId = parsed.positional[0];
-      if (!opportunityId) throw new Error(`缺少 <opportunity-id>，用法见 brain27 ${parsed.command} --help`);
-      if (parsed.command === "match") {
-        console.log(cmdMatch(cache, profile, opportunityId).text);
-        return 0;
-      }
-      if (parsed.command === "draft") {
-        // draft 的位置参数是 [kind]，但按命令面 kind 在前：brain27 draft cv <id>
-        // parseArgs 把非 -- 参数都收进 positional，所以 positional[0] 可能是 kind。
-        // 兼容两种顺序：先看 positional[0] 是否为 kind。
-        const kinds: DraftKind[] = ["cv", "ps", "email"];
-        let kind: DraftKind | undefined;
-        let id: string | undefined;
-        if (kinds.includes(parsed.positional[0] as DraftKind)) {
-          kind = parsed.positional[0] as DraftKind;
-          id = parsed.positional[1];
-        } else {
-          id = parsed.positional[0];
-          kind = parsed.positional[1] as DraftKind;
-        }
-        if (!kind || !kinds.includes(kind)) throw new Error("draft 用法：brain27 draft <cv|ps|email> <opportunity-id>");
-        if (!id) throw new Error("draft 缺少 <opportunity-id>");
+      } finally { store.close(); }
+    }
+    const opportunityId = parsed.positional[0];
+    if (!opportunityId) throw new Error(`缺少 <opportunity-id>，用法见 brain27 ${parsed.command} --help`);
+    if (parsed.command === "match") {
+      console.log(cmdMatch(cache, profile, opportunityId).text);
+      return 0;
+    }
+    if (parsed.command === "interview") {
+      console.log(cmdInterview(cache, profile, opportunityId).text);
+      return 0;
+    }
+    if (parsed.command === "draft") {
+      const kinds: DraftKind[] = ["cv", "ps", "email"];
+      const kindFirst = kinds.includes(parsed.positional[0] as DraftKind);
+      const kind = (kindFirst ? parsed.positional[0] : parsed.positional[1]) as DraftKind;
+      const id = kindFirst ? parsed.positional[1] : parsed.positional[0];
+      if (!kind || !kinds.includes(kind)) throw new Error("draft 用法：brain27 draft <cv|ps|email> <opportunity-id>");
+      if (!id) throw new Error("draft 缺少 <opportunity-id>");
+      // 检查先于 SQLite 初始化；命中时不生成或保存草稿。
+      const review = matchOpportunity(findOpportunity(cache, id), profile);
+      if (review.guardFlags?.length) throw new Error(guardText(review));
+      const { createSqliteDraftStore } = await import("./sqlite-store.ts");
+      const store = createSqliteDraftStore();
+      try {
         console.log(cmdDraft(cache, profile, store, kind, id).text);
         return 0;
-      }
-      if (parsed.command === "interview") {
-        console.log(cmdInterview(cache, profile, opportunityId).text);
-        return 0;
-      }
-      console.log(HELP_TEXT);
-      return 0;
-    } finally {
-      store.close();
+      } finally { store.close(); }
     }
+    console.log(HELP_TEXT);
+    return 0;
   } catch (err) {
     console.error(`brain27: ${(err as Error).message}`);
     return 1;
