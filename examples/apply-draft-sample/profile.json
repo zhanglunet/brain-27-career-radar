@@ -1,0 +1,8 @@
+{
+  "_readme": "PRD-150/T4 虚构档案样例（UserProfile/老平铺形状，parseJobDocProfile 宽容归一）。人物全虚构。",
+  "name": "王某某",
+  "education": ["示例大学 计算机科学与技术 本科（虚构）"],
+  "experience": ["在示例实验室做过强化学习课程项目，完成机械臂仿真抓取（虚构经历）"],
+  "skills": ["Python", "PyTorch", "机器人仿真"],
+  "interests": ["具身智能", "sim-to-real"]
+}

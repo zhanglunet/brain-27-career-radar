@@ -58,3 +58,14 @@ node --experimental-strip-types --test tests/local-apply-docx.test.mjs      # T2
 ```
 
 （`npm test` 全量跑；Node ≥ 22.18 起类型剥离默认开启，可省略 `--experimental-strip-types`。）
+
+
+## 申请助手流程对接（T4，#753）
+
+PRD-080 申请助手的产物三件套直接喂本入口即可生成求职信（样例见 `examples/apply-draft-sample/`，全虚构）：
+
+```bash
+node scripts/docx-apply-demo.mjs [--out <dir>]   # 一键演示：三件套 → cover_letter-*.docx
+```
+
+三件套与参数的对应：机会 JSON（`OpportunityInput` 形状）→ `--opportunity`；用户档案 → `--profile`；求职信匹配段草稿（带 AI 草稿标记）→ `--letter-draft`。渲染纯本地计算，无网络请求。
