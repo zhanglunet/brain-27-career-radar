@@ -17,7 +17,8 @@
     "verify": "npm run typecheck && npm run lint && npm test",
     "cf:typegen": "npm run build && wrangler types --config dist/server/wrangler.json worker-configuration.d.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate:local": "npm run build && wrangler d1 migrations apply brain-27-career-radar --local --persist-to .wrangler/state --config dist/server/wrangler.json"
+    "db:migrate:local": "npm run build && wrangler d1 migrations apply brain-27-career-radar --local --persist-to .wrangler/state --config dist/server/wrangler.json",
+    "docx:generate": "node --experimental-strip-types scripts/docx-generate.mjs"
   },
   "dependencies": {
     "better-sqlite3": "13.0.3",

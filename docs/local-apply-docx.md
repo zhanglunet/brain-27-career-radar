@@ -1,0 +1,60 @@
+# 本地求职文档 .docx 一键生成（PRD-150/T3）
+
+> trend #752。上游：T1 字段模型与模板设计、T2 渲染引擎（`lib/local-apply/docx/`，PR #58）。
+> 形态借鉴 genspark-ai/genoffice（Apache-2.0）「本地生成 + CLI + skill」思路，自研实现。
+
+一条命令把本地档案渲染成真实 .docx 简历 / 求职信：**全程本地，数据不出本机**（渲染路径无网络请求，产物只落盘、不代发）。
+
+## 一键生成
+
+```bash
+# 用虚构样例档案试跑（样例全虚构，T1 §3.1 纪律）
+npm run docx:generate -- --template resume --profile examples/doc-profile.sample.json
+
+# 用本机真实档案（~/.brain27/profile.json，与 PRD-080 申请助手同源；不入库）
+npm run docx:generate -- --template resume
+
+# 求职信：注入机会 JSON（公开情报）+ 匹配段草稿（materials 草稿只读消费）
+npm run docx:generate -- --template cover-letter \
+  --opportunity opportunity.json --letter-draft letter.md \
+  --opportunity-id opp-001 --version 2
+```
+
+产物命名（T1 §4.3）：`{kind}-{opportunityId}-v{version}.docx`（resume → `cv`；cover-letter → `cover_letter`），缺省落在 `outputs/`（已在 `.gitignore`）。
+
+## 选项
+
+| 选项 | 说明 |
+|---|---|
+| `--template <resume\|cover-letter>` | 模板类型（必填）：中文简历 / 中文求职信 |
+| `--profile <path>` | 档案 JSON：JobDocProfile 六区块嵌套形状，或老平铺形状（`degree`/`researchInterests`/`skills`/`experience:string[]`/`name` 自动归一）；缺省 `~/.brain27/profile.json` |
+| `--out <dir>` | 输出目录（缺省 `outputs/`） |
+| `--opportunity-id <id>` | 机会 ID，进文件名（缺省 `general`） |
+| `--version <n>` | 版本号，进文件名（缺省 `1`） |
+| `--opportunity <path>` | 机会 JSON（`title`/`org`/`type`/`region`/`deadline`/`keywords`/`mentors`；cover-letter 信头/来意段/佐证段用） |
+| `--letter-draft <path>` | 求职信匹配段草稿文件（Markdown/文本；渲染层自动剥除草稿头部的 `> ⚠️` 标注块） |
+| `--final` | 人工定稿版：不带 AI 草稿标注段（缺省带标注，T1 §3.3） |
+| `--list-placeholders` | 只列出缺失必选字段（`[待填写：…]`），不写任何文件 |
+| `-h, --help` | 用法说明 |
+
+行为约定：缺失**必选**字段不阻断生成——占位符 `[待填写：字段路径]` 入文 + 命令行逐条 ⚠️ 警告；缺失**可选**字段按模板空槽规则跳过（如联系行自动少一段、成果区块整块省略）。退出码 `0` = 成功（含留有占位符），`1` = 用法/文件错误。
+
+## Agent skill 用法（给本机 coding agent 的操作卡）
+
+适用：Claude Code / ZCode 等本机会话中，用户说「帮我生成简历/求职信 docx」。
+
+1. **检查档案**：读 `~/.brain27/profile.json`（真实档案，绝不可上传、不可入库、不得把字段值写进对话之外的文件）；
+2. **预检占位符**：`npm run docx:generate -- --template resume --list-placeholders`，把缺失必选字段清单报给用户，请其补填（不要替用户编造个人信息）；
+3. **生成**：补填后执行一键生成命令；把产物绝对路径与 ⚠️ 警告（若有）原样转述；
+4. **终稿**：用户人工改写并确认后，加 `--final` 重新导出无 AI 标注版；投递由用户手动完成（工具无上传/发送通道，也不得用其它通道代发）。
+
+硬规则：本 skill 只读本地文件、只写 `--out` 目录；不发起网络请求；不把真实档案内容写进仓库（样例一律用 `examples/doc-profile.sample.json` 的虚构数据）。
+
+## 测试
+
+```bash
+node --experimental-strip-types --test tests/local-apply-docx-cli.test.mjs  # T3 端到端（入口命令 → 真实 .docx 产物断言）
+node --experimental-strip-types --test tests/local-apply-docx.test.mjs      # T2 渲染引擎回归
+```
+
+（`npm test` 全量跑；Node ≥ 22.18 起类型剥离默认开启，可省略 `--experimental-strip-types`。）
