@@ -1,0 +1,45 @@
+{
+  "_readme": "PRD-150/T2 虚构样例档案（T1 §3.1）：人物/机构/成果全部虚构，邮箱用 example.com 域。故意留空 2 个可选字段（basics.phone、outputs）用于验证空槽跳过与成果区块整块省略。真实档案只存在于用户本机 ~/.brain27/profile.json，不入库。",
+  "basics": {
+    "name": "王某某",
+    "email": "wang@example.com",
+    "location": "上海",
+    "homepage": "https://wang.example.dev"
+  },
+  "education": [
+    {
+      "degree": "实验心理学硕士",
+      "school": "某大学心理与认知科学学院",
+      "period": "2024.09 – 2027.06（预计）",
+      "note": "方向：认知神经科学；GPA 3.8/4.0（示例）"
+    }
+  ],
+  "experience": [
+    {
+      "title": "科研助理",
+      "org": "某脑科学研究所",
+      "period": "2025.03 – 2025.12",
+      "highlight": "用 Python 处理 64 导 EEG 数据，复现××效应（示例）",
+      "star": {
+        "situation": "实验室缺少自动化脑电预处理流程（虚构示例）。",
+        "task": "负责搭建 64 导 EEG 数据的批处理管线（虚构示例）。",
+        "action": "用 Python 实现去伪迹与分段批处理并写成文档（虚构示例）。",
+        "result": "处理耗时缩短约一半，管线被组内沿用（虚构示例）。"
+      },
+      "tags": ["EEG", "Python"]
+    }
+  ],
+  "skills": [
+    "EEG 信号处理",
+    { "name": "Python", "level": "熟练" },
+    "Matlab"
+  ],
+  "outputs": [],
+  "target": {
+    "researchInterests": ["脑机接口", "认知神经科学"],
+    "targetTypes": ["phd", "ra"],
+    "targetRegions": ["英国"],
+    "mentorsOfInterest": ["某教授（示例）"],
+    "fundingNeed": "full"
+  }
+}
