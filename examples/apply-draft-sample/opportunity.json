@@ -1,0 +1,12 @@
+{
+  "_readme": "PRD-150/T4 虚构申请机会样例（drafter.ts OpportunityInput 形状）。机构/岗位全虚构。",
+  "id": "opp-demo-2026-042",
+  "title": "具身智能算法实习（虚构岗位）",
+  "org": "示例研究院（虚构机构）",
+  "type": "internship",
+  "region": "上海",
+  "deadline": "2026-11-30",
+  "keywords": ["机器人学习", "强化学习", "仿真环境"],
+  "mentors": ["李研究员（虚构）"],
+  "description": "围绕仿真到真机迁移做算法实验，每周组会汇报。"
+}
