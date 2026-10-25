@@ -103,11 +103,11 @@ S1–S4 为**硬信号**（诈骗/注入底线），S5–S8 为**软信号**（�
 
 | fixture | 触发路径 | 关键字段（全虚构） |
 |---|---|---|
-| `opp-example-trust` | 域名/联系方式与官方一致 → trusted | 机会"某大学脑科学中心科研助理（示例）"，机构页 `https://www.example.edu/careers`，邮箱 `hr@example.edu` |
+| `opp-example-trust` | 域名/联系方式与官方一致 → trusted | 机会"某大学脑科学中心科研助理（示例）"，机构页 `https://www.example.com/careers`，邮箱 `hr@example.com` |
 | `opp-example-scam` | 正文含"押金（示例）"命中 S1 → suspicious | 收件 `billing@example-pay.example`，正文全虚构 |
 | `opp-example-pending` | 源连续失败命中 S8 → pending | 快照缺失，confidence 30 |
 
-样例纪律：文档、fixture、测试数据一律虚构（`example.edu` 等占位域）；不出现真实主机名、IP、账号、密钥（PRD 风险条款；T5 含"无真实隐私样例入库"专项）。PRD 非目标重申：不保证 100% 识别诈骗、不骚扰企业电话验证、不存储敏感证件——S 码只降风险不担保。
+样例纪律：文档、fixture、测试数据一律虚构（`example.com` 等占位域）；不出现真实主机名、IP、账号、密钥（PRD 风险条款；T5 含"无真实隐私样例入库"专项）。PRD 非目标重申：不保证 100% 识别诈骗、不骚扰企业电话验证、不存储敏感证件——S 码只降风险不担保。
 
 **版权声明**：借鉴 cloudflare/security-audit-skill（MIT，已实测）——三态与独立复核形态可复用；落地文件如引用其结构，文件头按 `posting-guard.ts` 现行 Adapted-from 惯例保留 MIT 版权声明与来源链接；本文为自研表述，不拷贝代码。
 

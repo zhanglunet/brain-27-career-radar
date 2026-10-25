@@ -54,7 +54,7 @@ PRD-080 本地申请助手（`lib/local-apply/`）的现行纪律是「产物不
 | `action_kind` | TEXT | NOT NULL | 必须在 §2.1 注册表内 | `email_send` |
 | `opportunity_id` | TEXT | NOT NULL | 关联机会（与 materials.opportunity_id 同语义；不设硬外键，缓存 id 与草稿 id 可能异源） | `opp-example-001` |
 | `draft_ref` | TEXT | 可空；A1/A2 必填 | 引用 materials.id，不复制正文 | `cover_letter:opp-example-001:v2` |
-| `payload_json` | TEXT | NOT NULL DEFAULT '{}' | 动作载荷（收件人、目标 url、附件名等元数据） | `{"to":"hr@example.edu","subject":"应聘科研助理（示例）"}` |
+| `payload_json` | TEXT | NOT NULL DEFAULT '{}' | 动作载荷（收件人、目标 url、附件名等元数据） | `{"to":"hr@example.com","subject":"应聘科研助理（示例）"}` |
 | `idempotency_key` | TEXT | NOT NULL UNIQUE | 输入串（action_kind + opportunity_id + draft_ref + 收件人/URL）的 SHA-256 十六进制（64 位，样例从略）；防同一动作重复入队与重放 | — |
 | `status` | TEXT | NOT NULL DEFAULT 'pending' | 枚举见 §4.1 | `pending` |
 | `requested_at` | TEXT | NOT NULL，ISO 8601 | 入队时间 | `2026-10-25T09:00:00Z`（示例） |
@@ -137,7 +137,7 @@ pending ──批准──▶ approved ──执行成功──▶ executed（�
 
 **禁复用（T5 验收硬项）**：open-duet 许可证实测为 Apache-2.0；即便法律允许，PRD-175 非目标仍明确**不复用其代码**——本设计与 open-duet 实现零代码血缘，只保留「行动前批准」产品思路层面的一致性。T5（#879）验收含"无 open-duet 代码/片段入库"专项检查；如未来需引用其文字，按 Apache-2.0 保留版权与许可声明并单独评审。
 
-**样例纪律**：本文与后续实现的样例全虚构——机会 `opp-example-001`（"某大学脑科学中心科研助理（示例）"）、邮箱 `hr@example.edu`、表单地址 `https://jobs.example.edu/apply/123`、回执 `<receipt@example.invalid>`；文档、fixture、测试数据中不得出现真实主机名、IP、账号或密钥（PRD 风险条款；T5 含"无真实隐私样例入库"专项）。
+**样例纪律**：本文与后续实现的样例全虚构——机会 `opp-example-001`（"某大学脑科学中心科研助理（示例）"）、邮箱 `hr@example.com`、表单地址 `https://jobs.example.com/apply/123`、回执 `<receipt@example.invalid>`；文档、fixture、测试数据中不得出现真实主机名、IP、账号或密钥（PRD 风险条款；T5 含"无真实隐私样例入库"专项）。
 
 **下一步**：确认后进 **T2（#876）：投递/发送前拦截进队列**——`lib/local-apply/approval/`（registry / gate / store）、default-deny 与 bypass_blocked 审计、拦截测试（仓库现行 node --test 栈）。
 
