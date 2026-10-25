@@ -69,3 +69,25 @@ node scripts/docx-apply-demo.mjs [--out <dir>]   # 一键演示：三件套 → 
 ```
 
 三件套与参数的对应：机会 JSON（`OpportunityInput` 形状）→ `--opportunity`；用户档案 → `--profile`；求职信匹配段草稿（带 AI 草稿标记）→ `--letter-draft`。渲染纯本地计算，无网络请求。
+
+## T5 验收记录（trend #754）
+
+验收标准（PRD-150 T5 行）逐条结论，机器断言见 `tests/local-apply-docx-acceptance.test.mjs`（6 例）：
+
+| 验收标准 | 结论 | 证据 |
+|---|---|---|
+| 数据不出本机验证 | ✅ | 双重：①静态——渲染路径闭包（`scripts/docx-generate.mjs`、`scripts/docx-apply-demo.mjs`、`lib/local-apply/docx/**`、`lib/local-apply/drafter.ts`）逐文件 AST 扫描（typescript 编译器 API）：import 白名单（相对路径 / 非网络类 `node:` 内建 / 唯一渲染库 `docx`）、零 `fetch`/`WebSocket`/`XMLHttpRequest` 调用、零网络类内建 import、动态 `import()` 同白名单；注释里的字样不误伤（对 T3-6 行过滤口径的升级）。②运行——`tests/helpers/net-block.mjs` 预加载把 `net`/`tls`/`dns`/`fetch` 全部封死（连接即抛错）后：`docx-generate` 两模板、`docx-apply-demo`（`npm`→`node` 子进程链经 `NODE_OPTIONS` 一并封死）全部照常产出可重开的 `.docx`，退出码 0 |
+| 样例文档合格 | ✅ | 两模板样例 `.docx` 重开断言（最小 ZIP 读取器，与 T2/T3 同一实现）：resume——段落/文本段数量下限、姓名/教育/技能（等级标注）内容、空 `phone` 槽与空 `outputs` 区块按模板空槽规则跳过不留痕、AI 标注段默认携带且用独立样式 `ai-draft-marker`；cover-letter——机会公开情报注入信头、匹配段草稿正文消费且头部 `> ⚠️` 标注块剥除、缺失必选字段（样例故意缺 `target.researchInterests`）占位符 `[待填写：…]` 入文、`--final` 终稿消除 AI 标注段但保留待填占位符（诚实呈现） |
+| 无真实隐私样例入库 | ✅ | `examples/` 与 `docs/` 全量文本文件隐私扫描：非 `example.*` 域邮箱、大陆手机号（`1[3-9]\d{9}`）、18 位身份证号三类模式零命中；占位符与 `example.com`/`example.dev` 域放行；历史运维记录中的仓库主自有账户名显式豁免（非样例数据，T5 前已存在，登记于测试常量） |
+
+测试命令与结果（原样）：
+
+```bash
+node --experimental-strip-types --test tests/local-apply-docx-acceptance.test.mjs   # 6 pass
+node --experimental-strip-types --test tests/local-apply-docx.test.mjs \
+     tests/local-apply-docx-cli.test.mjs tests/local-apply-docx-apply.test.mjs \
+     tests/local-apply-docx-acceptance.test.mjs                                    # 20 pass（T2–T5 零回归）
+```
+
+AST 扫描有效性自证（会话内探针，非仓库文件）：构造含 `import net from "node:net"` 与真实 `fetch()` 调用的临时文件，同一扫描逻辑命中 `["import node:net","fetch()"]`；注释里的 `fetch(` 字样不命中。
+
