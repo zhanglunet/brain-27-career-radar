@@ -38,6 +38,7 @@ import {
   type GapDimension as InterviewGapDimension,
   type InterviewQuestion,
 } from "./interview.ts";
+import { authenticityDisplay } from "../authenticity/display.ts";
 
 // ── CLI 档案：T2 档案为正，另加 T3/T4 需要的可选字段 ──
 
@@ -294,6 +295,7 @@ export function cmdMatch(
   }
   lines.push(result.summary);
   lines.push(guardText(result));
+  lines.push(authenticityText(opp, result));
   return { result, text: lines.join("\n") };
 }
 
@@ -303,6 +305,26 @@ function guardText(result: MatchResult): string {
   if (flags.length === 0) return "内容检查：未检出已知风险（不代表安全或接入许可）；申请/提交须人工核验，CLI 不提供投递。";
   // 只展示类别，不把第三方载荷原样写到终端（可能包含控制字符）。
   return `内容检查：待人工确认，命中 ${flags.length} 项：${[...new Set(flags.map(f => f.kind))].join("、")}。禁止生成草稿、申请或提交；请人工核对来源正文与网站限制，不得绕过访问限制。`;
+}
+
+// ── 真实性展示（PRD-176/T3，trend #882；T1 §2.3/§3.3/§5.2）──
+
+/**
+ * 「真实性」行（match 输出行尾追加，T1 §5.2）。展示口径取自
+ * lib/authenticity/display.ts（T1 §3.3 单一来源）：
+ * 缺字段 = unverified（灰色「未复核」）；本地不产生终审 state，以云端为准。
+ */
+export function authenticityText(opp: MatchOpportunity, result?: MatchResult): string {
+  const display = authenticityDisplay(opp.authenticity?.state);
+  const checkedAt = opp.authenticity?.checkedAt ? `（复核于 ${opp.authenticity.checkedAt}）` : "";
+  const base = `真实性：${display.label}${checkedAt}${display.hint ? `——${display.hint}` : ""}`;
+  // 本地 signals 与云端 state 冲突时按更严者呈现警示（T1 §2.3）：
+  // 云端说「可信」而本地 posting-guard 命中 → 提示按更严口径人工核对。
+  const localHits = result?.guardFlags?.length ?? 0;
+  if (opp.authenticity?.state === "trusted" && localHits > 0) {
+    return `${base}；注意：本地内容检查命中 ${localHits} 项，与云端「可信」结论不一致——按更严者呈现，请人工核对后再使用`;
+  }
+  return base;
 }
 
 // ── draft：T3 ──
@@ -388,7 +410,13 @@ export function cmdInterview(
 
 export type StatusResult = {
   text: string;
-  counts: { opportunities: number; drafts: number; profile: string };
+  counts: {
+    opportunities: number;
+    drafts: number;
+    profile: string;
+    /** 真实性分布（PRD-176/T3；缺字段计 unverified）。 */
+    authenticity: { unverified: number; trusted: number; pending: number; suspicious: number };
+  };
 };
 
 export function cmdStatus(
@@ -397,18 +425,41 @@ export function cmdStatus(
   store: DraftStore,
 ): StatusResult {
   const drafts = store.list();
+  // 真实性分布（T1 §3.3 展示口径；缺字段 = unverified，老 cache.json 零迁移）。
+  const authenticity = { unverified: 0, trusted: 0, pending: 0, suspicious: 0 };
+  for (const opp of cache) {
+    const state = opp.authenticity?.state ?? "unverified";
+    if (state === "trusted" || state === "pending" || state === "suspicious") {
+      authenticity[state] += 1;
+    } else {
+      authenticity.unverified += 1;
+    }
+  }
+  const authLine =
+    `- 真实性：已核验·可信 ${authenticity.trusted} · 待验证 ${authenticity.pending} · ` +
+    `可疑 ${authenticity.suspicious} · 未复核 ${authenticity.unverified}`;
   const lines = [
     "brain27 本地状态（纯本地：本命令不发送任何数据）",
     `- 档案：${profile.degree}（兴趣：${profile.researchInterests.join("、") || "未填"}）`,
     `- 缓存机会：${cache.length} 条`,
+    authLine,
     `- 草稿：${drafts.length} 份${drafts.length > 0 ? `（${drafts.map((d) => d.id).join("、")}）` : ""}`,
   ];
+  if (authenticity.suspicious > 0) {
+    const suspiciousIds = cache
+      .filter((o) => o.authenticity?.state === "suspicious")
+      .map((o) => o.id);
+    lines.push(
+      `  注意：${suspiciousIds.length} 条被标记「可疑」（${suspiciousIds.join("、")}）——展示仅作参考，投递前须人工复核`,
+    );
+  }
   return {
     text: lines.join("\n"),
     counts: {
       opportunities: cache.length,
       drafts: drafts.length,
       profile: profile.degree,
+      authenticity,
     },
   };
 }

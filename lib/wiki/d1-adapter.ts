@@ -25,9 +25,10 @@ import type {
   WikiRegion,
   WikiVerdict,
 } from "./schema.ts";
-import { verdictToConfidence } from "./schema.ts";
+import { normalizeAuthenticityState, verdictToConfidence } from "./schema.ts";
+import type { WikiAuthenticityState } from "./schema.ts";
 
-/** D1 opportunities 表行（0000_robust_iron_patriot.sql）。 */
+/** D1 opportunities 表行（0000_robust_iron_patriot.sql；authenticity_state 列来自 PRD-176/T2 迁移 0026）。 */
 export type D1OpportunityRow = {
   id: string;
   source_id: string | null;
@@ -45,6 +46,8 @@ export type D1OpportunityRow = {
   published: number;
   source_verified_at: string | null;
   created_at: string;
+  /** 真实性复核状态（PRD-176/T2 列；旧调用方不选该列时缺省 → 条目不携带，MCP 层按 unverified 呈现）。 */
+  authenticity_state?: string | null;
 };
 
 /** D1 candidate_records 表行（0003_futuristic_inhumans.sql）。 */
@@ -163,6 +166,12 @@ export type D1WikiEntry = WikiEntry & {
   /** D1 原文 deadline（ISO 日期 / "预计 2026.10—11 发布" / "已启动｜滚动初筛" 等）。 */
   deadline: string | null;
   funding: WikiFunding | null;
+  /**
+   * 真实性复核状态（PRD-176/T3，trend #882；T1 §5.1）。值经
+   * normalizeAuthenticityState 校验：缺列/非法值不携带该字段（MCP 下发时
+   * 缺省 unverified，老客户端零破坏）。
+   */
+  authenticity_state?: WikiAuthenticityState;
 };
 
 function keywordsOf(tagsJson: string): string[] {
@@ -197,6 +206,8 @@ export function opportunityToEntry(
   const type = KIND_TO_TYPE[row.kind];
   const region = locationToRegion(row.location);
   const verdict = opts.verdict ?? "pending";
+  // PRD-176/T3（T1 §5.1）：真实性状态只读透传；缺列/非法值不携带字段。
+  const authenticityState = normalizeAuthenticityState(row.authenticity_state);
   return {
     id: `wiki-d1-opp-${row.id}`,
     title: excerpt(row.name, 80),
@@ -217,6 +228,7 @@ export function opportunityToEntry(
     org: row.org || null,
     deadline: row.deadline || null,
     funding: null,
+    ...(authenticityState ? { authenticity_state: authenticityState } : {}),
   };
 }
 
