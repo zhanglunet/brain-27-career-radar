@@ -283,7 +283,7 @@ test("PRD150/T5-2b · cover-letter 样例 .docx 重开：占位符入文 / 草�
 const SCAN_TEXT_EXT = new Set([".md", ".json", ".txt", ".sql", ".mjs", ".html", ".yaml", ".yml"]);
 /** 隐私红线豁免（显式登记，防扫描形同虚设）：仓库主自有账户名，历史运维记录、非样例数据。 */
 const EMAIL_BASELINE_ALLOWLIST = new Set(["zhanglu.net@gmail.com"]);
-const EXAMPLE_DOMAIN = /(^|\.)example\.(com|net|org|dev)$/i;
+const EXAMPLE_DOMAIN = /(^|\.)example\.(com|net|org|dev)$|(^|\.)[a-z0-9-]+\.(example|invalid|test|localhost)$/i; // RFC 2606 保留域全集（.example/.invalid/.test/.localhost 及 example.com/net/org/dev 子域）——保留域不可能持有真实邮箱
 const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
 const PHONE_RE = /(?<!\d)1[3-9]\d{9}(?!\d)/;             // 大陆手机号
 const ID_CARD_RE = /(?<![0-9Xx])\d{17}[\dXx](?![0-9Xx])/; // 18 位身份证号
