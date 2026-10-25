@@ -22,6 +22,7 @@ import {
   WIKI_OPPORTUNITY_TYPES,
   WIKI_REGIONS,
 } from "../wiki/schema.ts";
+import type { WikiAuthenticityState } from "../wiki/schema.ts";
 import { compareDeadline, parseDeadline, todayIso } from "./deadlines.ts";
 import type { WikiDeadlineKind } from "./deadlines.ts";
 
@@ -59,6 +60,12 @@ export type McpOpportunity = WikiEntry & {
    */
   deadline?: string | null;
   deadline_kind?: WikiDeadlineKind;
+  /**
+   * 真实性复核状态（PRD-176/T3，trend #882；T1 §2.1/§5.1，只读透传）。
+   * 条目缺省该字段时 search_opportunities 响应按 "unverified" 下发
+   * （老客户端零破坏：纯新增字段，不改既有字段）。
+   */
+  authenticity_state?: WikiAuthenticityState;
 };
 
 /** T1 §四错误码。404 不单独抛——无结果时按 T1 返回空数组 + total=0。 */
@@ -222,6 +229,12 @@ export type OpportunitySummary = {
   evidence_url: string;
   confidence: string;
   last_verified: string;
+  /**
+   * 真实性复核状态（PRD-176/T3，trend #882；T1 §5.1）。条目未携带复核
+   * 结论时缺省 "unverified"（从未复核 ≠ 复核中；展示口径 T1 §3.3）。
+   * 纯新增字段，老客户端零破坏。
+   */
+  authenticity_state: WikiAuthenticityState;
 };
 
 export type SearchOpportunitiesResult = {
@@ -244,6 +257,7 @@ function toSummary(e: McpOpportunity): OpportunitySummary {
     evidence_url: e.source_url,
     confidence: e.confidence,
     last_verified: e.last_verified,
+    authenticity_state: e.authenticity_state ?? "unverified",
   };
 }
 

@@ -61,6 +61,20 @@ export const CONFIDENCE_WEIGHTS: Record<WikiConfidence, number> = {
   low: 0.35,
 };
 
+// ── 真实性复核状态（PRD-176/T1 §2.1；展示口径 §3.3）────────────────────────
+// 三态（trusted/pending/suspicious）是复核结论值域；unverified 只表示
+// "从未复核"，单列第五态（T1 §2.1：不把"未复核"冒充"复核中"）。
+
+export const AUTHENTICITY_STATES = ["unverified", "trusted", "pending", "suspicious"] as const;
+export type WikiAuthenticityState = (typeof AUTHENTICITY_STATES)[number];
+
+/** 非法/缺失值返回 undefined（由消费方决定缺省口径，MCP 层缺省 unverified）。 */
+export function normalizeAuthenticityState(value: unknown): WikiAuthenticityState | undefined {
+  return typeof value === "string" && (AUTHENTICITY_STATES as readonly string[]).includes(value)
+    ? (value as WikiAuthenticityState)
+    : undefined;
+}
+
 // ── 条目类型 ────────────────────────────────────────────────────────────────
 
 export type WikiFacets = {
