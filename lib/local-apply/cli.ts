@@ -157,6 +157,7 @@ const PULL_WHITELIST = [
   "keywords",
   "mentors",
   "requirements",
+  "authenticity",
 ] as const;
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -192,6 +193,26 @@ function sanitizeOpportunity(raw: unknown): MatchOpportunity | null {
   if (mentors) opp.mentors = mentors;
   const requirements = toStringArray(get("requirements"));
   if (requirements) opp.requirements = requirements;
+  // PRD-176/T2（T1 §2.3）：authenticity 只读继承，内部只做 state/checkedAt
+  // 字符串校验；缺字段 = unverified（老 cache.json 零迁移）。
+  const authenticityRaw = get("authenticity");
+  if (isRecord(authenticityRaw) && typeof authenticityRaw["state"] === "string" &&
+      ["trusted", "pending", "suspicious"].includes(authenticityRaw["state"])) {
+    const authenticity: NonNullable<MatchOpportunity["authenticity"]> = {
+      state: authenticityRaw["state"] as NonNullable<MatchOpportunity["authenticity"]>["state"],
+    };
+    if (typeof authenticityRaw["checkedAt"] === "string") {
+      authenticity.checkedAt = authenticityRaw["checkedAt"];
+    }
+    if (Array.isArray(authenticityRaw["signals"])) {
+      const signals = authenticityRaw["signals"].filter(
+        (s: unknown): s is { code: string; detail: string } =>
+          isRecord(s) && typeof s["code"] === "string" && typeof s["detail"] === "string",
+      );
+      if (signals.length > 0) authenticity.signals = signals;
+    }
+    opp.authenticity = authenticity;
+  }
   return opp;
 }
 

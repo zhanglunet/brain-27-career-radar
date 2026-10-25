@@ -1,0 +1,8 @@
+{
+  "opportunityId": "opp-example-pending",
+  "title": "某研究所科研助理（示例）",
+  "org": "某研究所（示例）",
+  "bodyExcerpt": "协助实验数据处理（示例）",
+  "snapshotMissing": true,
+  "consecutiveFailures": 0
+}

@@ -65,10 +65,16 @@ export const opportunities = sqliteTable("opportunities", {
   url: text("url").notNull(),
   published: integer("published", { mode: "boolean" }).notNull().default(true),
   sourceVerifiedAt: text("source_verified_at"),
+  // PRD-176/T2（trend #881）：真实性三态列（T1 §2.1：unverified 单列第五态，
+  // 避免存量机会被误标"复核中"；state 列可索引筛选）。
+  authenticityState: text("authenticity_state", { enum: ["unverified", "trusted", "pending", "suspicious"] }).notNull().default("unverified"),
+  authenticityJson: text("authenticity_json").notNull().default("{}"),
+  authenticityCheckedAt: text("authenticity_checked_at"),
   ...timestamps,
 }, (table) => [
   index("opportunities_published_idx").on(table.published),
   index("opportunities_source_idx").on(table.sourceId),
+  index("opportunities_authenticity_idx").on(table.published, table.authenticityState),
 ]);
 
 export const institutions = sqliteTable("institutions", {

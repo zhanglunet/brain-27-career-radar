@@ -1,0 +1,14 @@
+{
+  "opportunityId": "opp-example-scam",
+  "title": "高薪远程科研助理（示例）",
+  "org": "某国际人才服务中心（示例）",
+  "orgOfficialDomain": "example.edu",
+  "officialPageUrl": "https://www.example-pay.example/apply/123",
+  "officialPageExcerpt": "入职需先付费办理档案（示例）",
+  "contactEmail": "billing@example-pay.example",
+  "fundingClaim": "月薪 20000 元（示例）",
+  "bodyExcerpt": "入职前需缴纳押金 2000 元与培训费（示例），请提供身份证原件与银行账户（示例）",
+  "fundingAmount": 20000,
+  "peerMedianAmount": 3000,
+  "consecutiveFailures": 0
+}
