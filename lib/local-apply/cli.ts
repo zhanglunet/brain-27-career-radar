@@ -410,13 +410,18 @@ export const HELP_TEXT = `brain27 —— 本地申请助手（PRD-080）
       T4 面试问题集（v0.1 非交互版；交互式模拟是后续事项）
   brain27 status [--profile <path>] [--cache <path>]
       本地数据盘点
+  brain27 approvals <list|show|approve|reject|cancel> [id] [--status <七态|all>] [--opportunity <id>] [--note <text>] [--json] [--db <path>]
+      批准队列本地确认入口（PRD-175/T3）：列出待批 / 查看含审计留痕 /
+      批准 / 拒绝 / 撤回；每条决定追加写入本地审计（append-only）。
+      批准 ≠ 执行：执行仍须经批准门唯一执行口（gate.execute）。
 
 命中内容检查风险时，草稿生成禁止，须人工核对来源；无自动申请或提交命令。
 
-默认路径：--profile ~/.brain27/profile.json，--cache ~/.brain27/cache.json`;
+默认路径：--profile ~/.brain27/profile.json，--cache ~/.brain27/cache.json，--db ~/.brain27/brain27.db`;
 
 export type ParsedArgs = {
-  command: "pull" | "match" | "draft" | "interview" | "status" | "help";
+  // PRD-175/T3（trend #877）：联合类型追加 "approvals" 一项；既有命令零改动（T1 §5.2）。
+  command: "pull" | "match" | "draft" | "interview" | "status" | "approvals" | "help";
   positional: string[];
   flags: Record<string, string | boolean>;
 };
@@ -429,7 +434,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
   const rest = [...argv];
   if (rest.length > 0 && !rest[0].startsWith("-")) {
     const c = rest.shift() as string;
-    if (c === "pull" || c === "match" || c === "draft" || c === "interview" || c === "status") {
+    if (c === "pull" || c === "match" || c === "draft" || c === "interview" || c === "status" || c === "approvals") {
       command = c;
     } else {
       return { command: "help", positional: [], flags: {} };
@@ -496,6 +501,14 @@ export async function main(argv: string[]): Promise<number> {
   const defaults = await defaultPaths();
   const profilePath = flagString(parsed.flags, "profile") ?? defaults.profile;
   const cachePath = flagString(parsed.flags, "cache") ?? defaults.cache;
+
+  // PRD-175/T3（trend #877）：approvals 命令族在加载档案/缓存之前分派——
+  // 批准队列只依赖本地 SQLite（--db），与 profile/cache 文件无关；
+  // 现有命令的代码路径零改动（T1 §5.2）。
+  if (parsed.command === "approvals") {
+    const { runApprovals } = await import("./approval-cli.ts");
+    return runApprovals(parsed.positional, parsed.flags);
+  }
 
   try {
     if (parsed.command === "pull") {
