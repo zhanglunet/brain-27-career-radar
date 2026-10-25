@@ -1,0 +1,19 @@
+{
+  "opportunityId": "opp-example-trust",
+  "title": "某大学脑科学中心科研助理（示例）",
+  "org": "某大学脑科学中心",
+  "orgOfficialDomain": "example.edu",
+  "orgOfficialName": "某大学脑科学中心",
+  "officialPageUrl": "https://www.example.edu/careers",
+  "officialPageExcerpt": "某大学脑科学中心招聘科研助理一名，协助脑成像数据采集与分析（示例）",
+  "scholarshipPageExcerpt": "科研助理资助标准：每月 3000 元（示例）",
+  "contactEmail": "hr@example.edu",
+  "fundingClaim": "资助每月 3000 元（示例）",
+  "bodyExcerpt": "协助脑成像数据采集与整理，参与课题组组会（示例）",
+  "deadline": "2026-11-30",
+  "officialDeadline": "2026-11-30",
+  "fieldEvidence": [
+    { "fieldName": "deadline", "excerpt": "截止 2026-11-30（示例）" }
+  ],
+  "consecutiveFailures": 0
+}

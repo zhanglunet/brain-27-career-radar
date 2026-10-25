@@ -56,6 +56,19 @@ export type MatchOpportunity = {
   mentors?: string[];
   /** 申请条件条目（如 "硕士学历"），来自 detail 下钻。 */
   requirements?: string[];
+  /**
+   * 真实性复核结论（PRD-176/T2，trend #881；T1 §2.3 本地只读继承）。
+   * 云端 D1 为权威源；本地缓存只读继承，缺字段 = unverified（老 cache.json
+   * 零迁移）。本地不产生终审 state：本地 posting-guard 扫描只产出本地
+   * signals（展示与拦截用），终审以云端为准。
+   */
+  authenticity?: {
+    state: "trusted" | "pending" | "suspicious";
+    /** 最近一次复核时间（ISO 8601）。 */
+    checkedAt?: string;
+    /** 与本条机会相关的信号（可选，展示/拦截用；码表见 lib/authenticity/signals.ts）。 */
+    signals?: { code: string; detail: string }[];
+  };
 };
 
 /** 本地用户档案：绝不出机器（T1 设计 §二-#4/#5）。 */
