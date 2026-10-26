@@ -36,6 +36,8 @@ import { T2_ENFORCED_KINDS, getRegisteredAction, type ActionKind, type Registere
 export type ApprovalErrorCode =
   /** 未注册动作（default-deny 命中，已留 bypass_blocked 审计）。 */
   | "BYPASS_UNREGISTERED"
+  /** 机会真实性 suspicious（PRD-176/T4 联动，已留 authenticity_blocked 审计）。 */
+  | "AUTHENTICITY_SUSPICIOUS"
   /** 无批准记录或记录未批准（已入队等待人工批准）。 */
   | "NOT_APPROVED"
   /** 同幂等键记录已处终态，重放被拒（已留 bypass_blocked 审计）。 */
@@ -225,7 +227,7 @@ export function createApprovalGate(options: ApprovalGateOptions = {}): ApprovalG
         T2_ENFORCED_KINDS.includes(req.actionKind)
       ) {
         store.appendAudit(
-          `auth-blocked-${Date.parse(now())}-${Math.floor(Math.random() * 1e6)}`,
+          `auth-blocked-${now().getTime()}-${Math.floor(Math.random() * 1e6)}`,
           "authenticity_blocked",
           "system",
           { actionKind: req.actionKind, opportunityId: req.opportunityId },
@@ -279,7 +281,7 @@ export function createApprovalGate(options: ApprovalGateOptions = {}): ApprovalG
         T2_ENFORCED_KINDS.includes(req.actionKind)
       ) {
         store.appendAudit(
-          `auth-blocked-${Date.parse(now())}-${Math.floor(Math.random() * 1e6)}`,
+          `auth-blocked-${now().getTime()}-${Math.floor(Math.random() * 1e6)}`,
           "authenticity_blocked",
           "system",
           { actionKind: req.actionKind, opportunityId: req.opportunityId },
