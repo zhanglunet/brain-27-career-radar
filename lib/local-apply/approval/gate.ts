@@ -29,13 +29,15 @@ import {
   type ApprovalStore,
   type ApprovalStoreOptions,
 } from "./store.ts";
-import { getRegisteredAction, type ActionKind, type RegisteredAction } from "./registry.ts";
+import { T2_ENFORCED_KINDS, getRegisteredAction, type ActionKind, type RegisteredAction } from "./registry.ts";
 
 // ── 错误 ─────────────────────────────────────────────────────
 
 export type ApprovalErrorCode =
   /** 未注册动作（default-deny 命中，已留 bypass_blocked 审计）。 */
   | "BYPASS_UNREGISTERED"
+  /** 机会真实性 suspicious（PRD-176/T4 联动，已留 authenticity_blocked 审计）。 */
+  | "AUTHENTICITY_SUSPICIOUS"
   /** 无批准记录或记录未批准（已入队等待人工批准）。 */
   | "NOT_APPROVED"
   /** 同幂等键记录已处终态，重放被拒（已留 bypass_blocked 审计）。 */
@@ -66,6 +68,8 @@ export type ApprovalRequest = {
   payload: Record<string, unknown>;
   /** 上游 posting-guard 结论（flag kinds；A1/A2 强制携带，可为空数组）。 */
   guardFlags?: string[];
+  /** 机会真实性状态（PRD-176/T4 联动，#883）：suspicious 的强制动作默认不可投。 */
+  authenticityState?: "trusted" | "pending" | "suspicious" | "unverified";
   /** 触发来源：`cli:<command>` 或 `ui`；缺省 `cli`。 */
   requestedBy?: string;
 };
@@ -215,6 +219,24 @@ export function createApprovalGate(options: ApprovalGateOptions = {}): ApprovalG
   const gate: ApprovalGate = {
     requestApproval(req) {
       enforceRegistered(req, (id, event, actor, detail) => store.appendAudit(id, event, actor, detail));
+      // PRD-176/T4（#883）：可疑机会的强制动作默认不可投（T1 §五联动）。
+      // pending/trusted/unverified 不拦（unverified 是存量未复核，不等于可疑）；
+      // 人工确认真伪后经 authenticity 覆盖字段改判即可入队（T1 §三人工覆盖）。
+      if (
+        req.authenticityState === "suspicious" &&
+        T2_ENFORCED_KINDS.includes(req.actionKind)
+      ) {
+        store.appendAudit(
+          `auth-blocked-${now().getTime()}-${Math.floor(Math.random() * 1e6)}`,
+          "authenticity_blocked",
+          "system",
+          { actionKind: req.actionKind, opportunityId: req.opportunityId },
+        );
+        throw approvalError(
+          "AUTHENTICITY_SUSPICIOUS",
+          "机会真实性状态为 suspicious（可疑）：默认不可投递；确认真伪并覆盖状态后重试",
+        );
+      }
       sweepExpired();
       const result = store.enqueue({
         actionKind: req.actionKind,
@@ -251,6 +273,24 @@ export function createApprovalGate(options: ApprovalGateOptions = {}): ApprovalG
 
     execute(req, runner) {
       enforceRegistered(req, (id, event, actor, detail) => store.appendAudit(id, event, actor, detail));
+      // PRD-176/T4（#883）：可疑机会的强制动作默认不可投（T1 §五联动）。
+      // pending/trusted/unverified 不拦（unverified 是存量未复核，不等于可疑）；
+      // 人工确认真伪后经 authenticity 覆盖字段改判即可入队（T1 §三人工覆盖）。
+      if (
+        req.authenticityState === "suspicious" &&
+        T2_ENFORCED_KINDS.includes(req.actionKind)
+      ) {
+        store.appendAudit(
+          `auth-blocked-${now().getTime()}-${Math.floor(Math.random() * 1e6)}`,
+          "authenticity_blocked",
+          "system",
+          { actionKind: req.actionKind, opportunityId: req.opportunityId },
+        );
+        throw approvalError(
+          "AUTHENTICITY_SUSPICIOUS",
+          "机会真实性状态为 suspicious（可疑）：默认不可投递；确认真伪并覆盖状态后重试",
+        );
+      }
       sweepExpired();
 
       let record = findByRequest(req);

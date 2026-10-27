@@ -54,7 +54,8 @@ export type AuditEvent =
   | "executed"
   | "failed"
   | "expired"
-  | "bypass_blocked";
+  | "bypass_blocked"
+  | "authenticity_blocked"; // PRD-176/T4（#883）：可疑机会强制动作入队被拒留痕
 
 export type ApprovalRecord = {
   /** `{action_kind}:{opportunity_id}:{seq}`，seq 为同 (kind, opportunity) 自增。 */
@@ -367,6 +368,7 @@ export function createApprovalStore(
   const AUDIT_EVENTS: readonly AuditEvent[] = [
     "requested", "approved", "rejected", "cancelled",
     "executed", "failed", "expired", "bypass_blocked",
+    "authenticity_blocked", // PRD-176/T4（#883）
   ];
 
   function insertAudit(
