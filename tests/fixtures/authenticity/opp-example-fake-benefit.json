@@ -1,0 +1,18 @@
+{
+  "opportunityId": "opp-example-fake-benefit",
+  "title": "某研究所研究助理——高薪直聘（假福利示例）",
+  "org": "某研究所",
+  "orgOfficialDomain": "example-university.example",
+  "orgOfficialName": "某研究所（示例）",
+  "officialPageUrl": "https://www.example-university.example/careers/902",
+  "officialPageExcerpt": "研究助理岗位说明（示例页摘录）",
+  "scholarshipPageExcerpt": "研究助理资助标准：每月 3000 元（示例）",
+  "contactEmail": "hr@example-university.example",
+  "fundingClaim": "签约津贴每月 20000 元，远超同类（假福利示例）",
+  "fundingAmount": 20000,
+  "peerMedianAmount": 3000,
+  "bodyExcerpt": "入职需先缴纳培训费 5000 元与服装费，签约后返还（假福利示例）",
+  "deadline": "2026-11-30",
+  "officialDeadline": "2026-11-30",
+  "consecutiveFailures": 0
+}
