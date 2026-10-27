@@ -1,0 +1,15 @@
+{
+  "opportunityId": "opp-example-fake-contact",
+  "title": "某大学数据采集专员——建档入职（索证件示例）",
+  "org": "某大学",
+  "orgOfficialDomain": "example-university.example",
+  "orgOfficialName": "某大学（示例）",
+  "officialPageUrl": "https://www.example-university.example/careers/903",
+  "officialPageExcerpt": "数据采集专员岗位说明（示例页摘录）",
+  "contactEmail": "hr@example-university.example",
+  "fundingClaim": "资助每月 3000 元（示例）",
+  "bodyExcerpt": "请提前将身份证原件正反面与银行账号发送给联系人完成建档（索证件示例）",
+  "deadline": "2026-11-30",
+  "officialDeadline": "2026-11-30",
+  "consecutiveFailures": 0
+}

@@ -1,0 +1,15 @@
+{
+  "opportunityId": "opp-example-fake-domain",
+  "title": "某大学认知科学中心科研助理（仿冒域示例）",
+  "org": "某大学认知科学中心",
+  "orgOfficialDomain": "example-university.example",
+  "orgOfficialName": "某大学认知科学中心",
+  "officialPageUrl": "https://careers.example-unlversity.example/apply/901",
+  "officialPageExcerpt": "某大学认知科学中心招聘科研助理（示例页摘录）",
+  "contactEmail": "hr@example-unlversity.example",
+  "fundingClaim": "资助每月 3000 元（示例）",
+  "bodyExcerpt": "协助认知实验被试招募与数据整理（示例）",
+  "deadline": "2026-11-30",
+  "officialDeadline": "2026-11-30",
+  "consecutiveFailures": 0
+}
