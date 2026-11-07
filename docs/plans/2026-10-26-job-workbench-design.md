@@ -299,7 +299,7 @@ PRD-204（claude-mem 式求职状态模型）是并行 T1，设计时点其枚�
 ### 6.5 借鉴与样例纪律（T2–T5 共同）
 
 - **借鉴纪律**：openbot 协议未核实——T2–T5 实现中不得出现 openbot 的代码、片段或其衍生表述；形态借鉴止于本文。若实现期间发现需要引用任何外部项目文字，先核实许可证并单独评审。
-- **样例纪律**：文档、fixture、测试数据全虚构——机会 `opp-example-001`、邮箱 `hr@example.edu`、表单 `https://jobs.example.edu/apply/123`、回执 `<receipt@example.invalid>`；不得出现真实主机名、IP、账号或密钥。
+- **样例纪律**：文档、fixture、测试数据全虚构——机会 `opp-example-001`、邮箱 `hr@example.com`、表单 `https://jobs.example.com/apply/123`、回执 `<receipt@example.invalid>`；不得出现真实主机名、IP、账号或密钥。
 
 ## 七、待用户决策事项
 
