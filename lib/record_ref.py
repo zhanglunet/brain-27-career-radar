@@ -27,9 +27,6 @@ import re
 from typing import Any
 
 REF_SCHEMA = "ref-resolution/v1"
-#: 错误码封闭词表（T1 §5 四码）
-ERROR_CODES = ("REF_SYNTAX_ERROR", "REF_NOT_FOUND", "REF_AMBIGUOUS",
-               "PROFILE_VERSION_GONE")
 OPP_RE = re.compile(r"^@(?P<opp>opp-[^@\s#]+)$")
 PROFILE_RE = re.compile(r"^@档案(?P<version>v\d+(?:\.\d+)*)$")
 
