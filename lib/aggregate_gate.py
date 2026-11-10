@@ -49,10 +49,12 @@ def entry_gate(entry: dict[str, Any]) -> list[str]:
 def classify_blocked(report: dict[str, Any]) -> dict[str, int]:
     """blocked[] 按三码归类计数（§4 三码封闭）。"""
     counts = {code: 0 for code in ERROR_CODES}
+    # 特异码优先（T2 统一包 SOURCE_BLOCKED 前缀——内层 UNREACHABLE 优先识别）
+    order = ("SOURCE_UNREACHABLE", "ENTRY_INCOMPLETE", "SOURCE_BLOCKED")
     for b in report.get("blocked", []):
         reason = str(b.get("reason", ""))
-        for code in ERROR_CODES:
-            if reason.startswith(code) or code in reason:
+        for code in order:
+            if code in reason:
                 counts[code] += 1
                 break
     return counts
