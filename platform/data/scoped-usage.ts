@@ -21,6 +21,18 @@ export function usageFor(db: D1Database, userId: string) {
         .first<{ calls: number }>();
       return row !== null;
     },
+    /** 原子地占用一次搜索额度：未超限时 searches + 1 并返回 true。 */
+    async reserveSearch(day: string, max: number): Promise<boolean> {
+      const row = await db
+        .prepare(
+          `INSERT INTO llm_usage (user_id, day, calls, tokens, searches) VALUES (?, ?, 0, 0, 1)
+           ON CONFLICT (user_id, day) DO UPDATE SET searches = searches + 1 WHERE searches < ?
+           RETURNING searches`,
+        )
+        .bind(userId, day, max)
+        .first<{ searches: number }>();
+      return row !== null;
+    },
     async addCall(day: string): Promise<void> {
       await db
         .prepare("INSERT INTO llm_usage (user_id, day, calls, tokens) VALUES (?, ?, 1, 0) ON CONFLICT (user_id, day) DO UPDATE SET calls = calls + 1")

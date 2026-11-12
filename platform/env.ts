@@ -1,5 +1,6 @@
 /** 私有平台 Worker 的绑定与可注入依赖。 */
 import type { LlmProvider } from "./llm/types.ts";
+import type { SearchProvider } from "./search/types.ts";
 
 export interface PlatformEnv {
   /** 私有 D1：账号与全部用户数据。 */
@@ -38,5 +39,7 @@ export interface Deps {
   fetch?: typeof fetch;
   /** 直接指定大模型实现（测试或切换供应商时使用），优先于 DeepSeek。 */
   llm?: LlmProvider;
+  /** 直接指定搜索实现（测试使用），优先于博查。 */
+  search?: SearchProvider;
   fetchJwks?(url: string): Promise<unknown>;
 }
