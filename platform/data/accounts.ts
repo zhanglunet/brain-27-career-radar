@@ -124,6 +124,19 @@ export async function consumeResetToken(db: D1Database, token: string, now: numb
   return db.prepare("SELECT user_id FROM password_resets WHERE token_hash = ?").bind(hash).first<string>("user_id");
 }
 
+/**
+ * 重置成功后的收尾，放在同一事务里：写入新密码、作废该用户其余全部未用的重置链接、
+ * 撤销全部会话、清除登录失败记录。
+ */
+export async function completePasswordReset(db: D1Database, userId: string, passwordHash: string, now: number): Promise<void> {
+  await db.batch([
+    db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").bind(passwordHash, userId),
+    db.prepare("UPDATE password_resets SET used_at = ? WHERE user_id = ? AND used_at IS NULL").bind(now, userId),
+    db.prepare("UPDATE sessions SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL").bind(now, userId),
+    db.prepare("DELETE FROM login_attempts WHERE email = (SELECT email FROM users WHERE id = ?)").bind(userId),
+  ]);
+}
+
 export async function recordLoginFailure(db: D1Database, email: string, now: number): Promise<void> {
   await db.prepare("INSERT INTO login_attempts (email, attempted_at) VALUES (?, ?)").bind(normalizeEmail(email), now).run();
 }

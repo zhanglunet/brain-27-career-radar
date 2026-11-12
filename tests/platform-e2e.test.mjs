@@ -1,6 +1,7 @@
 /** 端到端：经 Worker 入口驱动完整流程，验证两个用户之间的隔离。 */
 import assert from "node:assert/strict";
 import test from "node:test";
+import { CONSENT_VERSION } from "../platform/consent.ts";
 import worker from "../platform/worker.ts";
 import { client, makeEnv } from "./helpers/platform-client.mjs";
 import { forUser } from "../platform/data/scoped.ts";
@@ -13,7 +14,7 @@ async function setup() {
   const viaWorker = (c = client(env, deps, { fetchHandler })) => c;
   const admin = viaWorker();
   assert.equal((await admin.post("/setup", { token: "test-bootstrap", email: "admin@example.test", password: "admin-pass-1" })).status, 303);
-  await admin.post("/consent", { agree: "yes" });
+  await admin.post("/consent", { agree: "yes", version: CONSENT_VERSION });
   const users = {};
   for (const name of ["a", "b"]) {
     const invite = (await (await admin.post("/admin/invites")).text()).match(/<code data-invite>([^<]+)<\/code>/)[1];
@@ -22,7 +23,7 @@ async function setup() {
     const record = await findUserByEmail(env.PRIVATE_DB, `${name}@example.test`);
     assert.equal((await admin.post(`/admin/users/${record.id}/approve`)).status, 303);
     assert.equal((await c.post("/login", { email: `${name}@example.test`, password: `${name}-password-1` })).status, 303);
-    assert.equal((await c.post("/consent", { agree: "yes" })).status, 303);
+    assert.equal((await c.post("/consent", { agree: "yes", version: CONSENT_VERSION })).status, 303);
     assert.equal((await c.post("/goals", { title: `${name.toUpperCase()} 的目标`, description: `${name} 的意向描述` })).status, 303);
     users[name] = { client: c, id: record.id };
   }

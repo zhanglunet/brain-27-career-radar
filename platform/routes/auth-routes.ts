@@ -5,20 +5,19 @@ import { hashPassword, timingSafeEqual, verifyPassword } from "../crypto.ts";
 import {
   audit,
   clearLoginFailures,
+  completePasswordReset,
   consumeInvite,
   consumeResetToken,
   countActiveAdmins,
   createUser,
   deleteUserRow,
   findUserByEmail,
-  findUserById,
   isInviteValid,
   isLoginLocked,
   normalizeEmail,
   recordLoginFailure,
-  setPassword,
 } from "../data/accounts.ts";
-import { createSession, revokeSession, revokeUserSessions } from "../data/sessions.ts";
+import { createSession, revokeSession } from "../data/sessions.ts";
 import { HttpError, clearSessionCookie, html, logEvent, readForm, redirect, sessionCookie } from "../http.ts";
 import { field, layout, messagePage, notice } from "../views.ts";
 
@@ -203,10 +202,7 @@ export const routes: Route[] = [
       const now = ctx.deps.now();
       const userId = await consumeResetToken(db, token, now);
       if (!userId) return html(messagePage("链接无效", "链接无效或已过期，请联系管理员重新生成。", null, "error"), 400);
-      await setPassword(db, userId, await hashPassword(password));
-      await revokeUserSessions(db, userId, now);
-      const user = await findUserById(db, userId);
-      if (user) await clearLoginFailures(db, user.email);
+      await completePasswordReset(db, userId, await hashPassword(password), now);
       await audit(db, { actorUserId: userId, action: "user.password_reset", targetUserId: userId }, now);
       return redirect("/login", clearSessionCookie());
     },

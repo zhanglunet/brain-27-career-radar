@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { CONSENT_VERSION } from "../platform/consent.ts";
 import { activeUser, client, makeEnv } from "./helpers/platform-client.mjs";
 import { createUser, findUserByEmail } from "../platform/data/accounts.ts";
 import { hashPassword } from "../platform/crypto.ts";
@@ -43,7 +44,7 @@ test("停用用户后其现有会话立即失效；重新启用后可再登录",
   const { env, deps } = await makeEnv();
   const admin = await activeUser(env, deps, "admin@example.test", { role: "admin" });
   const user = await activeUser(env, deps, "u@example.test");
-  await user.post("/consent", { agree: "yes" });
+  await user.post("/consent", { agree: "yes", version: CONSENT_VERSION });
   assert.equal((await user.get("/")).status, 200);
   assert.equal((await admin.post(`/admin/users/${user.user.id}/disable`)).status, 303);
   const after = await user.get("/");
@@ -73,7 +74,7 @@ test("管理页面不含用户目标内容", async () => {
   const { env, deps } = await makeEnv();
   const admin = await activeUser(env, deps, "admin@example.test", { role: "admin" });
   const user = await activeUser(env, deps, "u@example.test");
-  await user.post("/consent", { agree: "yes" });
+  await user.post("/consent", { agree: "yes", version: CONSENT_VERSION });
   await user.post("/goals", { title: "私人目标-机密", description: "不应被管理员看到" });
   const page = await (await admin.get("/admin")).text();
   assert.match(page, /u@example\.test/);

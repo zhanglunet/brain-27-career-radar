@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { CONSENT_VERSION } from "../platform/consent.ts";
 import { activeUser, makeEnv } from "./helpers/platform-client.mjs";
 import { handleRequest } from "../platform/app.ts";
 import { forUser } from "../platform/data/scoped.ts";
@@ -7,7 +8,7 @@ import { findUserByEmail } from "../platform/data/accounts.ts";
 
 async function consentedUser(env, deps, email, options) {
   const c = await activeUser(env, deps, email, options);
-  const response = await c.post("/consent", { agree: "yes" });
+  const response = await c.post("/consent", { agree: "yes", version: CONSENT_VERSION });
   assert.equal(response.status, 303);
   return c;
 }
@@ -25,9 +26,9 @@ test("未同意条款不能进入首页；同意页列出条款；同意后可�
   const page = await (await c.get("/consent")).text();
   assert.match(page, /DeepSeek/);
   assert.match(page, /不是端到端加密/);
-  assert.equal((await c.post("/consent", {})).status, 400, "未勾选同意不记录");
+  assert.equal((await c.post("/consent", { version: CONSENT_VERSION })).status, 400, "未勾选同意不记录");
   assert.equal((await c.get("/")).status, 303);
-  assert.equal((await c.post("/consent", { agree: "yes" })).headers.get("location"), "/");
+  assert.equal((await c.post("/consent", { agree: "yes", version: CONSENT_VERSION })).headers.get("location"), "/");
   assert.equal((await c.get("/")).status, 200);
 });
 

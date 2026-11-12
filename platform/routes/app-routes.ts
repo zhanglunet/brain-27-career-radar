@@ -33,7 +33,7 @@ async function homePage(db: D1Database, user: User, message = "", status = 200):
 function consentPage(user: User, message = "", status = 200): Response {
   const body = `<h1>数据条款（${CONSENT_VERSION}）</h1>${message ? notice(message, "error") : ""}
 <p>使用智能体功能前，请阅读以下说明：</p><ul>${CONSENT_POINTS.map((point) => `<li>${escapeHtml(point)}</li>`).join("")}</ul>
-<form method="post" action="/consent"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="agree" value="yes" style="width:auto" required>我已阅读并同意以上条款</label><button type="submit">同意并继续</button></form>`;
+<form method="post" action="/consent"><input type="hidden" name="version" value="${CONSENT_VERSION}"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="agree" value="yes" style="width:auto" required>我已阅读并同意以上条款</label><button type="submit">同意并继续</button></form>`;
   return html(layout("数据条款", body, user), status);
 }
 
@@ -60,6 +60,8 @@ export const routes: Route[] = [
     async handler(ctx) {
       const user = await requireUser(ctx);
       const form = await readForm(ctx.request);
+      // 只记录用户实际看到的那一版条款：页面加载后条款若已升级，必须重新阅读。
+      if (form.get("version") !== CONSENT_VERSION) return consentPage(user, "条款已更新，请阅读最新条款后再同意。", 409);
       if (form.get("agree") !== "yes") return consentPage(user, "请勾选同意后再继续。", 400);
       await recordConsent(ctx.env.PRIVATE_DB, user.id, CONSENT_VERSION, ctx.deps.now());
       logEvent("platform.consent", { userId: user.id, status: CONSENT_VERSION });

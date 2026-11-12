@@ -5,6 +5,8 @@ import { activeUser, client, inviteCode, makeEnv } from "./helpers/platform-clie
 import { createResetToken, createUser, findUserByEmail } from "../platform/data/accounts.ts";
 import { hashPassword, verifyPassword } from "../platform/crypto.ts";
 import { forUser } from "../platform/data/scoped.ts";
+import { hasConsent } from "../platform/data/consents.ts";
+import { CONSENT_VERSION } from "../platform/consent.ts";
 
 // ── Important 1：不持有有效邀请码时，不能探测邮箱是否已注册 ──
 test("已注册邮箱配合无效邀请码，与未注册邮箱得到完全相同的响应", async () => {
@@ -93,4 +95,30 @@ test("管理员不能在后台删除自己（走账号页）", async () => {
   await activeUser(env, deps, "admin2@example.test", { role: "admin" });
   assert.equal((await admin.post(`/admin/users/${admin.user.id}/delete`)).status, 400);
   assert.ok(await findUserByEmail(env.PRIVATE_DB, "admin@example.test"));
+});
+
+// ── PR #138 评审：重置成功后，该用户其余未用的重置链接全部作废 ──
+test("用新重置链接改密后，旧重置链接失效", async () => {
+  const { env, deps } = await makeEnv();
+  const user = await activeUser(env, deps, "u@example.test");
+  const older = await createResetToken(env.PRIVATE_DB, user.user.id, "admin", deps.now());
+  const newer = await createResetToken(env.PRIVATE_DB, user.user.id, "admin", deps.now());
+  const anon = client(env, deps);
+  assert.equal((await anon.post("/reset", { token: newer, password: "recovered-pass" })).status, 303);
+  assert.equal((await anon.post("/reset", { token: older, password: "attacker-pass" })).status, 400);
+  assert.equal((await anon.post("/login", { email: "u@example.test", password: "recovered-pass" })).status, 303);
+});
+
+// ── PR #138 评审：同意必须绑定页面上展示的条款版本 ──
+test("同意表单携带条款版本；版本过期或缺失的提交不记录同意", async () => {
+  const { env, deps } = await makeEnv();
+  const user = await activeUser(env, deps, "c@example.test");
+  assert.match(await (await user.get("/consent")).text(), new RegExp(`name="version" value="${CONSENT_VERSION}"`));
+  const stale = await user.post("/consent", { agree: "yes", version: "v0" });
+  assert.equal(stale.status, 409);
+  assert.match(await stale.text(), /条款已更新/);
+  assert.equal((await user.post("/consent", { agree: "yes" })).status, 409);
+  assert.equal(await hasConsent(env.PRIVATE_DB, user.user.id, CONSENT_VERSION), false);
+  assert.equal((await user.post("/consent", { agree: "yes", version: CONSENT_VERSION })).status, 303);
+  assert.equal(await hasConsent(env.PRIVATE_DB, user.user.id, CONSENT_VERSION), true);
 });
