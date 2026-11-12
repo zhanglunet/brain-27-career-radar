@@ -11,7 +11,9 @@ import {
   setUserStatus,
 } from "../data/accounts.ts";
 import { eraseUser } from "../data/erase.ts";
+import { listRecentRuns } from "../data/find-admin.ts";
 import { revokeUserSessions } from "../data/sessions.ts";
+import { decideNomination, listNominations } from "../data/shared-sources.ts";
 import type { User } from "../data/tables.ts";
 import { HttpError, escapeHtml, html, logEvent, redirect } from "../http.ts";
 import { layout, notice } from "../views.ts";
@@ -37,12 +39,20 @@ function userRow(user: User, admin: User): string {
 async function adminPage(ctx: Ctx, admin: User, extra = "", status = 200): Promise<Response> {
   const users = await listUsers(ctx.env.PRIVATE_DB);
   const pending = users.filter((user) => user.status === "pending");
+  const nominations = await listNominations(ctx.env.PRIVATE_DB, "pending");
+  const runs = await listRecentRuns(ctx.env.PRIVATE_DB, 50);
   const body = `<h1>管理</h1>${extra}
 <h2>邀请码</h2><p class="muted">邀请码 7 天内有效、只能使用一次，生成后只显示这一次，请线下发给对方。</p>
 <form method="post" action="/admin/invites"><button type="submit">生成邀请码</button></form>
 <h2>待审批（${pending.length}）</h2>
 <h2>全部用户（${users.length}）</h2>
-<table><tr><th>邮箱</th><th>角色</th><th>状态</th><th>注册</th><th>操作</th></tr>${users.map((user) => userRow(user, admin)).join("")}</table>`;
+<table><tr><th>邮箱</th><th>角色</th><th>状态</th><th>注册</th><th>操作</th></tr>${users.map((user) => userRow(user, admin)).join("")}</table>
+<h2>待审核的共享来源（${nominations.length}）</h2>
+${nominations.length ? `<table><tr><th>网址</th><th>机构</th><th>提交时间</th><th>操作</th></tr>${nominations.map((n) => `<tr><td><code>${escapeHtml(n.url)}</code></td><td>${escapeHtml(n.org ?? "")}</td><td>${new Date(n.createdAt).toISOString().slice(0, 10)}</td><td>
+<form method="post" action="/admin/nominations/${encodeURIComponent(n.id)}/approve" style="margin:0;display:inline"><button class="link" type="submit">批准</button></form> ·
+<form method="post" action="/admin/nominations/${encodeURIComponent(n.id)}/reject" style="margin:0;display:inline"><button class="link" type="submit">拒绝</button></form></td></tr>`).join("")}</table>` : `<p class="muted">没有待审核的来源。</p>`}
+<h2>最近的找机会运行</h2>
+${runs.length ? `<table><tr><th>用户</th><th>目标 ID</th><th>触发</th><th>状态</th><th>统计</th><th>耗时</th></tr>${runs.map((r) => `<tr><td>${escapeHtml(r.email)}</td><td><code>${escapeHtml(r.goalId.slice(0, 8))}</code></td><td>${r.trigger}</td><td>${escapeHtml(r.status)}${r.error ? `（${escapeHtml(r.error)}）` : ""}</td><td>页面 ${r.stats.pagesFetched} · 机会 ${r.stats.opportunities} · 评估 ${r.stats.assessed}</td><td>${r.startedAt && r.finishedAt ? `${Math.round((r.finishedAt - r.startedAt) / 1000)} 秒` : ""}</td></tr>`).join("")}</table>` : `<p class="muted">还没有运行记录。</p>`}`;
   return html(layout("管理", body, admin), status);
 }
 
@@ -70,7 +80,23 @@ function userAction(
   };
 }
 
+function nominationAction(action: "approve" | "reject"): Route {
+  return {
+    method: "POST",
+    pattern: new RegExp(`^/admin/nominations/([0-9a-f-]+)/${action}$`),
+    async handler(ctx, [id]) {
+      const admin = await requireAdmin(ctx);
+      const now = ctx.deps.now();
+      if (!(await decideNomination(ctx.env.PRIVATE_DB, id, action === "approve" ? "approved" : "rejected", now))) throw new HttpError(409, "这条提名已处理过");
+      await audit(ctx.env.PRIVATE_DB, { actorUserId: admin.id, action: `admin.nomination_${action}`, targetUserId: null }, now);
+      return redirect("/admin");
+    },
+  };
+}
+
 export const routes: Route[] = [
+  nominationAction("approve"),
+  nominationAction("reject"),
   {
     method: "GET",
     pattern: /^\/admin$/,
