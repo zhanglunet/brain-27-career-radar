@@ -91,7 +91,13 @@ test("输出上限为 8192 token", async () => {
 
 test("超时真的会中断请求", async () => {
   const fetch = (_url, init) => new Promise((_, reject) => init.signal.addEventListener("abort", () => reject(init.signal.reason)));
-  await assert.rejects(() => createDeepSeekProvider({ apiKey: "k", fetch, timeoutMs: 20 }).completeJson(MESSAGES), (error) => error instanceof LlmError && error.kind === "unavailable");
+  // Node 22 中 AbortSignal.timeout 的计时器不保持事件循环；这里用一个普通计时器撑住，直到超时触发。
+  const keepAlive = setInterval(() => {}, 1000);
+  try {
+    await assert.rejects(() => createDeepSeekProvider({ apiKey: "k", fetch, timeoutMs: 20 }).completeJson(MESSAGES), (error) => error instanceof LlmError && error.kind === "unavailable");
+  } finally {
+    clearInterval(keepAlive);
+  }
 });
 
 test("材料过长时页面给出精简提示", async () => {
@@ -108,4 +114,77 @@ test("材料过长时页面给出精简提示", async () => {
 test("system 提示词包含小写的 json", () => {
   const [system] = buildDraftMessages({ resumeText: null, intentText: "x" });
   assert.ok(system.content.includes("json"));
+});
+
+// ── PR #139 评审：确认草稿必须与档案写入在同一事务；版本号分配必须并发安全 ──
+async function confirmSetup(responses) {
+  const { env, deps } = await makeEnv();
+  deps.llm = fakeLlm(responses);
+  const c = await activeUser(env, deps, "atomic@example.test");
+  await c.post("/consent", { agree: "yes", version: CONSENT_VERSION });
+  const draft = async (intent) => (await c.post("/profile/draft", { intent })).headers.get("location").split("/").pop();
+  return { env, deps, c, draft, scope: forUser(env.PRIVATE_DB, c.user.id) };
+}
+
+test("档案写入失败时草稿仍可重试确认", async () => {
+  const { env, c, draft, scope } = await confirmSetup([{ profile: { basics: { name: "甲" } }, target: {} }]);
+  const id = await draft("x");
+  const realBatch = env.PRIVATE_DB.batch.bind(env.PRIVATE_DB);
+  let failOnce = true;
+  env.PRIVATE_DB.batch = async (statements) => {
+    if (failOnce && statements.some((s) => /INTO profiles/.test(s.sql))) {
+      failOnce = false;
+      throw new Error("D1 transient failure");
+    }
+    return realBatch(statements);
+  };
+  const first = await c.post(`/profile/drafts/${id}/confirm`, { name: "甲" });
+  assert.equal(first.status, 500);
+  assert.equal((await scope.drafts.get(id)).status, "pending");
+  assert.equal(await scope.profile.current(), null);
+  const retry = await c.post(`/profile/drafts/${id}/confirm`, { name: "甲" });
+  assert.equal(retry.status, 303);
+  assert.equal((await scope.profile.current()).data.basics.name, "甲");
+});
+
+test("两个标签页同时确认不同草稿，两份内容都可找回", async () => {
+  const { c, draft, scope } = await confirmSetup([{ profile: {}, target: {} }, { profile: {}, target: {} }]);
+  const first = await draft("a");
+  const second = await draft("b");
+  const results = await Promise.all([
+    c.post(`/profile/drafts/${first}/confirm`, { name: "第一份" }),
+    c.post(`/profile/drafts/${second}/confirm`, { name: "第二份" }),
+  ]);
+  assert.deepEqual(results.map((r) => r.status), [303, 303]);
+  const current = await scope.profile.current();
+  const versions = await scope.profile.versions();
+  assert.equal(current.version, 2);
+  assert.deepEqual(versions.map((v) => v.version), [1]);
+  const names = [current.data.basics.name, ...versions.map((v) => v.data.basics.name)].sort();
+  assert.deepEqual(names, ["第一份", "第二份"]);
+});
+
+test("同一草稿并发确认两次，只有一次生效", async () => {
+  const { c, draft, scope } = await confirmSetup([{ profile: {}, target: {} }]);
+  const id = await draft("x");
+  const results = await Promise.all([
+    c.post(`/profile/drafts/${id}/confirm`, { name: "A" }),
+    c.post(`/profile/drafts/${id}/confirm`, { name: "B" }),
+  ]);
+  assert.deepEqual(results.map((r) => r.status).sort(), [303, 409]);
+  assert.equal((await scope.profile.current()).version, 1);
+  assert.deepEqual(await scope.profile.versions(), []);
+});
+
+test("数据层并发确认分配不同版本号，旧内容进入历史", async () => {
+  const { scope } = await confirmSetup([{}]);
+  const [v1, v2] = await Promise.all([
+    scope.profile.confirm(normalizeProfile({ basics: { name: "并发甲" } }), 10),
+    scope.profile.confirm(normalizeProfile({ basics: { name: "并发乙" } }), 11),
+  ]);
+  assert.deepEqual([v1, v2].sort(), [1, 2]);
+  const current = await scope.profile.current();
+  const versions = await scope.profile.versions();
+  const names = [current.data.basics.name, ...versions.map((v) => v.data.basics.name)].sort();
+  assert.deepEqual(names, ["并发乙", "并发甲"]);
 });

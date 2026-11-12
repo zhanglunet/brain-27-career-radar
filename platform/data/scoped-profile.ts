@@ -47,25 +47,68 @@ export function profileFor(db: D1Database, userId: string) {
     return row ? { data: normalizeProfile(parse(row.data_json)), version: row.version, confirmedAt: row.confirmed_at } : null;
   }
 
+  /**
+   * 写入新版本的两条语句：先把当前版本原样归档，再写新内容、版本号由数据库加一。
+   * 放在同一个 batch（事务）里执行，并发确认也不会分到同一个版本号或丢掉内容。
+   */
+  function writeVersionStatements(data: ProfileData, now: number): D1PreparedStatement[] {
+    return [
+      db
+        .prepare("INSERT INTO profile_versions (id, user_id, version, data_json, confirmed_at) SELECT ?, user_id, version, data_json, confirmed_at FROM profiles WHERE user_id = ?")
+        .bind(crypto.randomUUID(), userId),
+      db
+        .prepare(
+          `INSERT INTO profiles (user_id, data_json, version, confirmed_at) VALUES (?, ?, 1, ?)
+           ON CONFLICT (user_id) DO UPDATE SET data_json = excluded.data_json, version = profiles.version + 1, confirmed_at = excluded.confirmed_at
+           RETURNING version`,
+        )
+        .bind(userId, JSON.stringify(normalizeProfile(data)), now),
+    ];
+  }
+
+  function versionFrom(results: D1Result[], index: number): number {
+    const row = (results[index]?.results?.[0] ?? null) as { version?: number } | null;
+    if (typeof row?.version !== "number") throw new Error("profile version missing");
+    return row.version;
+  }
+
   async function confirm(data: ProfileData, now: number): Promise<number> {
-    const existing = await current();
-    const version = (existing?.version ?? 0) + 1;
-    const statements = [];
-    if (existing) {
+    return versionFrom(await db.batch(writeVersionStatements(data, now)), 1);
+  }
+
+  /**
+   * 确认草稿：占住草稿、归档当前版本、写新版本、写目标画像，全部在一个事务里。
+   * 草稿已被处理时，状态更新会把 status 设为 NULL 触发非空约束，整个事务回滚。
+   */
+  async function confirmDraft(
+    draftId: string,
+    data: ProfileData,
+    goal: { goalId: string; target: GoalTarget } | null,
+    now: number,
+  ): Promise<{ ok: true; version: number } | { ok: false }> {
+    const statements = [
+      db
+        .prepare("UPDATE profile_drafts SET status = CASE WHEN status = 'pending' THEN 'confirmed' ELSE NULL END, decided_at = ? WHERE id = ? AND user_id = ?")
+        .bind(now, draftId, userId),
+      ...writeVersionStatements(data, now),
+    ];
+    if (goal) {
       statements.push(db
-        .prepare("INSERT INTO profile_versions (id, user_id, version, data_json, confirmed_at) VALUES (?, ?, ?, ?, ?)")
-        .bind(crypto.randomUUID(), userId, existing.version, JSON.stringify(existing.data), existing.confirmedAt));
+        .prepare("UPDATE goals SET target_json = ? WHERE id = ? AND user_id = ?")
+        .bind(JSON.stringify(normalizeGoalTarget(goal.target)), goal.goalId, userId));
     }
-    statements.push(db
-      .prepare("INSERT INTO profiles (user_id, data_json, version, confirmed_at) VALUES (?, ?, ?, ?) ON CONFLICT (user_id) DO UPDATE SET data_json = excluded.data_json, version = excluded.version, confirmed_at = excluded.confirmed_at")
-      .bind(userId, JSON.stringify(normalizeProfile(data)), version, now));
-    await db.batch(statements);
-    return version;
+    try {
+      return { ok: true, version: versionFrom(await db.batch(statements), 2) };
+    } catch (error) {
+      if (/NOT NULL constraint failed: profile_drafts\.status/.test(String(error))) return { ok: false };
+      throw error;
+    }
   }
 
   return {
     current,
     confirm,
+    confirmDraft,
     async versions(): Promise<{ version: number; data: ProfileData; confirmedAt: number }[]> {
       const { results } = await db
         .prepare("SELECT version, data_json, confirmed_at FROM profile_versions WHERE user_id = ? ORDER BY version DESC")
@@ -80,8 +123,11 @@ export function profileFor(db: D1Database, userId: string) {
         .bind(userId)
         .first<{ id: string; data_json: string }>();
       if (!previous) return null;
-      await db.prepare("DELETE FROM profile_versions WHERE id = ? AND user_id = ?").bind(previous.id, userId).run();
-      return confirm(normalizeProfile(parse(previous.data_json)), now);
+      const results = await db.batch([
+        ...writeVersionStatements(normalizeProfile(parse(previous.data_json)), now),
+        db.prepare("DELETE FROM profile_versions WHERE id = ? AND user_id = ?").bind(previous.id, userId),
+      ]);
+      return versionFrom(results, 1);
     },
   };
 }

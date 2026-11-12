@@ -227,12 +227,17 @@ export const routes: Route[] = [
       const draft = await scope.drafts.get(id);
       if (!draft) throw new HttpError(404, "草稿不存在");
       const form = await readForm(ctx.request);
-      const now = ctx.deps.now();
-      // 先占住草稿（带条件的单条 UPDATE），再写档案：重复提交只有第一次生效。
-      if (!(await scope.drafts.decide(id, "confirmed", now))) return html(layout("草稿", notice("这份草稿已处理过。", "error"), user), 409);
-      const version = await scope.profile.confirm(formToProfile(form), now);
-      if (draft.goalId) await scope.goals.setTarget(draft.goalId, formToTarget(form));
-      logEvent("platform.profile.confirm", { userId: user.id, count: version });
+      const alreadyDecided = () => html(layout("草稿", notice("这份草稿已处理过。", "error"), user), 409);
+      if (draft.status !== "pending") return alreadyDecided();
+      // 占住草稿与写入档案、目标画像在同一事务：失败时整体回滚，草稿仍可重试；重复提交只有一次生效。
+      const result = await scope.profile.confirmDraft(
+        id,
+        formToProfile(form),
+        draft.goalId ? { goalId: draft.goalId, target: formToTarget(form) } : null,
+        ctx.deps.now(),
+      );
+      if (!result.ok) return alreadyDecided();
+      logEvent("platform.profile.confirm", { userId: user.id, count: result.version });
       return redirect("/profile");
     },
   },
