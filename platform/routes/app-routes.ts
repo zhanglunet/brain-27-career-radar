@@ -8,6 +8,7 @@ import { recordConsent } from "../data/consents.ts";
 import { eraseUser } from "../data/erase.ts";
 import { forUser } from "../data/scoped.ts";
 import type { User } from "../data/tables.ts";
+import type { GoalTarget } from "../profile/schema.ts";
 import { HttpError, clearSessionCookie, escapeHtml, html, jsonDownload, logEvent, readForm, redirect } from "../http.ts";
 import { layout, notice } from "../views.ts";
 
@@ -16,10 +17,22 @@ const DESCRIPTION_MAX = 4000;
 
 const length = (value: string) => [...value].length;
 
+function targetSummary(target: GoalTarget | null): string {
+  if (!target) return `<p class="muted">还没有确认目标画像。可以在"我的档案"里让智能体根据这个目标整理。</p>`;
+  const rows: [string, string][] = [
+    ["类型", target.kinds.join("、")],
+    ["方向", target.directions.join("、")],
+    ["城市", target.cities.join("、")],
+    ["时间", target.timing ?? ""],
+    ["其他", target.notes ?? ""],
+  ];
+  return `<table>${rows.filter(([, value]) => value).map(([label, value]) => `<tr><th>${label}</th><td>${escapeHtml(value)}</td></tr>`).join("")}</table>`;
+}
+
 async function homePage(db: D1Database, user: User, message = "", status = 200): Promise<Response> {
   const goals = await forUser(db, user.id).goals.list();
   const list = goals.length
-    ? `<ul class="cards">${goals.map((goal) => `<li><strong>${escapeHtml(goal.title)}</strong><p>${escapeHtml(goal.description)}</p>
+    ? `<ul class="cards">${goals.map((goal) => `<li><strong>${escapeHtml(goal.title)}</strong><p>${escapeHtml(goal.description)}</p>${targetSummary(goal.target)}
 <form method="post" action="/goals/${encodeURIComponent(goal.id)}/delete" style="margin:0"><button class="link" type="submit">删除</button></form></li>`).join("")}</ul>`
     : `<p class="muted">还没有目标。用一段话描述你想找什么样的机会，比如方向、岗位类型、城市和时间。</p>`;
   const body = `<h1>我的目标</h1>${message ? notice(message, "error") : ""}${list}
