@@ -142,7 +142,7 @@ test("R2 删除失败时数据库不删", async () => {
 test("DeepSeek 请求格式", async () => {
   // fakeFetch 记录请求：URL === "https://api.deepseek.com/chat/completions"
   // headers.authorization === "Bearer test-key"；body.model === "deepseek-chat"
-  // body.response_format.type === "json_object"；body.temperature === 0；body.max_tokens === 4000
+  // body.response_format.type === "json_object"；body.temperature === 0；body.max_tokens === 8192
 });
 test("解析 JSON 内容与 usage", async () => {
   // 返回 { choices:[{message:{content:'{"a":1}'}}], usage:{prompt_tokens:10, completion_tokens:5} }
