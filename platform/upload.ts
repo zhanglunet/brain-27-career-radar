@@ -41,7 +41,6 @@ export function sniffResumeType(bytes: Uint8Array, filename: string): ResumeMime
 /** 仅用于页面展示的文件名：去路径、去控制字符、截断到 100 字。 */
 export function displayFilename(raw: string): string {
   const base = raw.split(/[\\/]/).pop() ?? "";
-  // eslint-disable-next-line no-control-regex
   const cleaned = base.replace(/[\u0000-\u001f\u007f]/g, "").trim();
   return [...(cleaned || "简历")].slice(0, 100).join("");
 }
