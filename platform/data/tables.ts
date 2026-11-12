@@ -2,6 +2,10 @@
 
 /** 账号删除时按此顺序删除 `WHERE user_id = ?` 的行，最后再删 users。 */
 export const USER_TABLES = [
+  // 这三张表引用 goals，必须排在 goals 之前删除。
+  "user_opportunities",
+  "find_runs",
+  "goal_sources",
   "goals",
   "consents",
   "password_resets",

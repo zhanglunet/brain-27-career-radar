@@ -35,11 +35,13 @@ function fakeWrangler({ migrationsExit }) {
   return { dir, calls: () => { try { return readFileSync(log, "utf-8"); } catch { return ""; } } };
 }
 
-test("私有平台配置关闭 workers.dev 与预览 URL，且无 cron / assets；绑定 RESUMES 与 AI", () => {
+test("私有平台配置关闭 workers.dev 与预览 URL，无 assets；绑定 RESUMES、AI、队列与每日 cron", () => {
   const config = parseJsonc(read("platform/wrangler.jsonc"));
   assert.equal(config.workers_dev, false);
   assert.equal(config.preview_urls, false);
-  assert.equal(config.triggers, undefined);
+  assert.deepEqual(config.triggers, { crons: ["0 0 * * *"] });
+  assert.deepEqual(config.queues.producers, [{ binding: "FIND_QUEUE", queue: "job-agent-platform-find" }]);
+  assert.deepEqual(config.queues.consumers, [{ queue: "job-agent-platform-find", max_batch_size: 1, max_retries: 2 }]);
   assert.equal(config.assets, undefined);
   assert.deepEqual(config.ai, { binding: "AI" });
   assert.deepEqual(config.r2_buckets, [{ binding: "RESUMES", bucket_name: "job-agent-platform-resumes" }]);

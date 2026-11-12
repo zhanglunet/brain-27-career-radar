@@ -34,6 +34,8 @@ export async function makeEnv(overrides = {}) {
     RESUMES: createFakeR2(),
     AI: fakeAi(),
     DEEPSEEK_API_KEY: "test-key",
+    BOCHA_API_KEY: "test-bocha",
+    FIND_QUEUE: { sent: [], async send(body) { this.sent.push(body); } },
     ...overrides,
   };
   let current = 1_000_000;

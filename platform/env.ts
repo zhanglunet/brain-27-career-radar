@@ -10,6 +10,10 @@ export interface PlatformEnv {
   RESUMES: R2Bucket;
   /** Workers AI：只用于把简历转成文本，转换在 Cloudflare 内完成。 */
   AI: ResumeConverter;
+  /** 找机会运行队列。 */
+  FIND_QUEUE: Queue<FindMessage>;
+  /** 博查 Web Search API key（Workers Secret）。 */
+  BOCHA_API_KEY?: string;
   /** DeepSeek API key（Workers Secret）。 */
   DEEPSEEK_API_KEY?: string;
   /** 唯一允许的主机名，例如 platform.example.test。 */
@@ -21,6 +25,8 @@ export interface PlatformEnv {
   /** Cloudflare Access 应用 AUD；设置后 /admin 额外校验 Access JWT。 */
   ACCESS_AUD?: string;
 }
+
+export type FindMessage = { runId: string; userId: string };
 
 export interface ResumeConverter {
   toMarkdown(file: { name: string; blob: Blob }): Promise<{ format: "markdown"; data: string } | { format: "error"; error: string }>;

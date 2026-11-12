@@ -67,9 +67,15 @@ export function forUser(db: D1Database, userId: string) {
         .run();
       return result.meta.changes === 1;
     },
+    /** 删除目标及其机会、运行记录与来源（同一事务）。 */
     async remove(goalId: string): Promise<boolean> {
-      const result = await db.prepare("DELETE FROM goals WHERE id = ? AND user_id = ?").bind(goalId, userId).run();
-      return result.meta.changes === 1;
+      const results = await db.batch([
+        db.prepare("DELETE FROM user_opportunities WHERE goal_id = ? AND user_id = ?").bind(goalId, userId),
+        db.prepare("DELETE FROM find_runs WHERE goal_id = ? AND user_id = ?").bind(goalId, userId),
+        db.prepare("DELETE FROM goal_sources WHERE goal_id = ? AND user_id = ?").bind(goalId, userId),
+        db.prepare("DELETE FROM goals WHERE id = ? AND user_id = ?").bind(goalId, userId),
+      ]);
+      return results[3].meta.changes === 1;
     },
   };
 
