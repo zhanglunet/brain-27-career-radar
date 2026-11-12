@@ -179,6 +179,8 @@ export const routes: Route[] = [
       if (!intent && goal) intent = `${goal.title}\n${goal.description}`;
       const resume = resumeId ? await scope.resumes.get(resumeId) : null;
       if (resumeId && !resume) throw new HttpError(404, "简历不存在");
+      // 先确认大模型可用（同意条款、key），再做简历转换，避免白白调用转换服务。
+      const llm = await llmFor(ctx, user);
       let resumeText: string | null = null;
       if (resume) {
         const object = await ctx.env.RESUMES.get(resumeKey(user.id, resume.id));
@@ -191,7 +193,6 @@ export const routes: Route[] = [
         }
         await scope.resumes.setTextChars(resume.id, [...resumeText].length);
       }
-      const llm = await llmFor(ctx, user);
       let draft;
       try {
         draft = await draftFromInputs(llm, { resumeText, intentText: intent || null });

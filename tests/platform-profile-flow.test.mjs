@@ -236,3 +236,14 @@ test("form 解析：缺列补 null、多余列并入最后一列、空行跳过"
     { kind: "other", title: "示例项目", venue: null, year: null },
   ]);
 });
+
+test("DeepSeek 不可用（缺 key）时不调用简历转换", async () => {
+  const { env, deps, c, scope } = await setup();
+  delete deps.llm;
+  env.DEEPSEEK_API_KEY = undefined;
+  await c.upload("/resume", "resume", PDF);
+  const [resume] = await scope.resumes.list();
+  const response = await c.post("/profile/draft", { resumeId: resume.id });
+  assert.equal(response.status, 503);
+  assert.equal(env.AI.calls.length, 0);
+});

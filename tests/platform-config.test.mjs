@@ -75,6 +75,8 @@ test("部署脚本 --dry-run 生成的配置含自定义域名、真实 ID 与 A
   assert.equal(config.vars.PLATFORM_HOST, "jobs.example.test");
   assert.equal(config.vars.ACCESS_AUD, "aud-xyz");
   assert.equal(config.vars.ACCESS_TEAM_DOMAIN, "team.example.test");
+  assert.deepEqual(config.r2_buckets, [{ binding: "RESUMES", bucket_name: "job-agent-platform-resumes" }]);
+  assert.deepEqual(config.ai, { binding: "AI" });
   assert.ok(config.main.endsWith("platform/worker.ts") && config.main.startsWith("/"));
   assert.ok(byBinding.PRIVATE_DB.migrations_dir.endsWith("platform/migrations") && byBinding.PRIVATE_DB.migrations_dir.startsWith("/"));
 });
