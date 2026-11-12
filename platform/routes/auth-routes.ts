@@ -1,5 +1,5 @@
 /** 注册、登录、退出、重置密码与首个管理员初始化。 */
-import { currentUser, requireUser, sessionToken } from "../auth.ts";
+import { currentUser, sessionToken } from "../auth.ts";
 import type { Route } from "../context.ts";
 import { hashPassword, timingSafeEqual, verifyPassword } from "../crypto.ts";
 import {
@@ -191,14 +191,6 @@ export const routes: Route[] = [
       if (user) await clearLoginFailures(db, user.email);
       await audit(db, { actorUserId: userId, action: "user.password_reset", targetUserId: userId }, now);
       return redirect("/login", clearSessionCookie());
-    },
-  },
-  {
-    method: "GET",
-    pattern: /^\/$/,
-    async handler(ctx) {
-      const user = await requireUser(ctx);
-      return html(messagePage("我的目标", "功能建设中。", user));
     },
   },
 ];

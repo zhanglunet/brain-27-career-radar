@@ -2,10 +2,11 @@
 import type { Ctx, Route } from "./context.ts";
 import type { Deps, PlatformEnv } from "./env.ts";
 import { HttpError, html, isAllowedHost, isAllowedOrigin, logEvent, redirect, text, withSecurityHeaders } from "./http.ts";
+import { routes as appRoutes } from "./routes/app-routes.ts";
 import { routes as authRoutes } from "./routes/auth-routes.ts";
 import { messagePage } from "./views.ts";
 
-const ROUTES: Route[] = [...authRoutes];
+const ROUTES: Route[] = [...authRoutes, ...appRoutes];
 
 const ROBOTS = "User-agent: *\nDisallow: /\n";
 
