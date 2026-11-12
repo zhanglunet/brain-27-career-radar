@@ -1,4 +1,5 @@
 /** 私有平台 Worker 的绑定与可注入依赖。 */
+import type { LlmProvider } from "./llm/types.ts";
 
 export interface PlatformEnv {
   /** 私有 D1：账号与全部用户数据。 */
@@ -27,5 +28,9 @@ export interface ResumeConverter {
 
 export interface Deps {
   now(): number;
+  /** 出站请求；测试可注入替身。 */
+  fetch?: typeof fetch;
+  /** 直接指定大模型实现（测试或切换供应商时使用），优先于 DeepSeek。 */
+  llm?: LlmProvider;
   fetchJwks?(url: string): Promise<unknown>;
 }
