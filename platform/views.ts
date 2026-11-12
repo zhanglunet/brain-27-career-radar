@@ -18,7 +18,7 @@ code{word-break:break-all}ul.cards{list-style:none;padding:0;display:grid;gap:12
 
 export function layout(title: string, body: string, user: User | null = null): string {
   const nav = user
-    ? `<nav><a href="/">我的目标</a><a href="/account">账号</a>${user.role === "admin" ? '<a href="/admin">管理</a>' : ""}<form method="post" action="/logout" style="margin:0"><button class="link" type="submit">退出</button></form></nav>`
+    ? `<nav><a href="/">我的目标</a><a href="/profile">我的档案</a><a href="/account">账号</a>${user.role === "admin" ? '<a href="/admin">管理</a>' : ""}<form method="post" action="/logout" style="margin:0"><button class="link" type="submit">退出</button></form></nav>`
     : `<nav><a href="/login">登录</a><a href="/register">注册</a></nav>`;
   return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>${escapeHtml(title)}</title><style>${STYLE}</style></head><body><main><header><strong>求职空间</strong>${nav}</header>${body}</main></body></html>`;
 }

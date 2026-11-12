@@ -63,6 +63,12 @@ export function client(env, deps, { fetchHandler = handleRequest } = {}) {
   return {
     jar,
     get: (path, headers = {}) => send(path, { headers }),
+    upload: (path, fileField, file, fields = {}) => {
+      const form = new FormData();
+      for (const [key, value] of Object.entries(fields)) form.set(key, value);
+      form.set(fileField, new File([file.bytes], file.name, { type: file.type ?? "application/octet-stream" }));
+      return send(path, { method: "POST", body: form, headers: { origin: ORIGIN } });
+    },
     post: (path, form = {}, headers = {}) => send(path, {
       method: "POST",
       body: new URLSearchParams(form).toString(),

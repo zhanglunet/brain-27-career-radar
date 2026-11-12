@@ -6,9 +6,10 @@ import { HttpError, html, isAllowedHost, isAllowedOrigin, logEvent, redirect, te
 import { routes as adminRoutes } from "./routes/admin-routes.ts";
 import { routes as appRoutes } from "./routes/app-routes.ts";
 import { routes as authRoutes } from "./routes/auth-routes.ts";
+import { routes as profileRoutes } from "./routes/profile-routes.ts";
 import { messagePage } from "./views.ts";
 
-const ROUTES: Route[] = [...authRoutes, ...appRoutes, ...adminRoutes];
+const ROUTES: Route[] = [...authRoutes, ...appRoutes, ...profileRoutes, ...adminRoutes];
 
 const ROBOTS = "User-agent: *\nDisallow: /\n";
 

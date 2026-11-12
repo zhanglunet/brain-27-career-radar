@@ -2,6 +2,7 @@
  * 按用户隔离的数据访问入口。所有用户数据读写都必须经 forUser(db, userId)，
  * 每条 SQL 都绑定闭包中的 userId，调用方无法读写他人的行。
  */
+import { resumesFor } from "./scoped-resumes.ts";
 import { usageFor } from "./scoped-usage.ts";
 import { USER_COLUMNS, USER_TABLES, toUser } from "./tables.ts";
 import type { User } from "./tables.ts";
@@ -45,6 +46,7 @@ export function forUser(db: D1Database, userId: string) {
   return {
     goals,
     usage: usageFor(db, userId),
+    resumes: resumesFor(db, userId),
     async exportAll(now: number): Promise<UserExport> {
       const row = await db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`).bind(userId).first<Parameters<typeof toUser>[0]>();
       if (!row) throw new Error("user not found");
