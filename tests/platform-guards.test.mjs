@@ -8,7 +8,11 @@ import { applyPlatformMigrations, createSqliteD1 } from "./helpers/sqlite-d1.mjs
 import { ID_ONLY_TABLES, USER_TABLES } from "../platform/data/tables.ts";
 
 const REPO = fileURLToPath(new URL("..", import.meta.url));
-const PRIVATE_TABLES = ["users", "invites", "sessions", "consents", "password_resets", "login_attempts", "goals", "audit_log"];
+const PRIVATE_TABLES = [
+  "users", "invites", "sessions", "consents", "password_resets", "login_attempts", "goals", "audit_log",
+  "resumes", "profiles", "profile_versions", "profile_drafts", "llm_usage",
+  "goal_sources", "find_runs", "user_opportunities", "page_cache", "robots_cache", "platform_sources", "source_nominations",
+];
 
 function walk(dir) {
   const out = [];

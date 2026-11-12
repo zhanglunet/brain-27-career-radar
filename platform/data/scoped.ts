@@ -6,6 +6,7 @@ import { normalizeGoalTarget } from "../profile/schema.ts";
 import type { GoalTarget, ProfileData } from "../profile/schema.ts";
 import { draftsFor, profileFor } from "./scoped-profile.ts";
 import type { Draft } from "./scoped-profile.ts";
+import { sourcesFor } from "./scoped-find.ts";
 import { resumesFor } from "./scoped-resumes.ts";
 import type { Resume } from "./scoped-resumes.ts";
 import { usageFor } from "./scoped-usage.ts";
@@ -85,6 +86,7 @@ export function forUser(db: D1Database, userId: string) {
     resumes: resumesFor(db, userId),
     profile: profileFor(db, userId),
     drafts: draftsFor(db, userId),
+    sources: sourcesFor(db, userId),
     async exportAll(now: number): Promise<UserExport> {
       const row = await db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`).bind(userId).first<Parameters<typeof toUser>[0]>();
       if (!row) throw new Error("user not found");
