@@ -28,7 +28,7 @@
 - 日志只经 `logEvent`，字段白名单：`userId`、`targetUserId`、`route`、`status`、`count`、`reason`；不记录邮箱、密码、令牌、表单内容。
 - 测试只用虚构数据（`@example.test` 邮箱、`platform.test` 主机名）。
 - TS 写法须兼容 Node 原生类型剥离：不用 `enum`、`namespace`、构造函数参数属性；类型导入用 `import type`；相对导入带 `.ts` 扩展名。
-- 提交信息结尾：`Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`。
+- 提交信息结尾带会话要求的 Co-Authored-By 署名行（不要把署名邮箱写进 docs/，仓库隐私扫描会拦）。
 
 ## Review Focus
 
