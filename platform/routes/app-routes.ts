@@ -5,6 +5,7 @@ import type { Route } from "../context.ts";
 import { verifyPassword } from "../crypto.ts";
 import { audit, countActiveAdmins, findPasswordHash } from "../data/accounts.ts";
 import { recordConsent } from "../data/consents.ts";
+import { eraseUser } from "../data/erase.ts";
 import { forUser } from "../data/scoped.ts";
 import type { User } from "../data/tables.ts";
 import { HttpError, clearSessionCookie, escapeHtml, html, jsonDownload, logEvent, readForm, redirect } from "../http.ts";
@@ -129,7 +130,7 @@ export const routes: Route[] = [
       const stored = await findPasswordHash(db, user.id);
       if (!stored || !(await verifyPassword(password, stored))) return accountPage(user, "密码不正确。", 400);
       if (user.role === "admin" && (await countActiveAdmins(db)) <= 1) return accountPage(user, "不能删除唯一的管理员账号。", 400);
-      await forUser(db, user.id).deleteAll();
+      await eraseUser(ctx.env, user.id);
       await audit(db, { actorUserId: user.id, action: "account.delete", targetUserId: user.id }, ctx.deps.now());
       logEvent("platform.account.delete", { userId: user.id });
       return redirect("/login", clearSessionCookie());

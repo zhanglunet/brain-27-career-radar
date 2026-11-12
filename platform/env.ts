@@ -5,6 +5,12 @@ export interface PlatformEnv {
   PRIVATE_DB: D1Database;
   /** 公开 D1：只允许经 platform/data/public-readonly.ts 读取。 */
   PUBLIC_DB: D1Database;
+  /** 私有 R2：简历文件，键以 `${userId}/` 开头，禁止公共访问。 */
+  RESUMES: R2Bucket;
+  /** Workers AI：只用于把简历转成文本，转换在 Cloudflare 内完成。 */
+  AI: ResumeConverter;
+  /** DeepSeek API key（Workers Secret）。 */
+  DEEPSEEK_API_KEY?: string;
   /** 唯一允许的主机名，例如 platform.example.test。 */
   PLATFORM_HOST: string;
   /** 首个管理员初始化口令；建好管理员后应删除该 secret。 */
@@ -13,6 +19,10 @@ export interface PlatformEnv {
   ACCESS_TEAM_DOMAIN?: string;
   /** Cloudflare Access 应用 AUD；设置后 /admin 额外校验 Access JWT。 */
   ACCESS_AUD?: string;
+}
+
+export interface ResumeConverter {
+  toMarkdown(file: { name: string; blob: Blob }): Promise<{ format: "markdown"; data: string } | { format: "error"; error: string }>;
 }
 
 export interface Deps {

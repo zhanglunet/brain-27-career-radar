@@ -10,7 +10,7 @@ import {
   listUsers,
   setUserStatus,
 } from "../data/accounts.ts";
-import { forUser } from "../data/scoped.ts";
+import { eraseUser } from "../data/erase.ts";
 import { revokeUserSessions } from "../data/sessions.ts";
 import type { User } from "../data/tables.ts";
 import { HttpError, escapeHtml, html, logEvent, redirect } from "../http.ts";
@@ -112,7 +112,7 @@ export const routes: Route[] = [
     if (target.role === "admin" && target.status === "active" && (await countActiveAdmins(db)) <= 1) {
       throw new HttpError(400, "不能删除唯一的管理员");
     }
-    await forUser(db, target.id).deleteAll();
+    await eraseUser(ctx.env, target.id);
   }),
   userAction("reset-link", async (ctx, admin, target) => {
     if (target.status === "pending") throw new HttpError(400, "待审批用户不能重置密码");
