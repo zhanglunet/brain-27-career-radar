@@ -79,3 +79,38 @@ test("经 Worker 入口的所有响应都带 private, no-store；错误 Host 被
   const foreign = await fetchHandler(new Request("https://job-agent-platform.someone.workers.dev/"), env);
   assert.equal(foreign.status, 404);
 });
+
+test("两个用户的简历与档案互相隔离（经 Worker 入口与真实 DeepSeek 调用路径）", async (t) => {
+  const { deepSeekReply } = await import("./helpers/fake-llm.mjs");
+  const outbound = [];
+  t.mock.method(globalThis, "fetch", async (url, init) => {
+    outbound.push(String(url));
+    const body = JSON.parse(init.body);
+    const isA = body.messages[1].content.includes("甲的简历");
+    return deepSeekReply(JSON.stringify({ profile: { basics: { name: isA ? "甲（示例）" : "乙（示例）" }, skills: [isA ? "甲技能" : "乙技能"] }, target: {} }));
+  });
+  const { env, users } = await setup();
+  const { a, b } = users;
+  const pdf = (text) => ({ name: `${text}.pdf`, type: "application/pdf", bytes: new TextEncoder().encode(`%PDF-1.7 ${text}`) });
+  for (const [user, text] of [[a, "甲的简历"], [b, "乙的简历"]]) {
+    assert.equal((await user.client.upload("/resume", "resume", pdf(text))).status, 303);
+    const [resume] = await forUser(env.PRIVATE_DB, user.id).resumes.list();
+    const draft = await user.client.post("/profile/draft", { resumeId: resume.id });
+    assert.equal(draft.status, 303);
+    const id = draft.headers.get("location").split("/").pop();
+    const page = await (await user.client.get(`/profile/drafts/${id}`)).text();
+    const name = page.match(/name="name" value="([^"]*)"/)[1];
+    assert.equal((await user.client.post(`/profile/drafts/${id}/confirm`, { name, skills: text.startsWith("甲") ? "甲技能" : "乙技能" })).status, 303);
+  }
+  assert.ok(outbound.every((url) => url === "https://api.deepseek.com/chat/completions"));
+  const aProfile = await (await a.client.get("/profile")).text();
+  assert.match(aProfile, /甲（示例）/);
+  assert.doesNotMatch(aProfile, /乙（示例）|乙的简历|乙技能/);
+  const aExport = await (await a.client.get("/account/export")).text();
+  assert.doesNotMatch(aExport, /乙（示例）|乙的简历|乙技能/);
+  const [bResume] = await forUser(env.PRIVATE_DB, b.id).resumes.list();
+  assert.equal((await a.client.get(`/resume/${bResume.id}`)).status, 404);
+  assert.equal((await a.client.post("/account/delete", { password: "a-password-1" })).status, 303);
+  assert.ok(env.RESUMES.keys().every((key) => key.startsWith(`${b.id}/`)));
+  assert.equal(env.RESUMES.keys().length, 1);
+});

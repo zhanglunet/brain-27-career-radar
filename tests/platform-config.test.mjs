@@ -35,20 +35,21 @@ function fakeWrangler({ migrationsExit }) {
   return { dir, calls: () => { try { return readFileSync(log, "utf-8"); } catch { return ""; } } };
 }
 
-test("私有平台配置关闭 workers.dev 与预览 URL，且无 cron / assets / ai", () => {
+test("私有平台配置关闭 workers.dev 与预览 URL，且无 cron / assets；绑定 RESUMES 与 AI", () => {
   const config = parseJsonc(read("platform/wrangler.jsonc"));
   assert.equal(config.workers_dev, false);
   assert.equal(config.preview_urls, false);
   assert.equal(config.triggers, undefined);
   assert.equal(config.assets, undefined);
-  assert.equal(config.ai, undefined);
+  assert.deepEqual(config.ai, { binding: "AI" });
+  assert.deepEqual(config.r2_buckets, [{ binding: "RESUMES", bucket_name: "job-agent-platform-resumes" }]);
   assert.deepEqual(config.d1_databases.map((db) => db.binding).sort(), ["PRIVATE_DB", "PUBLIC_DB"]);
   assert.equal(config.main, "./worker.ts");
 });
 
 test("公开实例配置不含任何私有绑定", () => {
   const source = read("vite.config.ts");
-  for (const marker of ["PRIVATE_DB", "PUBLIC_DB", "DEEPSEEK", "r2_buckets", "platform/"]) assert.ok(!source.includes(marker), marker);
+  for (const marker of ["PRIVATE_DB", "PUBLIC_DB", "DEEPSEEK", "r2_buckets", "RESUMES", "platform/"]) assert.ok(!source.includes(marker), marker);
 });
 
 test("部署脚本缺环境变量时退出码 1 并列出缺失项，不调用 wrangler", () => {
@@ -74,6 +75,8 @@ test("部署脚本 --dry-run 生成的配置含自定义域名、真实 ID 与 A
   assert.equal(config.vars.PLATFORM_HOST, "jobs.example.test");
   assert.equal(config.vars.ACCESS_AUD, "aud-xyz");
   assert.equal(config.vars.ACCESS_TEAM_DOMAIN, "team.example.test");
+  assert.deepEqual(config.r2_buckets, [{ binding: "RESUMES", bucket_name: "job-agent-platform-resumes" }]);
+  assert.deepEqual(config.ai, { binding: "AI" });
   assert.ok(config.main.endsWith("platform/worker.ts") && config.main.startsWith("/"));
   assert.ok(byBinding.PRIVATE_DB.migrations_dir.endsWith("platform/migrations") && byBinding.PRIVATE_DB.migrations_dir.startsWith("/"));
 });

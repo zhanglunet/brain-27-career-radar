@@ -3,6 +3,19 @@ import { applyPlatformMigrations, createSqliteD1, tempDbPath } from "./sqlite-d1
 import { handleRequest } from "../../platform/app.ts";
 import { createInvite, createUser, findUserByEmail, setUserStatus } from "../../platform/data/accounts.ts";
 import { hashPassword } from "../../platform/crypto.ts";
+import { createFakeR2 } from "./fake-r2.mjs";
+
+/** 测试用 Workers AI 替身：把文件字节按 UTF-8 解码当作转换结果。 */
+export function fakeAi(handler) {
+  return {
+    calls: [],
+    async toMarkdown(file) {
+      this.calls.push(file);
+      if (handler) return handler(file);
+      return { format: "markdown", data: new TextDecoder().decode(await file.blob.arrayBuffer()) };
+    },
+  };
+}
 
 export const HOST = "platform.test";
 export const ORIGIN = `https://${HOST}`;
@@ -18,6 +31,9 @@ export async function makeEnv(overrides = {}) {
     PUBLIC_DB: createSqliteD1({ readonly: true, path: publicPath }),
     PLATFORM_HOST: HOST,
     ADMIN_BOOTSTRAP_TOKEN: "test-bootstrap",
+    RESUMES: createFakeR2(),
+    AI: fakeAi(),
+    DEEPSEEK_API_KEY: "test-key",
     ...overrides,
   };
   let current = 1_000_000;
@@ -47,6 +63,12 @@ export function client(env, deps, { fetchHandler = handleRequest } = {}) {
   return {
     jar,
     get: (path, headers = {}) => send(path, { headers }),
+    upload: (path, fileField, file, fields = {}) => {
+      const form = new FormData();
+      for (const [key, value] of Object.entries(fields)) form.set(key, value);
+      form.set(fileField, new File([file.bytes], file.name, { type: file.type ?? "application/octet-stream" }));
+      return send(path, { method: "POST", body: form, headers: { origin: ORIGIN } });
+    },
     post: (path, form = {}, headers = {}) => send(path, {
       method: "POST",
       body: new URLSearchParams(form).toString(),

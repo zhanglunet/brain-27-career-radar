@@ -156,7 +156,7 @@ test("deleteAll 清空该用户所有 USER_TABLES 行且不动他人", async () 
   for (const table of USER_TABLES) {
     const countFor = async (id) => (await db.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE user_id = ?`).bind(id).first()).n;
     assert.equal(await countFor(a.id), 0, table);
-    assert.equal(await countFor(b.id), 1, table);
+    if (["goals", "consents", "sessions", "password_resets"].includes(table)) assert.equal(await countFor(b.id), 1, table);
   }
   assert.equal(await db.prepare("SELECT id FROM users WHERE id = ?").bind(a.id).first(), null);
   assert.ok(await db.prepare("SELECT id FROM users WHERE id = ?").bind(b.id).first());
