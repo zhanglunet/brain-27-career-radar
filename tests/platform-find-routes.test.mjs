@@ -18,7 +18,7 @@ test("目标页显示机会清单、层级标签、截止与资格判定表", as
   const f = await ranFixture();
   const page = await (await f.c.get(`/goals/${f.goal.id}`)).text();
   assert.match(page, /用户研究校招（公开雷达）/);
-  assert.match(page, /来自聚合平台，待官方确认/);
+  assert.match(page, /来自第三方或聚合平台，待官方确认/);
   assert.match(page, /2026-12-01/);
   assert.match(page, /硕士及以上学历/);
   assert.match(page, /满足/);

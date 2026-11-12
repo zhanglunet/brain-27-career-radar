@@ -20,7 +20,7 @@ export const TIER_LABELS: Record<Tier, string> = {
   L1: "公开雷达 / 平台共享来源",
   L2: "搜索发现的官方页面",
   L3: "你添加的来源",
-  L4: "来自聚合平台，待官方确认",
+  L4: "来自第三方或聚合平台，待官方确认",
 };
 
 export function isAggregator(url: string): boolean {

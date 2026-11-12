@@ -60,5 +60,6 @@ export async function planQueries(
     queries.push(query);
     if (queries.length >= MAX_QUERIES) break;
   }
-  return queries.length ? queries : fallback(input.goal, input.target);
+  // 兜底检索词同样不能含姓名（目标标题可能写着名字）；过滤后为空就不搜索。
+  return queries.length ? queries : fallback(input.goal, input.target).filter((query) => !(name && query.includes(name)));
 }

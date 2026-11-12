@@ -253,10 +253,12 @@ export async function executeRun(env: PlatformEnv, deps: Deps, msg: FindMessage)
         if (change.created || change.requirementsChanged) toAssess.add(key);
         continue;
       }
+      // 搜索到的页面若被判为非官方，抽出的机会只能算"待官方确认"（L4），不能当作官方页面。
+      const tier: Tier = candidate.tier === "L2" && !extraction.official ? "L4" : candidate.tier;
       for (const opp of extraction.opportunities) {
         const key = opportunityKey(opp.url, page.finalUrl, opp.title);
         const input: OpportunityInput = {
-          key, title: opp.title, org: opp.org ?? extraction.org, url: opp.url, tier: candidate.tier, source: { url: candidate.url, tier: candidate.tier },
+          key, title: opp.title, org: opp.org ?? extraction.org, url: opp.url, tier, source: { url: candidate.url, tier },
           location: opp.location, kind: opp.kind, deadlineStatus: opp.deadlineStatus, deadlineDate: opp.deadlineDate, requirements: opp.requirements, risk: null,
         };
         const change = await scope.opportunities.upsert(goal.id, input, deps.now());
@@ -269,6 +271,12 @@ export async function executeRun(env: PlatformEnv, deps: Deps, msg: FindMessage)
     }
 
     // 4. 评估
+    // 补上以前没评估成的、或要求已变而评估过时的机会（本次有变化的排在前面）。
+    for (const opp of await scope.opportunities.list(goal.id)) {
+      if (opp.tier === "L4") continue;
+      const assessed = opp.assessment?.items.map((item) => item.requirement) ?? null;
+      if (!assessed || JSON.stringify(assessed) !== JSON.stringify(opp.requirements)) toAssess.add(opp.key);
+    }
     if (!llmStopped && toAssess.size && deps.now() - startedAt <= ASSESS_DEADLINE_MS) {
       const inputs: AssessInput[] = [];
       for (const key of [...toAssess].slice(0, MAX_ASSESS)) {

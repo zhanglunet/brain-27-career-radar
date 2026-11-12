@@ -237,3 +237,55 @@ test("公开机会页上只有一条岗位时采用其要求", async () => {
   const opp = (await f.scope.opportunities.list(f.goal.id)).find((o) => o.title === "用户研究校招（公开雷达）");
   assert.deepEqual(opp.requirements, ["硕士及以上学历"]);
 });
+
+// ── PR #140 评审 ──
+test("兜底检索词同样剔除含档案姓名的检索词", async () => {
+  const { planQueries } = await import("../platform/find/queries.ts");
+  const { fakeLlm } = await import("./helpers/fake-llm.mjs");
+  const profile = normalizeProfile({ basics: { name: "张三" } });
+  const queries = await planQueries(fakeLlm([{ queries: ["张三 校招"] }]), {
+    goal: { title: "张三的求职目标", description: "d" },
+    target: { kinds: [], directions: [], cities: [], timing: null, notes: null },
+    profile,
+  });
+  assert.ok(!queries.some((q) => q.includes("张三")), JSON.stringify(queries));
+});
+
+test("上次没评估的机会在下次运行时补评", async () => {
+  const { LlmError } = await import("../platform/llm/types.ts");
+  const llm = routedLlm();
+  const original = llm.completeJson.bind(llm);
+  let failAssess = true;
+  llm.completeJson = async (messages) => {
+    if (failAssess && messages[0].content.includes("资格评估")) throw new LlmError("unavailable", "down");
+    return original(messages);
+  };
+  const f = await findFixture({ llm });
+  await runOnce(f);
+  assert.ok((await f.scope.opportunities.list(f.goal.id)).some((o) => o.tier !== "L4" && !o.assessment), "第一次评估失败，应有未评估的机会");
+  failAssess = false;
+  f.clock.advance(31 * 60_000);
+  await runOnce(f);
+  const unassessed = (await f.scope.opportunities.list(f.goal.id)).filter((o) => o.tier !== "L4" && !o.assessment);
+  assert.deepEqual(unassessed.map((o) => o.title), []);
+});
+
+test("要求变化后旧评估作废并重新评估", async () => {
+  const f = await findFixture();
+  await runOnce(f);
+  const opp = (await f.scope.opportunities.list(f.goal.id)).find((o) => o.title === "用户来源岗位");
+  await f.scope.opportunities.setAssessment(f.goal.id, opp.key, { items: [{ requirement: "旧要求", status: "满足", evidence: "x" }], reasons: [], gaps: [], score: 99 }, f.deps.now());
+  f.clock.advance(31 * 60_000);
+  await runOnce(f);
+  const after = (await f.scope.opportunities.list(f.goal.id)).find((o) => o.key === opp.key);
+  assert.deepEqual(after.assessment.items.map((i) => i.requirement), ["硕士及以上学历"]);
+});
+
+test("搜索到的非官方页面抽出的机会不标为官方 L2", async () => {
+  const f = await findFixture({ llm: routedLlm({ official: false }) });
+  await runOnce(f);
+  const fromSearch = (await f.scope.opportunities.list(f.goal.id)).find((o) => o.title === "搜索发现岗位");
+  assert.notEqual(fromSearch.tier, "L2");
+  const page = await (await f.c.get(`/goals/${f.goal.id}`)).text();
+  assert.match(page, /待官方确认/);
+});
