@@ -1,0 +1,25 @@
+// 私有平台部署模板。数据库 ID 为占位值；生产部署用 `npm run platform:deploy`，
+// 由 scripts/platform-deploy.mjs 注入真实 ID 与域名后生成 dist/platform/wrangler.json。
+{
+  "name": "job-agent-platform",
+  "main": "./worker.ts",
+  "compatibility_date": "2026-07-31",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "d1_databases": [
+    {
+      "binding": "PRIVATE_DB",
+      "database_name": "job-agent-platform",
+      "database_id": "00000000-0000-0000-0000-000000000137",
+      "migrations_dir": "migrations"
+    },
+    {
+      "binding": "PUBLIC_DB",
+      "database_name": "public-radar-readonly",
+      "database_id": "00000000-0000-0000-0000-000000000027"
+    }
+  ],
+  "vars": { "PLATFORM_HOST": "platform.localhost" },
+  "observability": { "enabled": true, "logs": { "head_sampling_rate": 1 } }
+}
