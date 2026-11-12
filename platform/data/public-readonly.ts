@@ -55,3 +55,8 @@ export async function searchPublicOpportunities(db: D1Database, terms: string[],
     authenticityState: row.authenticity_state,
   }));
 }
+
+/** 供后台运行使用：从环境中取公开 D1（只读），其他文件不直接接触它。 */
+export function searchPublicForEnv(env: { PUBLIC_DB: D1Database }, terms: string[], limit: number): Promise<PublicOpportunityMatch[]> {
+  return searchPublicOpportunities(env.PUBLIC_DB, terms, limit);
+}

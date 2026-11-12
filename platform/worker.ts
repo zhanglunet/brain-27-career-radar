@@ -1,6 +1,11 @@
-/** 私有平台 Worker 入口。不含 cron、静态资源或公开页面。 */
+/** 私有平台 Worker 入口：HTTP 请求、找机会队列消费、每日刷新定时任务。不含静态资源或公开页面。 */
 import { handleRequest } from "./app.ts";
-import type { PlatformEnv } from "./env.ts";
+import type { Deps, FindMessage, PlatformEnv } from "./env.ts";
+import { enqueueDailyRuns, executeRun } from "./find/run.ts";
+
+function runtimeDeps(): Deps {
+  return { now: Date.now, fetch: (input, init) => fetch(input, init) };
+}
 
 const worker = {
   fetch(request: Request, env: PlatformEnv): Promise<Response> {
@@ -9,6 +14,17 @@ const worker = {
       fetchJwks: (url: string) => fetch(url).then((response) => response.json()),
     });
   },
-} satisfies ExportedHandler<PlatformEnv>;
+
+  async queue(batch: MessageBatch<FindMessage>, env: PlatformEnv): Promise<void> {
+    for (const message of batch.messages) {
+      await executeRun(env, runtimeDeps(), message.body);
+      message.ack();
+    }
+  },
+
+  async scheduled(_controller: ScheduledController, env: PlatformEnv, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(enqueueDailyRuns(env, runtimeDeps()).then(() => undefined));
+  },
+} satisfies ExportedHandler<PlatformEnv, FindMessage>;
 
 export default worker;

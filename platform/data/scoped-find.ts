@@ -267,3 +267,121 @@ export function opportunitiesFor(db: D1Database, userId: string) {
     },
   };
 }
+
+export type RunStatus = "queued" | "running" | "done" | "failed";
+export type RunTrigger = "manual" | "daily";
+export type RunStats = {
+  queries: number;
+  searchFailures: number;
+  pagesFetched: number;
+  pagesSkipped: number;
+  flaggedPages: number;
+  extracted: number;
+  assessed: number;
+  opportunities: number;
+  stoppedByQuota: boolean;
+};
+export type FindRun = {
+  id: string;
+  goalId: string;
+  trigger: RunTrigger;
+  status: RunStatus;
+  stats: RunStats;
+  error: string | null;
+  createdAt: number;
+  startedAt: number | null;
+  finishedAt: number | null;
+};
+
+export const STALE_RUN_MS = 30 * 60_000;
+
+export function emptyStats(): RunStats {
+  return { queries: 0, searchFailures: 0, pagesFetched: 0, pagesSkipped: 0, flaggedPages: 0, extracted: 0, assessed: 0, opportunities: 0, stoppedByQuota: false };
+}
+
+type RunRow = { id: string; goal_id: string; trigger: RunTrigger; status: RunStatus; stats_json: string; error: string | null; created_at: number; started_at: number | null; finished_at: number | null };
+
+const toRun = (row: RunRow): FindRun => ({
+  id: row.id,
+  goalId: row.goal_id,
+  trigger: row.trigger,
+  status: row.status,
+  stats: { ...emptyStats(), ...parseJson<Partial<RunStats>>(row.stats_json, {}) },
+  error: row.error,
+  createdAt: row.created_at,
+  startedAt: row.started_at,
+  finishedAt: row.finished_at,
+});
+
+const RUN_COLUMNS = "id, goal_id, trigger, status, stats_json, error, created_at, started_at, finished_at";
+
+/** 上海日期当天 00:00 对应的毫秒时间戳。 */
+export function shanghaiDayStart(now: number): number {
+  const offset = 8 * 3_600_000;
+  return Math.floor((now + offset) / 86_400_000) * 86_400_000 - offset;
+}
+
+export function runsFor(db: D1Database, userId: string) {
+  return {
+    /** 同一目标已有 30 分钟内排队或进行中的运行时返回 null；更早的视为卡死，先标记失败。插入是单条条件语句。 */
+    async create(goalId: string, trigger: RunTrigger, now: number): Promise<string | null> {
+      await db
+        .prepare("UPDATE find_runs SET status = 'failed', error = 'stale', finished_at = ? WHERE user_id = ? AND goal_id = ? AND status IN ('queued', 'running') AND created_at <= ?")
+        .bind(now, userId, goalId, now - STALE_RUN_MS)
+        .run();
+      const id = crypto.randomUUID();
+      const result = await db
+        .prepare(
+          `INSERT INTO find_runs (id, user_id, goal_id, trigger, status, created_at)
+           SELECT ?, ?, ?, ?, 'queued', ?
+           WHERE EXISTS (SELECT 1 FROM goals WHERE id = ? AND user_id = ?)
+             AND NOT EXISTS (SELECT 1 FROM find_runs WHERE user_id = ? AND goal_id = ? AND status IN ('queued', 'running'))`,
+        )
+        .bind(id, userId, goalId, trigger, now, goalId, userId, userId, goalId)
+        .run();
+      return result.meta.changes === 1 ? id : null;
+    },
+    async claim(runId: string, now: number): Promise<boolean> {
+      const result = await db
+        .prepare("UPDATE find_runs SET status = 'running', started_at = ? WHERE id = ? AND user_id = ? AND status = 'queued'")
+        .bind(now, runId, userId)
+        .run();
+      return result.meta.changes === 1;
+    },
+    async finish(runId: string, status: "done" | "failed", stats: RunStats, error: string | null, now: number): Promise<void> {
+      await db
+        .prepare("UPDATE find_runs SET status = ?, stats_json = ?, error = ?, finished_at = ? WHERE id = ? AND user_id = ? AND status = 'running'")
+        .bind(status, JSON.stringify(stats), error, now, runId, userId)
+        .run();
+    },
+    async get(runId: string): Promise<FindRun | null> {
+      const row = await db.prepare(`SELECT ${RUN_COLUMNS} FROM find_runs WHERE id = ? AND user_id = ?`).bind(runId, userId).first<RunRow>();
+      return row ? toRun(row) : null;
+    },
+    async latest(goalId: string): Promise<FindRun | null> {
+      const row = await db
+        .prepare(`SELECT ${RUN_COLUMNS} FROM find_runs WHERE user_id = ? AND goal_id = ? ORDER BY created_at DESC, id DESC LIMIT 1`)
+        .bind(userId, goalId)
+        .first<RunRow>();
+      return row ? toRun(row) : null;
+    },
+    async list(goalId: string, limit: number): Promise<FindRun[]> {
+      const { results } = await db
+        .prepare(`SELECT ${RUN_COLUMNS} FROM find_runs WHERE user_id = ? AND goal_id = ? ORDER BY created_at DESC, id DESC LIMIT ?`)
+        .bind(userId, goalId, Math.max(1, Math.min(100, limit)))
+        .all<RunRow>();
+      return results.map(toRun);
+    },
+    async listAll(): Promise<FindRun[]> {
+      const { results } = await db.prepare(`SELECT ${RUN_COLUMNS} FROM find_runs WHERE user_id = ? ORDER BY created_at, id`).bind(userId).all<RunRow>();
+      return results.map(toRun);
+    },
+    async hasRunToday(goalId: string, now: number): Promise<boolean> {
+      const row = await db
+        .prepare("SELECT 1 AS ok FROM find_runs WHERE user_id = ? AND goal_id = ? AND created_at >= ? LIMIT 1")
+        .bind(userId, goalId, shanghaiDayStart(now))
+        .first();
+      return row !== null;
+    },
+  };
+}
