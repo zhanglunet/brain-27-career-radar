@@ -33,6 +33,7 @@ async function homePage(db: D1Database, user: User, message = "", status = 200):
   const goals = await forUser(db, user.id).goals.list();
   const list = goals.length
     ? `<ul class="cards">${goals.map((goal) => `<li><strong>${escapeHtml(goal.title)}</strong><p>${escapeHtml(goal.description)}</p>${targetSummary(goal.target)}
+<p><a href="/goals/${encodeURIComponent(goal.id)}">查看机会</a></p>
 <form method="post" action="/goals/${encodeURIComponent(goal.id)}/delete" style="margin:0"><button class="link" type="submit">删除</button></form></li>`).join("")}</ul>`
     : `<p class="muted">还没有目标。用一段话描述你想找什么样的机会，比如方向、岗位类型、城市和时间。</p>`;
   const body = `<h1>我的目标</h1>${message ? notice(message, "error") : ""}${list}

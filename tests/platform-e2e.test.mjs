@@ -114,3 +114,74 @@ test("两个用户的简历与档案互相隔离（经 Worker 入口与真实 De
   assert.ok(env.RESUMES.keys().every((key) => key.startsWith(`${b.id}/`)));
   assert.equal(env.RESUMES.keys().length, 1);
 });
+
+test("两个用户找机会互相隔离（经 Worker 的 fetch 与 queue）", async () => {
+  const { findFixture, URLS } = await import("./helpers/find-fixture.mjs");
+  const { activeUser } = await import("./helpers/platform-client.mjs");
+  const { CONSENT_VERSION } = await import("../platform/consent.ts");
+  const { normalizeProfile } = await import("../platform/profile/schema.ts");
+  const f = await findFixture({ realClock: true });
+  // Worker 入口不接受注入的依赖，这里用全局 fetch 替身承接网页与搜索请求，并用 deps 外的方式跑队列
+  const web = f.web;
+  const bochaHits = { data: { webPages: { value: [{ name: "搜索发现岗位", url: URLS.official }] } } };
+  const deepseek = f.llm;
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init) => {
+    const target = String(url);
+    if (target === "https://api.bochaai.com/v1/web-search") return new Response(JSON.stringify(bochaHits), { status: 200 });
+    if (target === "https://api.deepseek.com/chat/completions") {
+      const { json } = await deepseek.completeJson(JSON.parse(init.body).messages);
+      return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(json) } }], usage: { prompt_tokens: 1, completion_tokens: 1 } }), { status: 200 });
+    }
+    return web(url, init);
+  };
+  try {
+    const b = await activeUser(f.env, f.deps, "b@example.test");
+    await b.post("/consent", { agree: "yes", version: CONSENT_VERSION });
+    await b.post("/goals", { title: "B 的目标", description: "B 的意向" });
+    const bScope = forUser(f.env.PRIVATE_DB, b.user.id);
+    const [bGoal] = await bScope.goals.list();
+    await bScope.goals.setTarget(bGoal.id, { kinds: ["实习"], directions: ["B方向"], cities: ["深圳"], timing: null, notes: null });
+    await bScope.profile.confirm(normalizeProfile({ skills: ["B技能"] }), f.deps.now());
+    await bScope.sources.add(bGoal.id, { url: "https://b-only.example.test/jobs", org: "B 专属机构", tier: "L3", origin: "user" }, f.deps.now());
+    const viaWorker = (request) => worker.fetch(request, f.env, { waitUntil() {}, passThroughOnException() {} });
+    const send = (c, path) => viaWorker(new Request(`https://platform.test${path}`, { method: "POST", headers: { origin: "https://platform.test", cookie: `__Host-session=${c.jar.session}`, "content-type": "application/x-www-form-urlencoded" }, body: "" }));
+    assert.equal((await send(f.c, `/goals/${f.goal.id}/find`)).status, 303);
+    assert.equal((await send(b, `/goals/${bGoal.id}/find`)).status, 303);
+    const acked = [];
+    await worker.queue({ messages: f.env.FIND_QUEUE.sent.map((body) => ({ body, ack() { acked.push(body.runId); } })) }, f.env, { waitUntil() {} });
+    assert.equal(acked.length, 2);
+    const aPage = await (await viaWorker(new Request(`https://platform.test/goals/${f.goal.id}`, { headers: { cookie: `__Host-session=${f.c.jar.session}` } }))).text();
+    assert.match(aPage, /用户来源岗位/);
+    assert.doesNotMatch(aPage, /B 专属机构|b-only\.example\.test|B 的目标/);
+    assert.equal((await viaWorker(new Request(`https://platform.test/goals/${bGoal.id}`, { headers: { cookie: `__Host-session=${f.c.jar.session}` } }))).status, 404);
+    const aExport = await (await viaWorker(new Request("https://platform.test/account/export", { headers: { cookie: `__Host-session=${f.c.jar.session}` } }))).text();
+    assert.doesNotMatch(aExport, /B 专属机构|b-only\.example\.test|B方向/);
+    assert.ok(!(await forUser(f.env.PRIVATE_DB, f.c.user.id).runs.list(f.goal.id, 10)).some((r) => r.goalId === bGoal.id));
+    assert.equal((await f.c.post("/account/delete", { password: "password-123" })).status, 303);
+    for (const table of ["user_opportunities", "find_runs", "goal_sources"]) {
+      const n = (await f.env.PRIVATE_DB.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE user_id = ?`).bind(f.c.user.id).first()).n;
+      assert.equal(n, 0, table);
+    }
+    assert.ok((await bScope.opportunities.list(bGoal.id)).length > 0, "B 的机会不受影响");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("导出包含来源、运行（含统计、不含检索词）、机会（含评估）与每日用量", async () => {
+  const { findFixture } = await import("./helpers/find-fixture.mjs");
+  const { startRun, executeRun } = await import("../platform/find/run.ts");
+  const f = await findFixture();
+  await startRun(f.env, f.deps, f.c.user, f.goal.id, "manual");
+  await executeRun(f.env, f.deps, f.env.FIND_QUEUE.sent.at(-1));
+  const raw = await (await f.c.get("/account/export")).text();
+  const data = JSON.parse(raw);
+  assert.ok(data.sources.length >= 1);
+  assert.equal(data.runs.length, 1);
+  assert.equal(data.runs[0].status, "done");
+  assert.ok(typeof data.runs[0].stats.pagesFetched === "number");
+  assert.ok(data.opportunities.some((o) => o.assessment && o.assessment.items.length));
+  assert.ok(data.usage.some((u) => u.calls > 0 && typeof u.searches === "number"));
+  assert.doesNotMatch(raw, /用户研究 校园招聘 官网/);
+});

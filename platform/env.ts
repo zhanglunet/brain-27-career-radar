@@ -1,5 +1,6 @@
 /** 私有平台 Worker 的绑定与可注入依赖。 */
 import type { LlmProvider } from "./llm/types.ts";
+import type { SearchProvider } from "./search/types.ts";
 
 export interface PlatformEnv {
   /** 私有 D1：账号与全部用户数据。 */
@@ -10,6 +11,10 @@ export interface PlatformEnv {
   RESUMES: R2Bucket;
   /** Workers AI：只用于把简历转成文本，转换在 Cloudflare 内完成。 */
   AI: ResumeConverter;
+  /** 找机会运行队列。 */
+  FIND_QUEUE: Queue<FindMessage>;
+  /** 博查 Web Search API key（Workers Secret）。 */
+  BOCHA_API_KEY?: string;
   /** DeepSeek API key（Workers Secret）。 */
   DEEPSEEK_API_KEY?: string;
   /** 唯一允许的主机名，例如 platform.example.test。 */
@@ -22,6 +27,8 @@ export interface PlatformEnv {
   ACCESS_AUD?: string;
 }
 
+export type FindMessage = { runId: string; userId: string };
+
 export interface ResumeConverter {
   toMarkdown(file: { name: string; blob: Blob }): Promise<{ format: "markdown"; data: string } | { format: "error"; error: string }>;
 }
@@ -32,5 +39,7 @@ export interface Deps {
   fetch?: typeof fetch;
   /** 直接指定大模型实现（测试或切换供应商时使用），优先于 DeepSeek。 */
   llm?: LlmProvider;
+  /** 直接指定搜索实现（测试使用），优先于博查。 */
+  search?: SearchProvider;
   fetchJwks?(url: string): Promise<unknown>;
 }

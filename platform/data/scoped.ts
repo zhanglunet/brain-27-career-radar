@@ -6,6 +6,8 @@ import { normalizeGoalTarget } from "../profile/schema.ts";
 import type { GoalTarget, ProfileData } from "../profile/schema.ts";
 import { draftsFor, profileFor } from "./scoped-profile.ts";
 import type { Draft } from "./scoped-profile.ts";
+import { opportunitiesFor, runsFor, sourcesFor } from "./scoped-find.ts";
+import type { FindRun, GoalSource, UserOpportunity } from "./scoped-find.ts";
 import { resumesFor } from "./scoped-resumes.ts";
 import type { Resume } from "./scoped-resumes.ts";
 import { usageFor } from "./scoped-usage.ts";
@@ -23,6 +25,10 @@ export type UserExport = {
   profile: { data: ProfileData; version: number; confirmedAt: number } | null;
   profileVersions: { version: number; data: ProfileData; confirmedAt: number }[];
   drafts: Draft[];
+  sources: GoalSource[];
+  runs: FindRun[];
+  opportunities: UserOpportunity[];
+  usage: { day: string; calls: number; tokens: number; searches: number }[];
 };
 
 type GoalRow = { id: string; title: string; description: string; created_at: number; target_json: string | null };
@@ -67,9 +73,15 @@ export function forUser(db: D1Database, userId: string) {
         .run();
       return result.meta.changes === 1;
     },
+    /** 删除目标及其机会、运行记录与来源（同一事务）。 */
     async remove(goalId: string): Promise<boolean> {
-      const result = await db.prepare("DELETE FROM goals WHERE id = ? AND user_id = ?").bind(goalId, userId).run();
-      return result.meta.changes === 1;
+      const results = await db.batch([
+        db.prepare("DELETE FROM user_opportunities WHERE goal_id = ? AND user_id = ?").bind(goalId, userId),
+        db.prepare("DELETE FROM find_runs WHERE goal_id = ? AND user_id = ?").bind(goalId, userId),
+        db.prepare("DELETE FROM goal_sources WHERE goal_id = ? AND user_id = ?").bind(goalId, userId),
+        db.prepare("DELETE FROM goals WHERE id = ? AND user_id = ?").bind(goalId, userId),
+      ]);
+      return results[3].meta.changes === 1;
     },
   };
 
@@ -79,6 +91,9 @@ export function forUser(db: D1Database, userId: string) {
     resumes: resumesFor(db, userId),
     profile: profileFor(db, userId),
     drafts: draftsFor(db, userId),
+    sources: sourcesFor(db, userId),
+    opportunities: opportunitiesFor(db, userId),
+    runs: runsFor(db, userId),
     async exportAll(now: number): Promise<UserExport> {
       const row = await db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`).bind(userId).first<Parameters<typeof toUser>[0]>();
       if (!row) throw new Error("user not found");
@@ -95,6 +110,10 @@ export function forUser(db: D1Database, userId: string) {
         profile: await profileFor(db, userId).current(),
         profileVersions: await profileFor(db, userId).versions(),
         drafts: await draftsFor(db, userId).list(),
+        sources: await sourcesFor(db, userId).listAll(),
+        runs: await runsFor(db, userId).listAll(),
+        opportunities: await opportunitiesFor(db, userId).listAll(),
+        usage: await usageFor(db, userId).list(),
       };
     },
     /** 一次事务删除该用户在 USER_TABLES 中的全部行、登录失败记录与账号本身。 */
