@@ -12,7 +12,6 @@ import {
   deleteUserRow,
   findUserByEmail,
   isLoginLocked,
-  normalizeEmail,
   recordLoginFailure,
   setUserStatus,
 } from "../platform/data/accounts.ts";
