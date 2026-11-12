@@ -33,6 +33,13 @@ export function usageFor(db: D1Database, userId: string) {
         .first<{ searches: number }>();
       return row !== null;
     },
+    async list(): Promise<{ day: string; calls: number; tokens: number; searches: number }[]> {
+      const { results } = await db
+        .prepare("SELECT day, calls, tokens, searches FROM llm_usage WHERE user_id = ? ORDER BY day")
+        .bind(userId)
+        .all<{ day: string; calls: number; tokens: number; searches: number }>();
+      return results;
+    },
     async addCall(day: string): Promise<void> {
       await db
         .prepare("INSERT INTO llm_usage (user_id, day, calls, tokens) VALUES (?, ?, 1, 0) ON CONFLICT (user_id, day) DO UPDATE SET calls = calls + 1")

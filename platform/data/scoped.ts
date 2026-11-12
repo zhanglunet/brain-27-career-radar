@@ -7,6 +7,7 @@ import type { GoalTarget, ProfileData } from "../profile/schema.ts";
 import { draftsFor, profileFor } from "./scoped-profile.ts";
 import type { Draft } from "./scoped-profile.ts";
 import { opportunitiesFor, runsFor, sourcesFor } from "./scoped-find.ts";
+import type { FindRun, GoalSource, UserOpportunity } from "./scoped-find.ts";
 import { resumesFor } from "./scoped-resumes.ts";
 import type { Resume } from "./scoped-resumes.ts";
 import { usageFor } from "./scoped-usage.ts";
@@ -24,6 +25,10 @@ export type UserExport = {
   profile: { data: ProfileData; version: number; confirmedAt: number } | null;
   profileVersions: { version: number; data: ProfileData; confirmedAt: number }[];
   drafts: Draft[];
+  sources: GoalSource[];
+  runs: FindRun[];
+  opportunities: UserOpportunity[];
+  usage: { day: string; calls: number; tokens: number; searches: number }[];
 };
 
 type GoalRow = { id: string; title: string; description: string; created_at: number; target_json: string | null };
@@ -105,6 +110,10 @@ export function forUser(db: D1Database, userId: string) {
         profile: await profileFor(db, userId).current(),
         profileVersions: await profileFor(db, userId).versions(),
         drafts: await draftsFor(db, userId).list(),
+        sources: await sourcesFor(db, userId).listAll(),
+        runs: await runsFor(db, userId).listAll(),
+        opportunities: await opportunitiesFor(db, userId).listAll(),
+        usage: await usageFor(db, userId).list(),
       };
     },
     /** 一次事务删除该用户在 USER_TABLES 中的全部行、登录失败记录与账号本身。 */

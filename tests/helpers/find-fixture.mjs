@@ -64,9 +64,11 @@ export function routedLlm({ queries = ["用户研究 校园招聘 官网"], offi
   };
 }
 
-export async function findFixture({ pages = {}, searchMap, llm = routedLlm(), publicRows } = {}) {
+export async function findFixture({ pages = {}, searchMap, llm = routedLlm(), publicRows, realClock = false } = {}) {
   const PUBLIC_DB = await publicDb(publicRows ?? [["pub-1", "用户研究校招（公开雷达）", "示例研究院", "校招", "北京", "2026-12-01", URLS.public, 1, "[]", "confirmed", "2026-12-01", "trusted"]]);
   const { env, deps, clock } = await makeEnv({ PUBLIC_DB });
+  // 经 Worker 入口的请求使用真实时间，会话也要按真实时间创建才不会被判过期。
+  if (realClock) clock.set(Date.now());
   const c = await activeUser(env, deps, "a@example.test");
   await c.post("/consent", { agree: "yes", version: CONSENT_VERSION });
   await c.post("/goals", { title: "国内校招", description: "用户研究" });
