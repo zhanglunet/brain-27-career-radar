@@ -197,6 +197,7 @@ export const routes: Route[] = [
       try {
         draft = await draftFromInputs(llm, { resumeText, intentText: intent || null });
       } catch (error) {
+        if (error instanceof LlmError && error.kind === "too_long") return profilePage(ctx, user, "材料过长，智能体没能整理完。请精简简历或意向描述后重试。", 422);
         if (error instanceof LlmError) return profilePage(ctx, user, "智能体暂时不可用，请稍后再试。", 502);
         throw error;
       }

@@ -14,12 +14,11 @@ export function withDailyQuota(provider: LlmProvider, scope: UserScope, userId: 
   return {
     async completeJson(messages) {
       const day = shanghaiDay(now());
-      const used = await scope.usage.get(day);
-      if (used.calls >= LLM_DAILY_CALLS || used.tokens >= LLM_DAILY_TOKENS) {
-        logEvent("platform.llm.quota_exceeded", { userId, count: used.calls });
+      // 检查与占用在同一条语句里完成，并发请求无法同时越过上限。
+      if (!(await scope.usage.reserveCall(day, LLM_DAILY_CALLS, LLM_DAILY_TOKENS))) {
+        logEvent("platform.llm.quota_exceeded", { userId });
         throw new HttpError(429, "今日智能体额度已用完，请明天再试");
       }
-      await scope.usage.addCall(day);
       const started = now();
       try {
         const result = await provider.completeJson(messages);

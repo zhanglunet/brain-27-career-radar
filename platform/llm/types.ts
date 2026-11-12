@@ -8,10 +8,13 @@ export interface LlmProvider {
   completeJson(messages: ChatMessage[]): Promise<LlmResult>;
 }
 
-export class LlmError extends Error {
-  kind: "unavailable" | "bad_response";
+/** unavailable：网络 / 超时 / 5xx；bad_response：输出不是 JSON；too_long：输出达到长度上限被截断。 */
+export type LlmErrorKind = "unavailable" | "bad_response" | "too_long";
 
-  constructor(kind: "unavailable" | "bad_response", message: string) {
+export class LlmError extends Error {
+  kind: LlmErrorKind;
+
+  constructor(kind: LlmErrorKind, message: string) {
     super(message);
     this.kind = kind;
   }

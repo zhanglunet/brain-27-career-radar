@@ -33,7 +33,8 @@ const MAX_ITEMS = 30;
 function str(value: unknown, max = SHORT): string | null {
   if (typeof value === "number" && Number.isFinite(value)) value = String(value);
   if (typeof value !== "string") return null;
-  const trimmed = value.trim();
+  // 字段内的换行折成"；"、竖线换成全角：否则表单按行、按" | "拆分时会生出假条目或错列。
+  const trimmed = value.replace(/\s*[\r\n]+\s*/g, "；").replace(/\|/g, "｜").replace(/^；+|；+$/g, "").trim();
   return trimmed ? [...trimmed].slice(0, max).join("") : null;
 }
 

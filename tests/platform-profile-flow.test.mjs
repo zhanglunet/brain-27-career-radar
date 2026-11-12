@@ -229,7 +229,7 @@ test("form 解析：缺列补 null、多余列并入最后一列、空行跳过"
   }));
   assert.deepEqual(profile.education, [
     { school: "示例大学", degree: "硕士", major: null, period: null },
-    { school: "另一所大学", degree: "本科", major: "心理学", period: "2021-2025 | 多余" },
+    { school: "另一所大学", degree: "本科", major: "心理学", period: "2021-2025 ｜ 多余" },
   ]);
   assert.deepEqual(profile.outputs, [
     { kind: "award", title: "示例奖", venue: null, year: "2024" },

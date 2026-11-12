@@ -16,7 +16,7 @@
 
 - 1a 的全部约束继续有效（数据只经 `platform/data/`、永不写公开库、Host/Origin 校验、`private, no-store`、日志白名单、虚构测试数据、类型剥离兼容写法）。
 - **调用 DeepSeek 或上传简历之前必须 `requireConsent`**；`CONSENT_VERSION` 保持 `v1`（v1 条款已覆盖 R2 与 DeepSeek）。
-- DeepSeek：`POST https://api.deepseek.com/chat/completions`，`model: "deepseek-chat"`，`response_format: { type: "json_object" }`，`temperature: 0`，`max_tokens: 4000`，超时 60 秒；key 只来自 `env.DEEPSEEK_API_KEY`（Workers Secret）。
+- DeepSeek：`POST https://api.deepseek.com/chat/completions`，`model: "deepseek-chat"`，`response_format: { type: "json_object" }`，`temperature: 0`，`max_tokens: 8192`，超时 120 秒（审查后由 4000 / 60 秒放宽，`finish_reason: "length"` 单独提示"材料过长"）；key 只来自 `env.DEEPSEEK_API_KEY`（Workers Secret）。
 - 提示词、简历文本、模型输出**一律不进日志**；`logEvent` 只记调用次数、token 数、耗时、错误种类。
 - 每用户每日额度（按 `Asia/Shanghai` 日期计）：大模型调用 30 次、token 150000；超出返回 429"今日智能体额度已用完，请明天再试"。调用一旦发出即计 1 次，成功时再计 token。
 - 简历：只接受 PDF（文件头 `%PDF-`）和 DOCX（文件头 `PK\x03\x04` 且文件名以 `.docx` 结尾）；单个 ≤ 5 MB（5242880 字节）；每用户最多 3 份；R2 键 `${userId}/resumes/${resumeId}`；下载只经鉴权路由、`Content-Disposition: attachment`。

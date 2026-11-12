@@ -24,7 +24,7 @@ test("DeepSeek 请求格式", async () => {
   assert.equal(request.body.model, "deepseek-chat");
   assert.deepEqual(request.body.response_format, { type: "json_object" });
   assert.equal(request.body.temperature, 0);
-  assert.equal(request.body.max_tokens, 4000);
+  assert.equal(request.body.max_tokens, 8192);
   assert.deepEqual(request.body.messages, MESSAGES);
   assert.ok(request.signal, "应带超时信号");
 });
