@@ -16,7 +16,7 @@
 - 私有平台**永不写公开 D1**：`PUBLIC_DB` 只能在 `platform/data/public-readonly.ts` 中出现，且该文件只含 `SELECT`。
 - 用户数据表的 SQL 只能出现在 `platform/data/`；每张含 `user_id` 的表必须登记在 `USER_TABLES`。
 - 代码中不得出现任何领域专属词（脑科学、心理学、2027、BRAIN / 27 等）。
-- 所有响应带 `Cache-Control: private, no-store`、`X-Robots-Tag: noindex, nofollow`、`Referrer-Policy: no-referrer`；`/robots.txt` 返回 `User-agent: *\nDisallow: /`；不提供站点地图。
+- 所有响应带 `Cache-Control: private, no-store`、`X-Robots-Tag: noindex, nofollow`、`Referrer-Policy: same-origin`（不能用 no-referrer：浏览器会把表单提交的 Origin 发成 null）；`/robots.txt` 返回 `User-agent: *\nDisallow: /`；不提供站点地图。
 - `Host` 不等于 `env.PLATFORM_HOST` 的请求一律 404（防 workers.dev、预览 URL、替代域名绕过）；`platform/wrangler.jsonc` 中 `workers_dev: false`、`preview_urls: false`。
 - 非 GET/HEAD 请求的 `Origin` 必须等于 `https://${PLATFORM_HOST}`，否则 403；仅当 `PLATFORM_HOST` 以 `.localhost` 结尾（本地开发）时，额外接受 `http://${PLATFORM_HOST}` 及带端口的同名 Origin。
 - 会话 cookie：名称 `__Host-session`，`HttpOnly; Secure; SameSite=Lax; Path=/`，有效期 30 天；数据库只存令牌的 SHA-256。

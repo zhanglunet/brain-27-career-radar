@@ -18,7 +18,10 @@
     "cf:typegen": "npm run build && wrangler types --config dist/server/wrangler.json worker-configuration.d.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "npm run build && wrangler d1 migrations apply brain-27-career-radar --local --persist-to .wrangler/state --config dist/server/wrangler.json",
-    "docx:generate": "node --experimental-strip-types scripts/docx-generate.mjs"
+    "docx:generate": "node --experimental-strip-types scripts/docx-generate.mjs",
+    "platform:dev": "wrangler dev --config platform/wrangler.jsonc --persist-to .wrangler/platform-state",
+    "platform:migrate:local": "wrangler d1 migrations apply PRIVATE_DB --local --persist-to .wrangler/platform-state --config platform/wrangler.jsonc",
+    "platform:deploy": "node scripts/platform-deploy.mjs"
   },
   "dependencies": {
     "better-sqlite3": "13.0.3",

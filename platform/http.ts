@@ -20,7 +20,7 @@ export function withSecurityHeaders(response: Response): Response {
   const headers = new Headers(response.headers);
   headers.set("Cache-Control", "private, no-store");
   headers.set("X-Robots-Tag", "noindex, nofollow");
-  headers.set("Referrer-Policy", "no-referrer");
+  headers.set("Referrer-Policy", "same-origin");
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("X-Frame-Options", "DENY");
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });

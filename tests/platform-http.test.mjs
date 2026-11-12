@@ -21,7 +21,13 @@ test("安全头", () => {
   const response = withSecurityHeaders(new Response("x", { headers: { "cache-control": "public, max-age=60" } }));
   assert.equal(response.headers.get("cache-control"), "private, no-store");
   assert.equal(response.headers.get("x-robots-tag"), "noindex, nofollow");
-  assert.equal(response.headers.get("referrer-policy"), "no-referrer");
+  assert.equal(response.headers.get("referrer-policy"), "same-origin");
+});
+
+test("Referrer-Policy 不能是 no-referrer：否则浏览器表单提交的 Origin 为 null，会被来源校验全部拦下", () => {
+  const policy = withSecurityHeaders(new Response("x")).headers.get("referrer-policy");
+  assert.notEqual(policy, "no-referrer");
+  assert.notEqual(policy, "unsafe-url");
 });
 
 test("会话 cookie 属性", () => {
