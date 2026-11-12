@@ -87,10 +87,10 @@ test("重置链接页面只显示一次明文，链接可用", async () => {
   const user = await activeUser(env, deps, "u@example.test");
   const response = await admin.post(`/admin/users/${user.user.id}/reset-link`);
   assert.equal(response.status, 200);
-  const link = (await response.text()).match(/https:\/\/platform\.test\/reset\/([A-Za-z0-9_-]+)/);
+  const link = (await response.text()).match(/https:\/\/platform\.test\/reset#([A-Za-z0-9_-]+)/);
   assert.ok(link);
   assert.doesNotMatch(await (await admin.get("/admin")).text(), new RegExp(link[1]));
-  assert.equal((await client(env, deps).post(`/reset/${link[1]}`, { password: "brand-new-pass" })).status, 303);
+  assert.equal((await client(env, deps).post("/reset", { token: link[1], password: "brand-new-pass" })).status, 303);
 });
 
 test("管理操作写入审计", async () => {

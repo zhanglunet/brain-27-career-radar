@@ -12,6 +12,7 @@ import {
   deleteUserRow,
   findUserByEmail,
   findUserById,
+  isInviteValid,
   isLoginLocked,
   normalizeEmail,
   recordLoginFailure,
@@ -31,6 +32,13 @@ function validEmail(email: string): boolean {
 
 function validPassword(password: string): boolean {
   return password.length >= MIN_PASSWORD && password.length <= MAX_PASSWORD;
+}
+
+let dummyHashPromise: Promise<string> | null = null;
+/** 未知邮箱登录时用于对齐耗时的假哈希。 */
+function dummyHash(): Promise<string> {
+  dummyHashPromise ??= hashPassword("dummy-password-for-timing");
+  return dummyHashPromise;
 }
 
 const PASSWORD_HINT = `密码长度需为 ${MIN_PASSWORD}–${MAX_PASSWORD} 个字符。`;
@@ -58,9 +66,14 @@ function setupPage(message = "", status = 200): Response {
   return html(layout("初始化", body), status);
 }
 
-function resetPage(token: string, message = "", status = 200): Response {
+/**
+ * 重置令牌放在链接的 # 片段里（浏览器不会把片段发给服务器，因此不会进访问日志），
+ * 由页面脚本填入表单，经 POST 字段提交。没有脚本时可以手动粘贴。
+ */
+function resetPage(message = "", status = 200): Response {
   const body = `<h1>设置新密码</h1>${message ? notice(message, "error") : ""}
-<form method="post" action="/reset/${encodeURIComponent(token)}">${field("新密码", "password", "password", `required minlength="${MIN_PASSWORD}" maxlength="${MAX_PASSWORD}" autocomplete="new-password"`)}<button type="submit">保存</button></form>`;
+<form method="post" action="/reset">${field("重置码", "token", "text", 'required autocomplete="off" id="reset-token"')}${field("新密码", "password", "password", `required minlength="${MIN_PASSWORD}" maxlength="${MAX_PASSWORD}" autocomplete="new-password"`)}<button type="submit">保存</button></form>
+<script>(function(){var t=location.hash.slice(1);if(/^[A-Za-z0-9_-]+$/.test(t)){document.getElementById("reset-token").value=t;history.replaceState(null,"",location.pathname);}})();</script>`;
   return html(layout("重置密码", body), status);
 }
 
@@ -110,8 +123,9 @@ export const routes: Route[] = [
       const password = form.get("password") ?? "";
       if (!validEmail(email)) return registerPage("请填写有效的邮箱地址。", 400);
       if (!validPassword(password)) return registerPage(PASSWORD_HINT, 400);
-      if (!invite) return registerPage("邀请码无效或已过期。", 400);
       const now = ctx.deps.now();
+      // 先校验邀请码再碰 users 表：不持有有效邀请码的人无法借"该邮箱已注册"探测他人账号。
+      if (!invite || !(await isInviteValid(db, invite, now))) return registerPage("邀请码无效或已过期。", 400);
       let user;
       try {
         user = await createUser(db, { email, passwordHash: await hashPassword(password), role: "user", status: "pending" }, now);
@@ -147,7 +161,8 @@ export const routes: Route[] = [
       const now = ctx.deps.now();
       if (await isLoginLocked(db, email, now)) return loginPage("尝试次数过多，请 15 分钟后再试。", 429);
       const user = email && password.length <= MAX_PASSWORD ? await findUserByEmail(db, email) : null;
-      if (!user || !(await verifyPassword(password, user.passwordHash))) {
+      const passwordOk = await verifyPassword(password, user ? user.passwordHash : await dummyHash());
+      if (!user || !passwordOk) {
         if (email) await recordLoginFailure(db, email, now);
         logEvent("platform.login.failed", { reason: user ? "password" : "unknown" });
         return loginPage("邮箱或密码错误。", 401);
@@ -170,18 +185,21 @@ export const routes: Route[] = [
   },
   {
     method: "GET",
-    pattern: /^\/reset\/([A-Za-z0-9_-]+)$/,
-    async handler(_ctx, [token]) {
-      return resetPage(token);
+    pattern: /^\/reset$/,
+    async handler() {
+      return resetPage();
     },
   },
   {
     method: "POST",
-    pattern: /^\/reset\/([A-Za-z0-9_-]+)$/,
-    async handler(ctx, [token]) {
+    pattern: /^\/reset$/,
+    async handler(ctx) {
       const db = ctx.env.PRIVATE_DB;
-      const password = (await readForm(ctx.request)).get("password") ?? "";
-      if (!validPassword(password)) return resetPage(token, PASSWORD_HINT, 400);
+      const form = await readForm(ctx.request);
+      const token = (form.get("token") ?? "").trim();
+      const password = form.get("password") ?? "";
+      if (!validPassword(password)) return resetPage(PASSWORD_HINT, 400);
+      if (!/^[A-Za-z0-9_-]+$/.test(token)) return html(messagePage("链接无效", "链接无效或已过期，请联系管理员重新生成。", null, "error"), 400);
       const now = ctx.deps.now();
       const userId = await consumeResetToken(db, token, now);
       if (!userId) return html(messagePage("链接无效", "链接无效或已过期，请联系管理员重新生成。", null, "error"), 400);

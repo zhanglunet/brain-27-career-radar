@@ -52,7 +52,7 @@ export async function handleRequest(request: Request, env: PlatformEnv, deps: De
     if (error instanceof HttpError) {
       response = errorResponse(error);
     } else {
-      logEvent("platform.error", { route: ctx.url.pathname, reason: error instanceof Error ? error.name : "unknown" });
+      logEvent("platform.error", { route: ctx.url.pathname.replace(/[A-Za-z0-9_-]{20,}/g, ":token"), reason: error instanceof Error ? error.name : "unknown" });
       response = html(messagePage("出错了", "服务暂时出错，请稍后再试。", null, "error"), 500);
     }
   }

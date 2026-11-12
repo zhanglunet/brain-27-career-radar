@@ -10,6 +10,7 @@ import {
   listUsers,
   setUserStatus,
 } from "../data/accounts.ts";
+import { forUser } from "../data/scoped.ts";
 import { revokeUserSessions } from "../data/sessions.ts";
 import type { User } from "../data/tables.ts";
 import { HttpError, escapeHtml, html, logEvent, redirect } from "../http.ts";
@@ -21,12 +22,13 @@ function actionButton(userId: string, action: string, label: string, danger = fa
   return `<form method="post" action="/admin/users/${encodeURIComponent(userId)}/${action}" style="margin:0;display:inline"><button class="${danger ? "danger" : "link"}" type="submit">${label}</button></form>`;
 }
 
-function userRow(user: User): string {
+function userRow(user: User, admin: User): string {
   const actions = [
     user.status === "pending" ? actionButton(user.id, "approve", "批准") : "",
     user.status === "active" ? actionButton(user.id, "disable", "停用") : "",
     user.status === "disabled" ? actionButton(user.id, "enable", "启用") : "",
     user.status !== "pending" ? actionButton(user.id, "reset-link", "生成重置链接") : "",
+    user.id !== admin.id ? actionButton(user.id, "delete", user.status === "pending" ? "拒绝并删除" : "删除账号", true) : "",
   ].filter(Boolean).join(" · ");
   const date = new Date(user.createdAt).toISOString().slice(0, 10);
   return `<tr><td>${escapeHtml(user.email)}</td><td>${user.role === "admin" ? "管理员" : "用户"}</td><td>${STATUS_LABEL[user.status]}</td><td>${date}</td><td>${actions}</td></tr>`;
@@ -40,7 +42,7 @@ async function adminPage(ctx: Ctx, admin: User, extra = "", status = 200): Promi
 <form method="post" action="/admin/invites"><button type="submit">生成邀请码</button></form>
 <h2>待审批（${pending.length}）</h2>
 <h2>全部用户（${users.length}）</h2>
-<table><tr><th>邮箱</th><th>角色</th><th>状态</th><th>注册</th><th>操作</th></tr>${users.map(userRow).join("")}</table>`;
+<table><tr><th>邮箱</th><th>角色</th><th>状态</th><th>注册</th><th>操作</th></tr>${users.map((user) => userRow(user, admin)).join("")}</table>`;
   return html(layout("管理", body, admin), status);
 }
 
@@ -104,10 +106,18 @@ export const routes: Route[] = [
     if (target.status !== "disabled") throw new HttpError(400, "该用户未被停用");
     await setUserStatus(ctx.env.PRIVATE_DB, target.id, "active", ctx.deps.now());
   }),
+  userAction("delete", async (ctx, admin, target) => {
+    const db = ctx.env.PRIVATE_DB;
+    if (target.id === admin.id) throw new HttpError(400, "请在账号页删除自己的账号");
+    if (target.role === "admin" && target.status === "active" && (await countActiveAdmins(db)) <= 1) {
+      throw new HttpError(400, "不能删除唯一的管理员");
+    }
+    await forUser(db, target.id).deleteAll();
+  }),
   userAction("reset-link", async (ctx, admin, target) => {
     if (target.status === "pending") throw new HttpError(400, "待审批用户不能重置密码");
     const token = await createResetToken(ctx.env.PRIVATE_DB, target.id, admin.id, ctx.deps.now());
-    const link = `https://${ctx.env.PLATFORM_HOST}/reset/${token}`;
+    const link = `https://${ctx.env.PLATFORM_HOST}/reset#${token}`;
     return adminPage(ctx, admin, `${notice(`已为 ${target.email} 生成重置链接，24 小时内有效，只显示这一次，请线下转交：`)}<p><code>${escapeHtml(link)}</code></p>`);
   }),
 ];

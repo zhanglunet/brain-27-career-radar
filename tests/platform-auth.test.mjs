@@ -155,11 +155,11 @@ test("重置链接一次有效且会撤销旧会话", async () => {
   const user = await findUserByEmail(env.PRIVATE_DB, "reset@example.test");
   const token = await createResetToken(env.PRIVATE_DB, user.id, "admin", deps.now());
   const anon = client(env, deps);
-  assert.equal((await anon.get(`/reset/${token}`)).status, 200);
-  const done = await anon.post(`/reset/${token}`, { password: "new-password-456" });
+  assert.equal((await anon.get("/reset")).status, 200);
+  const done = await anon.post("/reset", { token, password: "new-password-456" });
   assert.equal(done.status, 303);
   assert.equal(done.headers.get("location"), "/login");
-  const again = await anon.post(`/reset/${token}`, { password: "another-pass-789" });
+  const again = await anon.post("/reset", { token, password: "another-pass-789" });
   assert.equal(again.status, 400);
   const replay = await handleRequest(new Request("https://platform.test/", { headers: { cookie: `__Host-session=${oldToken}` } }), env, deps);
   assert.equal(replay.headers.get("location"), "/login");

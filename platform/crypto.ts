@@ -1,6 +1,8 @@
 /** 密码哈希与随机令牌（仅用 WebCrypto，Workers 与 Node 通用）。 */
 
 const PBKDF2_ITERATIONS = 100_000;
+/** Workers 的 WebCrypto 对 PBKDF2 的迭代上限。 */
+const MAX_PBKDF2_ITERATIONS = 100_000;
 const SALT_BYTES = 16;
 const HASH_BITS = 256;
 const encoder = new TextEncoder();
@@ -44,7 +46,7 @@ export async function verifyPassword(password: string, stored: string): Promise<
   const parts = stored.split("$");
   if (parts.length !== 4 || parts[0] !== "pbkdf2") return false;
   const iterations = Number(parts[1]);
-  if (iterations !== PBKDF2_ITERATIONS) return false;
+  if (!Number.isInteger(iterations) || iterations < 1 || iterations > MAX_PBKDF2_ITERATIONS) return false;
   const salt = fromBase64Url(parts[2]);
   const expected = fromBase64Url(parts[3]);
   if (!salt || !expected || expected.length !== HASH_BITS / 8) return false;

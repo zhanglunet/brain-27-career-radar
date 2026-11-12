@@ -89,6 +89,14 @@ export async function createInvite(db: D1Database, createdBy: string, now: numbe
   return code;
 }
 
+export async function isInviteValid(db: D1Database, code: string, now: number): Promise<boolean> {
+  const row = await db
+    .prepare("SELECT 1 AS ok FROM invites WHERE code_hash = ? AND used_at IS NULL AND expires_at > ?")
+    .bind(await sha256Hex(code.trim()), now)
+    .first();
+  return row !== null;
+}
+
 export async function consumeInvite(db: D1Database, code: string, userId: string, now: number): Promise<boolean> {
   const result = await db
     .prepare("UPDATE invites SET used_by = ?, used_at = ? WHERE code_hash = ? AND used_at IS NULL AND expires_at > ?")
