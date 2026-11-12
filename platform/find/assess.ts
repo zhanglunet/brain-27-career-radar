@@ -34,7 +34,29 @@ function shortList(value: unknown): string[] {
   return value.map((item) => short(item)).filter((item): item is string => item !== null).slice(0, 5);
 }
 
-export function verifyAssessment(raw: unknown, requirements: string[]): Assessment {
+function profileText(profile: ProfileData): string {
+  const parts: string[] = [];
+  const walk = (value: unknown) => {
+    if (typeof value === "string") parts.push(value);
+    else if (Array.isArray(value)) value.forEach(walk);
+    else if (value && typeof value === "object") Object.values(value).forEach(walk);
+  };
+  walk(profile);
+  return parts.join("|").replace(/\s+/g, "").toLowerCase();
+}
+
+/**
+ * 依据必须能在档案里找到：去掉开头的"教育：""技能："之类标签后按标点和空白拆成片段，
+ * 每个长度 ≥ 2 的片段都要是档案文字的子串。
+ */
+export function evidenceInProfile(evidence: string, text: string): boolean {
+  const body = evidence.replace(/^[^：:]{1,8}[：:]/, "");
+  const fragments = body.split(/[\s，,；;、。:：（）()“”"'「」]+/).map((part) => part.toLowerCase()).filter((part) => [...part].length >= 2);
+  return fragments.length > 0 && fragments.every((part) => text.includes(part));
+}
+
+export function verifyAssessment(raw: unknown, requirements: string[], profile?: ProfileData): Assessment {
+  const text = profile ? profileText(profile) : null;
   const root = raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
   const byRequirement = new Map<string, EligibilityItem>();
   for (const item of Array.isArray(root.items) ? root.items : []) {
@@ -44,7 +66,7 @@ export function verifyAssessment(raw: unknown, requirements: string[]): Assessme
     if (!requirements.includes(requirement) || byRequirement.has(requirement)) continue;
     let status: EligibilityStatus = STATUSES.includes(r.status as EligibilityStatus) ? (r.status as EligibilityStatus) : "未知";
     let evidence = short(r.evidence, 300);
-    if (status !== "未知" && !evidence) status = "未知";
+    if (status !== "未知" && (!evidence || (text !== null && !evidenceInProfile(evidence, text)))) status = "未知";
     if (status === "未知") evidence = null;
     byRequirement.set(requirement, { requirement, status, evidence });
   }
@@ -84,7 +106,7 @@ export async function assessOpportunities(llm: LlmProvider, profile: ProfileData
     for (const item of list) {
       if (item && typeof item === "object" && typeof (item as { key?: unknown }).key === "string") byKey.set((item as { key: string }).key, item);
     }
-    for (const opp of batch) results.set(opp.key, verifyAssessment(byKey.get(opp.key), opp.requirements));
+    for (const opp of batch) results.set(opp.key, verifyAssessment(byKey.get(opp.key), opp.requirements, profile));
   }
   return results;
 }

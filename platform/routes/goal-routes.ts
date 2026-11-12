@@ -1,6 +1,7 @@
 /** 目标详情：机会清单、找机会、来源管理、机会标记。所有目标 / 来源 / 机会都按本人校验。 */
 import { requireConsent, requireUser } from "../auth.ts";
 import type { Ctx, Route } from "../context.ts";
+import { STALE_RUN_MS } from "../data/scoped-find.ts";
 import type { FindRun, GoalSource, UserOpportunity } from "../data/scoped-find.ts";
 import { forUser } from "../data/scoped.ts";
 import type { Goal } from "../data/scoped.ts";
@@ -35,12 +36,15 @@ async function ownGoal(ctx: Ctx, user: User, goalId: string): Promise<Goal> {
   return goal;
 }
 
-function runSummary(run: FindRun | null): string {
+function runSummary(run: FindRun | null, now: number): string {
   if (!run) return `<p class="muted">还没有找过机会。</p>`;
+  if ((run.status === "queued" || run.status === "running") && now - run.createdAt > STALE_RUN_MS) {
+    return `<p>最近一次：超时未完成，可以重新点"找机会"。</p>`;
+  }
   const when = run.status === "done" ? time(run.finishedAt) : run.status === "failed" ? `：${RUN_ERRORS[run.error ?? ""] ?? "运行出错"}` : "";
   const s = run.stats;
   const detail = run.status === "done" || run.status === "failed"
-    ? `<p class="muted">检索词 ${s.queries} 条 · 抓取页面 ${s.pagesFetched} 个（跳过 ${s.pagesSkipped}，可疑 ${s.flaggedPages}）· 评估 ${s.assessed} 条 · 共 ${s.opportunities} 条机会${s.searchFailures ? ` · 搜索失败 ${s.searchFailures} 次` : ""}${s.stoppedByQuota ? " · 今日额度已用完，部分步骤未执行" : ""}</p>`
+    ? `<p class="muted">检索词 ${s.queries} 条 · 抓取页面 ${s.pagesFetched} 个（跳过 ${s.pagesSkipped}，可疑 ${s.flaggedPages}）· 评估 ${s.assessed} 条 · 共 ${s.opportunities} 条机会${s.searchFailures ? ` · 搜索失败 ${s.searchFailures} 次` : ""}${s.stoppedByQuota ? " · 今日额度不足，部分步骤未执行" : ""}${s.stoppedByTime ? " · 运行时间到，部分页面未抓取" : ""}</p>`
     : "";
   return `<p>最近一次：${RUN_STATUS[run.status]} ${escapeHtml(when)}</p>${detail}`;
 }
@@ -82,7 +86,7 @@ async function goalPage(ctx: Ctx, user: User, goal: Goal, message = "", status =
     ? `<p class="muted">${escapeHtml([goal.target.kinds.join("、"), goal.target.directions.join("、"), goal.target.cities.join("、"), goal.target.timing ?? ""].filter(Boolean).join(" · "))}</p>`
     : notice("这个目标还没有确认画像，请先到“我的档案”让智能体整理并确认。", "error");
   const body = `<h1>${escapeHtml(goal.title)}</h1>${message ? notice(message, "error") : ""}${target}
-<h2>找机会</h2>${runSummary(run)}
+<h2>找机会</h2>${runSummary(run, ctx.deps.now())}
 <form method="post" action="/goals/${encodeURIComponent(goal.id)}/find"><button type="submit">找机会</button></form>
 <p class="muted">每天早上 8 点也会自动刷新一次。</p>
 <h2>机会（${opps.length}）</h2>

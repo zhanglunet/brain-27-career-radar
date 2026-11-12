@@ -2,16 +2,20 @@
 import { parseRunStats } from "./run-stats.ts";
 import type { RunStats } from "./scoped-find.ts";
 
-export async function listDailyCandidates(db: D1Database, consentVersion: string): Promise<{ userId: string; goalId: string }[]> {
+export const DAILY_ACTIVE_WINDOW_MS = 7 * 86_400_000;
+
+/** 每日刷新候选：账号正常、已同意当前条款、近 7 天登录过、目标已确认画像。 */
+export async function listDailyCandidates(db: D1Database, consentVersion: string, now: number): Promise<{ userId: string; goalId: string }[]> {
   const { results } = await db
     .prepare(
       `SELECT g.user_id AS user_id, g.id AS goal_id FROM goals g
          JOIN users u ON u.id = g.user_id
         WHERE u.status = 'active' AND g.target_json IS NOT NULL
           AND EXISTS (SELECT 1 FROM consents c WHERE c.user_id = u.id AND c.version = ?)
+          AND EXISTS (SELECT 1 FROM sessions s WHERE s.user_id = u.id AND s.created_at >= ?)
         ORDER BY g.user_id, g.created_at`,
     )
-    .bind(consentVersion)
+    .bind(consentVersion, now - DAILY_ACTIVE_WINDOW_MS)
     .all<{ user_id: string; goal_id: string }>();
   return results.map((row) => ({ userId: row.user_id, goalId: row.goal_id }));
 }

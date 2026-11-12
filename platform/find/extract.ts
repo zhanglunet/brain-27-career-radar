@@ -23,6 +23,8 @@ export type ExtractedOpportunity = {
 export type Extraction = { official: boolean; org: string | null; opportunities: ExtractedOpportunity[] };
 
 const MAX_OPPORTUNITIES = 10;
+/** 送模型的正文上限：控制单次调用耗时与 token；校验仍对照完整正文。 */
+export const MAX_PROMPT_CHARS = 12_000;
 const MAX_REQUIREMENTS = 20;
 const MAX_REQUIREMENT_CHARS = 300;
 const STATUSES: DeadlineStatus[] = ["date", "rolling", "unknown", "closed"];
@@ -107,7 +109,7 @@ export function verifyExtraction(raw: unknown, page: FetchedPage): Extraction {
 export async function extractOpportunities(llm: LlmProvider, page: FetchedPage): Promise<Extraction> {
   if (page.flagged) return { official: false, org: null, opportunities: [] };
   const links = page.links.slice(0, 100).map((link) => `- ${link.text || "（无文字）"}：${link.href}`).join("\n");
-  const user = `页面地址：${page.finalUrl}\n页面标题：${page.title ?? ""}\n页面中的链接：\n${links || "（无）"}\n\n<page>\n${neutralize(page.text)}\n</page>`;
+  const user = `页面地址：${page.finalUrl}\n页面标题：${page.title ?? ""}\n页面中的链接：\n${links || "（无）"}\n\n<page>\n${neutralize([...page.text].slice(0, MAX_PROMPT_CHARS).join(""))}\n</page>`;
   const { json } = await llm.completeJson([
     { role: "system", content: SYSTEM },
     { role: "user", content: user },

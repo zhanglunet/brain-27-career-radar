@@ -7,6 +7,7 @@ import { HttpError } from "../http.ts";
 import { nominateShared } from "./shared-sources.ts";
 
 export const MAX_USER_SOURCES_PER_GOAL = 20;
+export const MAX_SEARCH_SOURCES_PER_GOAL = 20;
 
 export type GoalSource = {
   id: string;
@@ -35,10 +36,10 @@ const toSource = (row: SourceRow): GoalSource => ({
 const SOURCE_COLUMNS = "id, goal_id, url, org, tier, origin, nominated_at, created_at";
 
 export function sourcesFor(db: D1Database, userId: string) {
-  async function findByUrl(goalId: string, url: string): Promise<GoalSource | null> {
+  async function findByKey(goalId: string, urlKey: string): Promise<GoalSource | null> {
     const row = await db
-      .prepare(`SELECT ${SOURCE_COLUMNS} FROM goal_sources WHERE user_id = ? AND goal_id = ? AND url = ?`)
-      .bind(userId, goalId, url)
+      .prepare(`SELECT ${SOURCE_COLUMNS} FROM goal_sources WHERE user_id = ? AND goal_id = ? AND url_key = ?`)
+      .bind(userId, goalId, urlKey)
       .first<SourceRow>();
     return row ? toSource(row) : null;
   }
@@ -55,29 +56,32 @@ export function sourcesFor(db: D1Database, userId: string) {
       const { results } = await db.prepare(`SELECT ${SOURCE_COLUMNS} FROM goal_sources WHERE user_id = ? ORDER BY created_at, id`).bind(userId).all<SourceRow>();
       return results.map(toSource);
     },
-    /** 规范化 URL 后去重；目标必须属于本人；用户来源每目标最多 20 条。 */
+    /**
+     * 按原始网址保存（抓取也用它），规范化结果存 url_key 只用于去重；目标必须属于本人；
+     * 用户来源与搜索记下的来源每目标各最多 20 条。
+     */
     async add(goalId: string, input: { url: string; org: string | null; tier: GoalSource["tier"]; origin: GoalSource["origin"] }, now: number): Promise<GoalSource> {
-      const url = normalizeUrl(input.url);
-      if (!url || !isFetchableUrl(url)) throw new HttpError(400, "请填写有效的公开网址");
-      const existing = await findByUrl(goalId, url);
+      const url = input.url.trim();
+      const urlKey = normalizeUrl(url);
+      if (!urlKey || !isFetchableUrl(url)) throw new HttpError(400, "请填写有效的公开网址");
+      const existing = await findByKey(goalId, urlKey);
       if (existing) return existing;
-      if (input.origin === "user") {
-        const count = await db
-          .prepare("SELECT COUNT(*) AS n FROM goal_sources WHERE user_id = ? AND goal_id = ? AND origin = 'user'")
-          .bind(userId, goalId)
-          .first<number>("n");
-        if ((count ?? 0) >= MAX_USER_SOURCES_PER_GOAL) throw new HttpError(400, `每个目标最多添加 ${MAX_USER_SOURCES_PER_GOAL} 个来源`);
-      }
+      const limit = input.origin === "user" ? MAX_USER_SOURCES_PER_GOAL : MAX_SEARCH_SOURCES_PER_GOAL;
+      const count = await db
+        .prepare("SELECT COUNT(*) AS n FROM goal_sources WHERE user_id = ? AND goal_id = ? AND origin = ?")
+        .bind(userId, goalId, input.origin)
+        .first<number>("n");
+      if ((count ?? 0) >= limit) throw new HttpError(400, `每个目标最多添加 ${limit} 个来源`);
       const id = crypto.randomUUID();
       const result = await db
         .prepare(
-          `INSERT OR IGNORE INTO goal_sources (id, user_id, goal_id, url, org, tier, origin, created_at)
-           SELECT ?, ?, ?, ?, ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM goals WHERE id = ? AND user_id = ?)`,
+          `INSERT OR IGNORE INTO goal_sources (id, user_id, goal_id, url, url_key, org, tier, origin, created_at)
+           SELECT ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM goals WHERE id = ? AND user_id = ?)`,
         )
-        .bind(id, userId, goalId, url, input.org, input.tier, input.origin, now, goalId, userId)
+        .bind(id, userId, goalId, url, urlKey, input.org, input.tier, input.origin, now, goalId, userId)
         .run();
       if (result.meta.changes !== 1) {
-        const raced = await findByUrl(goalId, url);
+        const raced = await findByKey(goalId, urlKey);
         if (raced) return raced;
         throw new HttpError(404, "目标不存在");
       }
@@ -280,6 +284,7 @@ export type RunStats = {
   assessed: number;
   opportunities: number;
   stoppedByQuota: boolean;
+  stoppedByTime: boolean;
 };
 export type FindRun = {
   id: string;
@@ -296,7 +301,7 @@ export type FindRun = {
 export const STALE_RUN_MS = 30 * 60_000;
 
 export function emptyStats(): RunStats {
-  return { queries: 0, searchFailures: 0, pagesFetched: 0, pagesSkipped: 0, flaggedPages: 0, extracted: 0, assessed: 0, opportunities: 0, stoppedByQuota: false };
+  return { queries: 0, searchFailures: 0, pagesFetched: 0, pagesSkipped: 0, flaggedPages: 0, extracted: 0, assessed: 0, opportunities: 0, stoppedByQuota: false, stoppedByTime: false };
 }
 
 type RunRow = { id: string; goal_id: string; trigger: RunTrigger; status: RunStatus; stats_json: string; error: string | null; created_at: number; started_at: number | null; finished_at: number | null };

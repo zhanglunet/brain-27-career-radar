@@ -54,3 +54,17 @@ export async function putRobots(db: D1Database, host: string, rules: RobotsRules
     .bind(host, now, JSON.stringify(rules))
     .run();
 }
+
+/** 每个网址最近一次成功抓取的时间（没抓过为 0），用于候选轮转。 */
+export async function lastFetchedAt(db: D1Database, urls: string[]): Promise<Map<string, number>> {
+  const result = new Map<string, number>();
+  for (let i = 0; i < urls.length; i += 50) {
+    const chunk = urls.slice(i, i + 50);
+    const { results } = await db
+      .prepare(`SELECT url, fetched_at FROM page_cache WHERE url IN (${chunk.map(() => "?").join(", ")})`)
+      .bind(...chunk)
+      .all<{ url: string; fetched_at: number }>();
+    for (const row of results) result.set(row.url, row.fetched_at);
+  }
+  return result;
+}

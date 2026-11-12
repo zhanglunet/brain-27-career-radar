@@ -24,7 +24,7 @@ test("来源去重按规范化 URL", async () => {
   const second = await scope.sources.add(goal.id, { url: "https://jobs.example.test/campus", org: null, tier: "L3", origin: "user" }, 2);
   assert.equal(first.id, second.id);
   assert.equal((await scope.sources.list(goal.id)).length, 1);
-  assert.equal((await scope.sources.list(goal.id))[0].url, "https://jobs.example.test/campus");
+  assert.equal((await scope.sources.list(goal.id))[0].url, "http://Jobs.Example.test/campus/?utm_source=x", "按原始网址保存，规范化结果只用于去重");
 });
 
 test("非法网址被拒", async () => {
