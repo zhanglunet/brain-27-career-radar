@@ -1,16 +1,30 @@
 /** 私有平台请求入口：主机与来源校验 → 路由分发 → 统一错误页与安全头。 */
+import { verifyAccessJwt } from "./access.ts";
 import type { Ctx, Route } from "./context.ts";
 import type { Deps, PlatformEnv } from "./env.ts";
 import { HttpError, html, isAllowedHost, isAllowedOrigin, logEvent, redirect, text, withSecurityHeaders } from "./http.ts";
+import { routes as adminRoutes } from "./routes/admin-routes.ts";
 import { routes as appRoutes } from "./routes/app-routes.ts";
 import { routes as authRoutes } from "./routes/auth-routes.ts";
 import { messagePage } from "./views.ts";
 
-const ROUTES: Route[] = [...authRoutes, ...appRoutes];
+const ROUTES: Route[] = [...authRoutes, ...appRoutes, ...adminRoutes];
 
 const ROBOTS = "User-agent: *\nDisallow: /\n";
 
+/** 配置了 ACCESS_AUD 时，/admin 路径必须带合法的 Cloudflare Access JWT（缺配置一律拒绝）。 */
+async function checkAdminAccess(ctx: Ctx): Promise<void> {
+  if (!ctx.env.ACCESS_AUD || !/^\/admin(\/|$)/.test(ctx.url.pathname)) return;
+  const token = ctx.request.headers.get("cf-access-jwt-assertion");
+  const { ACCESS_TEAM_DOMAIN: teamDomain, ACCESS_AUD: aud } = ctx.env;
+  const fetchJwks = ctx.deps.fetchJwks;
+  const ok = Boolean(token && teamDomain && fetchJwks)
+    && (await verifyAccessJwt(token as string, { teamDomain: teamDomain as string, aud, now: ctx.deps.now(), fetchJwks: fetchJwks as (url: string) => Promise<unknown> }));
+  if (!ok) throw new HttpError(403, "没有权限");
+}
+
 async function dispatch(ctx: Ctx): Promise<Response> {
+  await checkAdminAccess(ctx);
   const method = ctx.request.method === "HEAD" ? "GET" : ctx.request.method;
   if (method === "GET" && ctx.url.pathname === "/robots.txt") return text(ROBOTS);
   for (const route of ROUTES) {
