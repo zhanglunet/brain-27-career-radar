@@ -93,7 +93,8 @@ export const routes: Route[] = [
       const expected = ctx.env.ADMIN_BOOTSTRAP_TOKEN;
       if (!setupAvailable(expected, await countActiveAdmins(db))) throw new HttpError(404, "页面不存在");
       const form = await readForm(ctx.request);
-      if (!timingSafeEqual(form.get("token") ?? "", expected)) return setupPage("初始化口令不正确", 403);
+      // 口令从终端复制时常带上首尾空白，比对前去掉；口令本身是十六进制，不含空白。
+      if (!timingSafeEqual((form.get("token") ?? "").trim(), expected.trim())) return setupPage("初始化口令不正确", 403);
       const email = normalizeEmail(form.get("email") ?? "");
       const password = form.get("password") ?? "";
       if (!validEmail(email) || !validPassword(password)) return setupPage(`请填写有效邮箱。${PASSWORD_HINT}`, 400);

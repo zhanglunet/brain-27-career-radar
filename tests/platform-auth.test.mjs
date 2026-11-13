@@ -173,3 +173,10 @@ test("超大请求体返回 413 且不建账号", async () => {
   assert.equal(response.status, 413);
   assert.equal(await findUserByEmail(env.PRIVATE_DB, "big@example.test"), null);
 });
+
+test("初始化口令首尾的空白（复制时常带上）不影响校验", async () => {
+  const { env, deps } = await makeEnv();
+  const c = client(env, deps);
+  const response = await c.post("/setup", { token: "  test-bootstrap \n", email: "admin@example.test", password: "adminpass1" });
+  assert.equal(response.status, 303);
+});
