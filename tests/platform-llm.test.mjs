@@ -116,3 +116,35 @@ test("未同意条款时 llmFor 跳转 /consent；缺 key 返回 503；注入的
   assert.deepEqual((await provider.completeJson(MESSAGES)).json, { hi: 1 });
   assert.equal(injected.calls.length, 1);
 });
+
+test("调用失败时日志记下不含内容的错误细节（HTTP 状态码、超时、内容格式）", async (t) => {
+  const lines = [];
+  t.mock.method(console, "log", (line) => lines.push(String(line)));
+  const { env, deps } = await makeEnv();
+  const user = await activeUser(env, deps, "d@example.test");
+  const scope = forUser(env.PRIVATE_DB, user.user.id);
+  const cases = [
+    [() => new Response("unauthorized", { status: 401 }), "http_401"],
+    [() => { throw new DOMException("t", "TimeoutError"); }, "timeout"],
+    [() => deepSeekReply("not json"), "content_not_json"],
+  ];
+  for (const [handler, detail] of cases) {
+    const provider = withDailyQuota(createDeepSeekProvider({ apiKey: "k", fetch: fakeFetch(handler) }), scope, user.user.id, () => NOV12_23H);
+    await assert.rejects(() => provider.completeJson(MESSAGES));
+    assert.ok(lines.some((line) => line.includes("platform.llm.call") && line.includes(detail)), detail);
+  }
+});
+
+test("key 首尾的空白与换行被去掉后再放进请求头", async () => {
+  const fetch = fakeFetch(() => deepSeekReply("{}"));
+  await createDeepSeekProvider({ apiKey: "  sk-test-key\n", fetch }).completeJson(MESSAGES);
+  assert.equal(fetch.requests[0].headers.get("authorization"), "Bearer sk-test-key");
+});
+
+test("key 含非法字符时不发请求，报 key_invalid_chars", async () => {
+  const fetch = fakeFetch(() => deepSeekReply("{}"));
+  for (const bad of ["sk-ab cd", "sk-全角", "sk-a\nb"]) {
+    await assert.rejects(() => createDeepSeekProvider({ apiKey: bad, fetch }).completeJson(MESSAGES), (e) => e instanceof LlmError && e.detail === "key_invalid_chars", JSON.stringify(bad));
+  }
+  assert.equal(fetch.requests.length, 0);
+});

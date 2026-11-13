@@ -113,7 +113,7 @@ export async function executeRun(env: PlatformEnv, deps: Deps, msg: FindMessage)
   if (!(await scope.runs.claim(msg.runId, deps.now()))) return;
   const stats: RunStats = emptyStats();
   const startedAt = deps.now();
-  const fetchDeps = { now: deps.now, fetch: deps.fetch ?? fetch };
+  const fetchDeps = { now: deps.now, fetch: deps.fetch ?? ((input, init) => fetch(input, init)) };
   try {
     const run = await scope.runs.get(msg.runId);
     const goal = run ? await scope.goals.get(run.goalId) : null;

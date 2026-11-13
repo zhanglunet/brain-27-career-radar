@@ -82,3 +82,11 @@ test("日志不含检索词", async (t) => {
   assert.ok(lines.some((line) => line.includes("platform.search.call")));
   assert.ok(!lines.join("\n").includes("机密检索词"));
 });
+
+test("博查 key 首尾的空白被去掉；含非法字符时不发请求", async () => {
+  const fetch = fakeFetch(() => bochaReply([]));
+  await createBochaProvider({ apiKey: " sk-bocha\n", fetch }).search("q");
+  assert.equal(fetch.requests[0].headers.get("authorization"), "Bearer sk-bocha");
+  await assert.rejects(() => createBochaProvider({ apiKey: "sk 全角", fetch }).search("q"), (e) => e instanceof SearchError);
+  assert.equal(fetch.requests.length, 1);
+});
