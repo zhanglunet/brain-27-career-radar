@@ -13,9 +13,12 @@ export type LlmErrorKind = "unavailable" | "bad_response" | "too_long";
 
 export class LlmError extends Error {
   kind: LlmErrorKind;
+  /** 可写进日志的简短错误细节（HTTP 状态码、超时、格式问题），不含任何请求或响应内容。 */
+  detail: string;
 
-  constructor(kind: LlmErrorKind, message: string) {
+  constructor(kind: LlmErrorKind, message: string, detail = "") {
     super(message);
     this.kind = kind;
+    this.detail = detail;
   }
 }

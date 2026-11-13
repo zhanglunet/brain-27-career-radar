@@ -3,6 +3,10 @@ import { handleRequest } from "./app.ts";
 import type { Deps, FindMessage, PlatformEnv } from "./env.ts";
 import { enqueueDailyRuns, executeRun } from "./find/run.ts";
 
+/**
+ * Workers 的全局 fetch 不能被当作对象方法调用（this 不对会抛 Illegal invocation），
+ * 所以这里统一包一层箭头函数再交给各模块。
+ */
 function runtimeDeps(): Deps {
   return { now: Date.now, fetch: (input, init) => fetch(input, init) };
 }
@@ -10,7 +14,7 @@ function runtimeDeps(): Deps {
 const worker = {
   fetch(request: Request, env: PlatformEnv): Promise<Response> {
     return handleRequest(request, env, {
-      now: Date.now,
+      ...runtimeDeps(),
       fetchJwks: (url: string) => fetch(url).then((response) => response.json()),
     });
   },

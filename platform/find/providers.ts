@@ -33,14 +33,14 @@ async function ensureEligible(env: PlatformEnv, userId: string): Promise<void> {
 
 export async function llmForUserId(env: PlatformEnv, deps: Deps, userId: string): Promise<LlmProvider> {
   await ensureEligible(env, userId);
-  const inner = deps.llm ?? (env.DEEPSEEK_API_KEY ? createDeepSeekProvider({ apiKey: env.DEEPSEEK_API_KEY, fetch: deps.fetch ?? fetch }) : null);
+  const inner = deps.llm ?? (env.DEEPSEEK_API_KEY ? createDeepSeekProvider({ apiKey: env.DEEPSEEK_API_KEY, fetch: deps.fetch ?? ((input, init) => fetch(input, init)) }) : null);
   if (!inner) throw new RunAbort("no_key");
   return withDailyQuota(inner, forUser(env.PRIVATE_DB, userId), userId, deps.now);
 }
 
 export async function searchForUserId(env: PlatformEnv, deps: Deps, userId: string): Promise<SearchProvider> {
   await ensureEligible(env, userId);
-  const inner = deps.search ?? (env.BOCHA_API_KEY ? createBochaProvider({ apiKey: env.BOCHA_API_KEY, fetch: deps.fetch ?? fetch }) : null);
+  const inner = deps.search ?? (env.BOCHA_API_KEY ? createBochaProvider({ apiKey: env.BOCHA_API_KEY, fetch: deps.fetch ?? ((input, init) => fetch(input, init)) }) : null);
   if (!inner) throw new RunAbort("no_key");
   return withSearchQuota(inner, forUser(env.PRIVATE_DB, userId), userId, deps.now);
 }

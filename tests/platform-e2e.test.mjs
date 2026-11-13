@@ -185,3 +185,43 @@ test("导出包含来源、运行（含统计、不含检索词）、机会（�
   assert.ok(data.usage.some((u) => u.calls > 0 && typeof u.searches === "number"));
   assert.doesNotMatch(raw, /用户研究 校园招聘 官网/);
 });
+
+/** 模拟 Workers：全局 fetch 被当作对象方法调用（this 不是 undefined / globalThis）时抛 Illegal invocation。 */
+function strictFetch(handler) {
+  return function fetch(url, init) {
+    if (this !== undefined && this !== globalThis) throw new TypeError("Illegal invocation: function called with incorrect `this` reference");
+    return handler(String(url), init);
+  };
+}
+
+test("经 Worker 入口生成草稿时，全局 fetch 不会被当作对象方法调用", async () => {
+  const { deepSeekReply } = await import("./helpers/fake-llm.mjs");
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = strictFetch(() => deepSeekReply(JSON.stringify({ profile: { basics: { name: "严格（示例）" } }, target: {} })));
+  try {
+    const { env, deps } = await makeEnv();
+    deps.now = Date.now;
+    const viaWorker = (request) => worker.fetch(request, env, { waitUntil() {}, passThroughOnException() {} });
+    const c = client(env, deps, { fetchHandler: viaWorker });
+    const { activeUser } = await import("./helpers/platform-client.mjs");
+    const u = await activeUser(env, deps, "strict@example.test");
+    c.jar.session = u.jar.session;
+    await c.post("/consent", { agree: "yes", version: CONSENT_VERSION });
+    const response = await c.post("/profile/draft", { intent: "想找北京的校招" });
+    assert.equal(response.status, 303, await response.clone().text());
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("各提供方与抓取层直接调用传入的 fetch，不以对象方法的形式调用", async () => {
+  const { createDeepSeekProvider } = await import("../platform/llm/deepseek.ts");
+  const { createBochaProvider } = await import("../platform/search/bocha.ts");
+  const { fetchPublicPage } = await import("../platform/fetcher/page.ts");
+  const { deepSeekReply } = await import("./helpers/fake-llm.mjs");
+  await createDeepSeekProvider({ apiKey: "k", fetch: strictFetch(() => deepSeekReply("{}")) }).completeJson([{ role: "user", content: "x" }]);
+  await createBochaProvider({ apiKey: "k", fetch: strictFetch(() => new Response(JSON.stringify({ data: {} }), { status: 200 })) }).search("q");
+  const { env, deps } = await makeEnv();
+  const result = await fetchPublicPage(env, { now: deps.now, fetch: strictFetch(() => new Response("<p>x</p>", { headers: { "content-type": "text/html" } })) }, "https://jobs.example.test/x");
+  assert.equal(result.ok, true);
+});

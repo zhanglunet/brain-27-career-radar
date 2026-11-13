@@ -203,7 +203,8 @@ async function robotsAllows(env: Pick<PlatformEnv, "PRIVATE_DB">, deps: FetchDep
   if (!rules) {
     rules = { disallow: [], allow: [] };
     try {
-      const response = await deps.fetch(`${url.origin}/robots.txt`, {
+      const fetchFn = deps.fetch;
+      const response = await fetchFn(`${url.origin}/robots.txt`, {
         headers: { "User-Agent": USER_AGENT },
         redirect: "manual",
         signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -266,7 +267,8 @@ async function load(env: Pick<PlatformEnv, "PRIVATE_DB">, deps: FetchDeps, url: 
     if (!(await robotsAllows(env, deps, current))) throw new Failure("robots");
     let response: Response;
     try {
-      response = await deps.fetch(current, {
+      const fetchFn = deps.fetch;
+      response = await fetchFn(current, {
         headers: { "User-Agent": USER_AGENT, Accept: "text/html,text/plain;q=0.9" },
         redirect: "manual",
         signal: AbortSignal.timeout(TIMEOUT_MS),

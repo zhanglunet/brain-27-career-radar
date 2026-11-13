@@ -27,8 +27,9 @@ export function withDailyQuota(provider: LlmProvider, scope: UserScope, userId: 
         logEvent("platform.llm.call", { userId, status: "ok", count: tokens, reason: `${now() - started}ms` });
         return result;
       } catch (error) {
-        const kind = error instanceof Error && "kind" in error ? String((error as { kind: unknown }).kind) : "error";
-        logEvent("platform.llm.call", { userId, status: "failed", reason: kind });
+        const kind = error instanceof Error && "kind" in error ? String((error as { kind: unknown }).kind) : error instanceof Error ? error.name : "error";
+        const detail = error instanceof Error && "detail" in error ? String((error as { detail: unknown }).detail) : "";
+        logEvent("platform.llm.call", { userId, status: "failed", reason: detail ? `${kind}:${detail}` : kind });
         throw error;
       }
     },

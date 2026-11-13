@@ -1,4 +1,5 @@
 /** 博查 Web Search API 实现（接口格式对照博查官方 MCP 服务器源码）。 */
+import { cleanApiKey } from "../llm/deepseek.ts";
 import { SearchError } from "./types.ts";
 import type { SearchHit, SearchProvider } from "./types.ts";
 
@@ -12,11 +13,14 @@ export function createBochaProvider(opts: { apiKey: string; fetch: typeof fetch;
   const timeoutMs = opts.timeoutMs ?? 15_000;
   return {
     async search(query: string): Promise<SearchHit[]> {
+      const apiKey = cleanApiKey(opts.apiKey);
+      if (!apiKey) throw new SearchError("博查 key 含有非法字符");
       let response: Response;
+      const fetchFn = opts.fetch;
       try {
-        response = await opts.fetch(ENDPOINT, {
+        response = await fetchFn(ENDPOINT, {
           method: "POST",
-          headers: { Authorization: `Bearer ${opts.apiKey}`, "Content-Type": "application/json" },
+          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
           body: JSON.stringify({ query, summary: true, freshness: "oneYear", count: 10 }),
           signal: AbortSignal.timeout(timeoutMs),
         });
