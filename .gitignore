@@ -42,3 +42,8 @@ tsconfig.tsbuildinfo
 /.wrangler/
 /outputs/
 /work/
+
+# python
+__pycache__/
+*.py[cod]
+*$py.class
