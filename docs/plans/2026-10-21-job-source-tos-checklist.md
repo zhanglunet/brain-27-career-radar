@@ -3,9 +3,20 @@
 > 对应 trend issue `zhanglunet/trend#584`。PRD 在中央仓库 `adopted/` 的 PRD-117。
 > 借鉴：`strelov1/freehire`（MIT）。GitHub License API 实测 SPDX 为 `MIT`，许可证文件 blob `e7fd05a368cfba2adcc3eb34ea276e3f77a7aec9`，核对提交 `233874a1dce87b21ac51ca0bc06bd9b9ddaff7d7`（2026-10-21）。版权声明：Copyright (c) 2026 freehire contributors。
 > 本文件是设计，不是抓取器。T1 不新增适配器、不改 Cron、不改 D1。
-> 下一步：T1 确认后，后续任务只允许接入本清单里 `decision: admit` 的行。
+> 状态：**T1 待研究，未完成验收；当前真实来源准入数为 0。**
+> 中央基准：`zhanglunet/trend` main `4dca217` 的 `adopted/PRD-117-brain27-aggregated-search.md`（文件 blob `154e957576c8522f00ba0460489c2c2ab009de9e`），T1 #584 要求“每个来源注明接入方式与条款结论”；T3 另要求至少 3 个合规来源。中央文档的占位要求针对真实内部主机/IP/账号/密钥，并非禁止引用公开的官方条款证据。
 
-本环境读不到私有中央仓库正文（`zhanglunet/trend` 返回 404）。下面的范围以 issue #584 和本任务说明为准：做一份职位来源与服务条款清单；优先公开/官方 API；禁止绕过反自动化措施；freehire 按 MIT 处理；清单里只有占位符，不写真实主机名、IP、账号或密钥。
+已读中央 PRD；原稿“中央仓库不可读”的范围假设已撤回。下文保留判定框架和**合成示例**，但没有已识别的真实来源、可核验条款文档或逐源结论。因此它不能充当 T1 完成证据，不能解锁 T2/T3 的来源接入，也不能据此请求真实服务。
+
+### T1 逐源研究缺口
+
+| 对象 | 当前证据 | 访问/条款结论 | 下一步与验收边界 |
+|---|---|---|---|
+| 具体 ATS 平台、聚合器和雇主来源 | 尚未选定或核验任何真实来源 | 待研究；没有来源获准接入 | 先确定真实来源标识，再逐源收集官方机器接口、访问身份、条款及限流证据；每源独立结论 |
+| 参照项目 `strelov1/freehire` 的目录服务 | 原稿记录软件 MIT 许可证；未核验目录服务条款 | 软件许可不能证明目录数据可读、可存或可展示；`research_only` | 需独立核验服务和数据许可；未取得证据前不接入 |
+| 第六节十个占位行 | 仅合成判定样例 | 全部不是实际来源结论；真实准入数 0 | 只说明判定算法，不能作为接入配置或验收计数 |
+
+每个真实来源的研究记录至少需有：公开来源名称与标识、官方接口/供稿文档引用、条款引用与查阅日期、访问身份、允许保存/展示/回链的证据及限制、限流与反自动化要求、最终结论与依据、待确认项。可引用公开文档，但不得写内部地址或凭据。证据缺失时保持 `research_only`，不能把“公开可见”或软件 MIT 当作许可。本轮未访问真实招聘站或服务商，也未作法律授权判断。
 
 ## 一、定位
 
@@ -19,7 +30,7 @@ freehire 证明「多来源收成一份目录，再按同一形状去重」这�
 - 不修改 `lib/source-monitor.ts`、种子数据和已有 `sources` 行。
 - 不把参照仓库的适配器源码抄进本仓库。MIT 允许在保留版权声明的前提下复用代码；本 T1 选择不复用任何代码。
 - 不把参照项目的职位数据、公司名单或平台清单当作可再发布的数据集。MIT 给的是软件许可，不是抓取许可，也不是数据许可。
-- 不记录真实主机名、IP、账号、令牌、cookie 或密钥。接入地址只出现为环境变量名。
+- 不记录真实内部主机名、IP、账号、令牌、cookie 或密钥。运行时接入地址只出现为环境变量名，公开官方条款与接口文档可作为证据引用。
 
 ## 二、软件许可和数据权利分开
 
@@ -56,7 +67,7 @@ freehire 证明「多来源收成一份目录，再按同一形状去重」这�
 | `kind` | enum | `ats_platform` / `aggregator` / `employer_career` / `reference_catalogue` |
 | `access_mode` | enum | `official_http_api` / `official_feed` / `public_document` / `unknown` |
 | `tos_status` | enum | `allowed` / `restricted` / `forbidden` / `unchecked` |
-| `tos_ref` | string | 条款文档的占位名，不是 URL。未读到条款时为空字符串 |
+| `tos_ref` | string | 真实研究记录须提供公开官方条款引用与查阅日期；合成示例才使用占位名。未读到条款时为空字符串 |
 | `robots` | enum | `allow` / `disallow` / `not_applicable` / `unknown` |
 | `auth` | enum | `none` / `env_key` / `session_required` |
 | `credential_env` | string | 仅 `auth=env_key` 时填写变量名；其他情况为空字符串。禁止填值 |
@@ -90,9 +101,9 @@ freehire 证明「多来源收成一份目录，再按同一形状去重」这�
 3. 多租户招聘系统**文档化的公开读接口**，且租户标识来自对方公开目录，不来自猜测。
 4. 参照项目的公开目录 API。软件是 MIT，接口能不能用要单独核条款，核完之前保持 `research_only`。
 
-## 六、占位清单
+## 六、合成判定示例（不构成真实来源清单）
 
-下列名称、变量和条款引用都是占位符。`tos_ref` 不是链接。`base_url_env` 的值由部署环境注入，不写进仓库。
+下列名称、变量和条款引用都是合成占位符。`example_decision` 只是在假设条件成立时的算法输出，故意不使用可被接入代码读取的 `decision` 字段；不得转为实际准入。`tos_ref` 不是链接。`base_url_env` 的值由部署环境注入，不写进仓库。
 
 ```yaml
 schema_version: 1
@@ -101,7 +112,7 @@ reference:
   license: MIT
   copyright: Copyright (c) 2026 freehire contributors
   commit: 233874a1dce87b21ac51ca0bc06bd9b9ddaff7d7
-rows:
+synthetic_examples:
   - id: src-gov-open-jobs
     kind: employer_career
     access_mode: official_http_api
@@ -115,7 +126,7 @@ rows:
     anti_bot: none_required
     stores_posting: true
     attribution: link_back
-    decision: admit
+    example_decision: admit
     reason: 公共机构文档化的职位 API，允许保存字段并回链，有明确配额。
 
   - id: src-employer-json-feed
@@ -131,7 +142,7 @@ rows:
     anti_bot: none_required
     stores_posting: true
     attribution: link_back
-    decision: admit
+    example_decision: admit
     reason: 雇主为自己的职位发布的 JSON 供稿，robots 允许，条款允许展示并回链。
 
   - id: src-ats-public-board
@@ -147,7 +158,7 @@ rows:
     anti_bot: none_required
     stores_posting: true
     attribution: link_back
-    decision: admit
+    example_decision: admit
     reason: 多租户系统文档中的公开读接口，租户标识取自对方公开目录，不猜测。
 
   - id: src-keyed-official-api
@@ -163,7 +174,7 @@ rows:
     anti_bot: none_required
     stores_posting: true
     attribution: link_back
-    decision: admit
+    example_decision: admit
     reason: 官方 API 使用密钥，密钥只存在于环境变量名所指的运行时配置。
 
   - id: src-reference-catalogue-api
@@ -179,7 +190,7 @@ rows:
     anti_bot: none_required
     stores_posting: false
     attribution: unknown
-    decision: research_only
+    example_decision: research_only
     reason: 参照实现的软件是 MIT，其目录数据与接口条款尚未核对，不能当作可再发布来源。
 
   - id: src-aggregator-html
@@ -195,7 +206,7 @@ rows:
     anti_bot: none_required
     stores_posting: false
     attribution: unknown
-    decision: research_only
+    example_decision: research_only
     reason: 只有给人看的 HTML，没有文档化的机器接口，按 ADR-016 不进入自动聚合。
 
   - id: src-robots-disallow
@@ -211,7 +222,7 @@ rows:
     anti_bot: none_required
     stores_posting: true
     attribution: link_back
-    decision: reject
+    example_decision: reject
     reason: 供稿存在，但 robots 拒绝自动读取。不换入口、不改身份重试。
 
   - id: src-tos-no-republication
@@ -227,7 +238,7 @@ rows:
     anti_bot: none_required
     stores_posting: false
     attribution: forbidden
-    decision: reject
+    example_decision: reject
     reason: 接口公开，但条款禁止保存或再发布职位内容。
 
   - id: src-login-wall
@@ -243,7 +254,7 @@ rows:
     anti_bot: none_required
     stores_posting: false
     attribution: unknown
-    decision: reject
+    example_decision: reject
     reason: 需要账号会话。不注册账号、不保存 cookie、不借用人工登录态。
 
   - id: src-challenge-page
@@ -259,11 +270,11 @@ rows:
     anti_bot: requires_circumvention
     stores_posting: false
     attribution: unknown
-    decision: reject
+    example_decision: reject
     reason: 只有在伪装客户端或通过人机验证之后才能读到内容。禁止绕过。
 ```
 
-这十行的判定分布：`admit` 4、`research_only` 2、`reject` 4。`admit` 四行是后续任务的全部准入集合，在条款证据换成真实文档之前，它们仍然只是形状样例，不能拿去请求任何真实服务。
+这十个合成样例的算法输出分布为 4/2/4，仅用于说明规则。它们没有实际 `decision`，不是后续任务的准入集合；当前真实来源 `admit` 数为 0。
 
 ## 七、和现有巡检的边界
 
@@ -275,7 +286,7 @@ rows:
 
 ## 八、交给后续任务的契约
 
-后续任务开始写代码时：
+T1 逐源研究验收完成之后，后续任务才可开始写接入代码；本文件当前不解锁该步骤。届时：
 
 - 只读 `decision: admit` 的行。`research_only` 与 `reject` 没有代码路径。
 - 基址从 `base_url_env` 读取。变量缺失、为空，或看起来像占位符未被替换，则该行跳过并记一条失败，不影响其他行。
@@ -285,16 +296,22 @@ rows:
 - 响应进现有证据链：原始摘录、字段、抽取器名、置信度。不自动把聚合结果标成已发布机会。发布仍走现有人工确认。
 - 不新增 HTML 解析兜底。接口失败就失败。
 
-建议的落点（本 PR 不创建）：`lib/job-sources/checklist.ts` 放类型与判定函数，测试用本节的十行断言「四条 admit、两条 research_only、四条 reject，且没有任何 admit 违反第三节」。
+建议的落点（本 PR 不创建）：`lib/job-sources/checklist.ts` 放类型与判定函数，纯规则测试可用第六节合成样例断言算法输出 4/2/4；这不计入真实来源覆盖率，也不代表 T1/T3 通过。
 
 ## 九、验收
 
-对照本文件即可，不需要跑抓取：
+**当前以下真实来源验收尚未满足，T1 仍未完成。** 不需要通过实际抓取来证明许可：
 
-- 清单覆盖四类来源：`ats_platform`、`aggregator`、`employer_career`、`reference_catalogue`。
-- 每一行都有 `decision`，且能由第五节的顺序推出。
+- 逐一列出真实候选来源，而非来源类别或合成行。
+- 每个来源附官方访问方式和可核验证据引用，条款查阅日期、限制与结论；没有证据的明确待研究。
+- 真实来源准入集合独立于合成示例；当前为空。
+
+下面仅是原稿设计框架的静态自检，不是中央 PRD 的完成标准：
+
+- 合成示例覆盖四类来源：`ats_platform`、`aggregator`、`employer_career`、`reference_catalogue`。
+- 每个合成样例有 `example_decision`，可由第五节的顺序推出，但不可作为接入配置。
 - 没有任何 `admit` 行的 `anti_bot` 为 `requires_circumvention`，`auth` 为 `session_required`，`tos_status` 不是 `allowed`，或 `access_mode` 落在 `public_document` / `unknown`。
-- 全文没有真实主机名、IP、账号、邮箱或密钥值。地址与密钥只以环境变量名出现。
+- 文档不含真实内部主机名、IP、账号、邮箱或密钥值；公开官方证据可引用，运行时基址与密钥值不入文档。
 - MIT 声明写明项目、SPDX、版权句和核对过的提交。
 - 本 PR 的 diff 只有这份设计文档。
 
