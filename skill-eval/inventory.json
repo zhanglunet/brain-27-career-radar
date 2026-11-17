@@ -1,0 +1,66 @@
+{
+  "prd": 484,
+  "repo": "brain-27-career-radar",
+  "version": 1,
+  "generated_at": "2026-11-17",
+  "design_ref": "docs/plans/2026-11-17-prd-484-brain-skill-evaluation-design.md",
+  "gate": "rate-trio",
+  "thresholds": {
+    "min_sample_tasks": 30,
+    "max_error_rate": 0.1,
+    "max_error_vs_control_ratio": 0.5,
+    "min_behavior_change_rate": 0.1,
+    "min_adoption_rate": 0.8,
+    "fail_adoption_rate": 0.5,
+    "overlap_similarity": 0.8,
+    "error_label": "假信号率"
+  },
+  "scope_note": "本仓尚无入库的 SKILL.md 文件，技能以“录制→草稿生成器”形态存在；本次以三处技能实现文本（文件头注释 = 技能自述）为评估对象。实测在影子模式下跑，不触发真实投递、不进 PRD-175 批准门（本次 T2 不做实测）。反爬红线：评估只读公开合规来源，遇拒绝即显形记录，绝不伪装或绕过。",
+  "skills": [
+    {
+      "id": "capture:job-capture",
+      "kind": "采集",
+      "source_path": "lib/job-capture.mjs",
+      "description": "求职实操录制管线（job-capture-v1）：字段白名单封闭，PII 阻断式脱敏（J-1~J-4），全程本地零网络。",
+      "text": "// PRD-260/T2（trend #1301）：求职实操录制管线——job-capture-v1 最小实现。\n//\n// 按 PRD-260/T1 设计（docs/plans/2026-10-28-prd-260-job-skills-recorder.md）实现 T2 范围：\n//   字段白名单封闭：顶层 {schema, captured_at, jobseeker, task_kind, steps, summary}；\n//   step 仅 {seq, surface_kind, action, intent, field_kind, pi_involved}——\n//   **PII 在模型中无字段可装**：涉及个人信息的步骤只记 pi_involved=true（布尔），值永不入模型；\n//   禁止字段出现即录制失败（白名单丢弃+告警不适用于值类禁录——检测到即抛）；\n//   脱敏 J-1~J-4 阻断式（记录前）：J-1 邮箱/手机/证件；J-2 疑似简历句式；J-3 带 token URL；J-4 内部词替换。\n//   全程本地零网络。虚构纪律：示例任务/解说全虚构；密钥样例占位形态。",
+      "metrics": {
+        "sample_tasks": 0,
+        "false_signal_rate": null,
+        "control_false_signal_rate": null,
+        "behavior_change_rate": null,
+        "adoption_rate": null,
+        "source": "尚无对照跑分：T2 只跑门逻辑与重叠检测，真实对照跑分（A/B）在后续实测（T5）补；不编造跑分数据。"
+      }
+    },
+    {
+      "id": "draft:job-skill-draft",
+      "kind": "清单技能草稿生成",
+      "source_path": "lib/job-skill-draft.mjs",
+      "description": "录制时间线 → SKILL.md 兼容清单技能草稿；固定清单项「任何投递/提交动作前，走 PRD-175 人工批准门」不可删。",
+      "text": "// PRD-260/T3（trend #1302）：清单技能草稿生成——job-capture-v1 时间线 → SKILL.md 兼容草稿。\n//\n// 按 PRD-260/T1 设计（docs/plans/2026-10-28-prd-260-job-skills-recorder.md §3.3）实现 T3 范围：\n//   draftFromCapture(capture, {name, description}) → {frontmatter, bodyMarkdown, requiredGateLine}：\n//     frontmatter 含 name/description/triggers{canonical(1 条), colloquial}/\n//     review{state:\"draft\", reviewer:\"\", decided_at:\"\"}/source:\"recorded\"；\n//     body 为清单形态：适用场景 / 步骤清单（做什么+为什么+注意什么）/ 投递前置检查项；\n//   **固定清单项（不可删）**：「任何投递/提交动作前，走 PRD-175 人工批准门」——生成器强制\n//   插入并打 required 标记，函数返回值含 requiredGateLine；removeGateLine(body) 恒返回\n//   false（闸门校验演示：required 固定项不可删，生成器与闸门双重校验）；\n//   批准门不变声明：本模块只复述清单与流程，不含任何代操作指令，不新增绕过 175 门的路径。\n// 零网络零依赖；草稿仅供人本地 diff review，review 通过前不入库；示例全虚构。",
+      "metrics": {
+        "sample_tasks": 0,
+        "false_signal_rate": null,
+        "control_false_signal_rate": null,
+        "behavior_change_rate": null,
+        "adoption_rate": null,
+        "source": "尚无对照跑分：T2 只跑门逻辑与重叠检测，真实对照跑分（A/B）在后续实测（T5）补；不编造跑分数据。"
+      }
+    },
+    {
+      "id": "review:authenticity-reviewer",
+      "kind": "筛选/复核",
+      "source_path": "lib/authenticity/reviewer.ts",
+      "description": "机会信号独立复核 agent：只读证据原文 + 交叉源规则（R1–R6），三态结论（可信/待验证/可疑），纯函数零网络。",
+      "text": "/**\n * 独立复核 agent 编排与交叉源规则（最小实现）—— PRD-176/T2（trend #881）。\n *\n * T1 规范：PRD-176/T1《真实性字段与三态（可信/待验证/可疑）规范》§2/§3/§四\n * （中央仓库 zhanglunet/trend，adopted/drafts/prd-176-opportunity-authenticity-t1.md）。\n * 本文件按 T1 落地，**不得擅自增删状态枚举、信号码与字段**。\n *\n * ── 上下文隔离（T1 §四，借鉴 cloudflare/security-audit-skill 的独立复核\n *    形态，MIT；本文件为自研表述，不拷贝其代码）─────────────────\n * 复核与采集是两个独立上下文：复核者的输入**只有证据原文**（快照 excerpt、\n * field_evidence、官方页 URL/摘录）与规则集；`ReviewerEvidence` 类型不含\n * 采集链路的推断字段（fit/why/action/summary 等），JS 侧多传也不读——\n * 结论独立给出，复核与采集不共享中间状态。\n *\n * ── 交叉源规则最小集（T1 §四 R1–R6）────────────────────────\n * 每条规则只输出 dim 级 state + evidence_refs（+ 信号）；全局 state 一律由\n * composeState() 按 T1 §3.2 合成，规则无权直接改全局。\n *\n * 纯函数、无副作用：不做任何网络请求；测试用 node --test（可擦除语法）。\n */",
+      "metrics": {
+        "sample_tasks": 0,
+        "false_signal_rate": null,
+        "control_false_signal_rate": null,
+        "behavior_change_rate": null,
+        "adoption_rate": null,
+        "source": "尚无对照跑分：T2 只跑门逻辑与重叠检测，真实对照跑分（A/B）在后续实测（T5）补；不编造跑分数据。"
+      }
+    }
+  ]
+}
