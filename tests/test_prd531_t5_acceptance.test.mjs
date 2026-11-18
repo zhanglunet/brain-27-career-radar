@@ -13,10 +13,9 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { WORKFLOW_STEPS, PatternLedger, renderPackMd, checkStepSequence,
-         checkWorkflow, checkPack, checkPatternEntry }
+import { WORKFLOW_STEPS, PatternLedger, renderPackMd, checkStepSequence }
   from '../lib/methodology-pack.mjs';
-import { checkWorkflow as gateCheckWorkflow }
+import { checkPack, checkPatternEntry, checkWorkflow }
   from '../lib/methodology-pack-gate.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -34,7 +33,7 @@ test('落账产物与当前渲染逐字节一致', () => {
 test('真实 workflow 全步序列过闸', () => {
   const d = checkWorkflow([...WORKFLOW_STEPS]);
   assert.equal(d.allowed, true);
-  assert.equal(gateCheckWorkflow([...WORKFLOW_STEPS]).allowed, true);
+  assert.equal(checkWorkflow([...WORKFLOW_STEPS]).allowed, true);
 });
 
 test('无方法论包演练：PACK_MISSING 拦下', () => {
